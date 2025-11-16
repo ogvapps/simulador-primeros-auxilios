@@ -7,6 +7,8 @@ import React, {
   memo, // Importamos 'memo' para la optimización
 } from 'react';
 import { initializeApp } from 'firebase/app';
+import firebaseConfig from './firebaseConfig'; // <-- AÑADE ESTA LÍNEA
+
 // --- INICIO DE LA CORRECCIÓN ---
 // Se añaden las importaciones de 'firebase/auth' que faltaban
 import {
@@ -15,6 +17,21 @@ import {
   signInWithCustomToken,
   signInAnonymously,
 } from 'firebase/auth';
+// --- FIN DE LA CORRECCIÓN ---
+import {
+  getFirestore,
+  doc,
+  onSnapshot,
+  setDoc,
+  getDoc,
+  getDocs,
+  collection,
+  setLogLevel,
+} from 'firebase/firestore';
+// ... (el resto de imports de lucide-react)
+
+const app = initializeApp(firebaseConfig); // <-- YA PUEDES USAR firebaseConfig
+
 // --- FIN DE LA CORRECCIÓN ---
 import {
   getFirestore,
@@ -3163,5 +3180,6 @@ const AdminDashboard = memo(function AdminDashboard({ onBack }) {
   );
 // --- FIN DE LA CORRECCIÓN ---
 } // <-- Esta es la llave de cierre que faltaba para 'function App()'
+
 
 export default App;
