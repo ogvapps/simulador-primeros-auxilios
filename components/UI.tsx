@@ -26,6 +26,7 @@ export const Footer = memo(() => (
         <span className="text-[10px] text-gray-500 dark:text-gray-500 hidden md:inline">Licencia CC BY-NC-SA 4.0</span>
       </a>
     </div>
+        </div>
 ));
 
 export const OfflineIndicator = () => {
