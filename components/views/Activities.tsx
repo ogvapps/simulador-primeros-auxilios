@@ -288,7 +288,7 @@ export const LearningModule = ({ module, onComplete, onBack }: { module: Module,
                           <Lock size={40} className="text-purple-600"/>
                       </div>
                       <h3 className="text-2xl font-black text-gray-800 mb-2">{t('microTestTitle')}</h3>
-                      <p className="text-gray-500 mb-6">{t('microTestDesc')}</p>
+                      <p className="text-gray-500 mb-8">{t('microTestDesc')}</p>
                       
                       <div className="bg-white border-2 border-purple-100 p-6 rounded-xl shadow-sm mb-8">
                           <p className="text-lg font-bold text-gray-800">{microTestQuestion?.q}</p>
@@ -336,11 +336,11 @@ export const LearningModule = ({ module, onComplete, onBack }: { module: Module,
             )}
 
             <div className="w-full max-w-2xl text-center">
-                <div className="mb-8 transform hover:scale-105 transition-transform duration-300 inline-block p-6 bg-gray-50 rounded-full shadow-inner border border-gray-100">
-                    {React.cloneElement(currentContent.icon as React.ReactElement, { size: 80 })}
+                <div className="mb-8-105 transition-transform duration-300 inline-block p-6 bg-gray-50 rounded-full shadow-inner border border-gray-100">
+                    {React.cloneElement(currentContent.icon as React.ReactElement, { mb-8 })}
                 </div>
                 
-                <h3 className="text-2xl md:text-4xl font-black text-gray-800 mb-6 leading-tight flex flex-col md:flex-row items-center justify-center gap-3">
+                <h3 className="text-2xl md:text-4xl font-black text-gray-800 mb-8 leading-tight flex flex-col md:flex-row items-center justify-center gap-3">
                     {currentContent.title}
                     <div className="flex">
                         <SpeakButton text={`${currentContent.title}. ${currentContent.text}`} />
@@ -357,7 +357,7 @@ export const LearningModule = ({ module, onComplete, onBack }: { module: Module,
                 
                 {/* AI Explanation Box */}
                 {showAiExplanation && (
-                    <div className="bg-indigo-50 border border-indigo-100 p-4 rounded-xl text-left text-indigo-900 mb-6 animate-in slide-in-from-top-2">
+                    <div className="mb-8 rounded-xl text-left text-indigo-900 mb-8 animate-in slide-in-from-top-2">
                         <h4 className="font-bold text-sm uppercase tracking-wide mb-1 flex items-center gap-2"><Brain size={16}/> {t('aiTutorTitle')}</h4>
                                         <p 
                   className="text-sm md:text-base"
@@ -370,7 +370,7 @@ export const LearningModule = ({ module, onComplete, onBack }: { module: Module,
                     </div>
                 )}
 
-                <p className="text-lg md:text-xl text-gray-600 mb-10 leading-relaxed font-medium">
+                <p className="mb-8 leading-relaxed font-medium">
                     {currentContent.text}
                 </p>
 
@@ -474,8 +474,8 @@ export const FlashcardComponent = ({ onComplete, onBack }: { onComplete: () => v
             <Card className="max-w-xl mx-auto text-center p-8 animate-in zoom-in" padding="lg">
                 <CheckCircle2 size={64} className="mx-auto text-green-500 mb-4" />
                 <h2 className="text-2xl font-bold mb-2 text-gray-800">¡Todo Repasado!</h2>
-                <p className="text-gray-500 mb-6">No tienes tarjetas pendientes para hoy. Vuelve mañana para fortalecer tu memoria.</p>
-                <div className="bg-blue-50 p-4 rounded-xl mb-6">
+                <p className="text-gray-500 mb-8">No tienes tarjetas pendientes para hoy. Vuelve mañana para fortalecer tu memoria.</p>
+                <div className="bg-blue-50 p-4 rounded-xl mb-8">
                     <p className="text-sm font-bold text-blue-800">Estadísticas Rápidas</p>
                     <p className="text-xs text-blue-600 mt-1">Has revisado {queue.length} conceptos hoy.</p>
                 </div>
@@ -736,9 +736,9 @@ export const ExamComponent = ({ onComplete, onBack }: { onComplete: (score: numb
           {mode === 'normal' && <span>Mínimo: {MIN_PASS_SCORE}</span>}
       </div>
       
-      <div className="h-2 bg-gray-100 rounded-full mb-6"><div className={`h-full rounded-full transition-all ${mode === 'hardcore' ? 'bg-red-600' : 'bg-indigo-600'}`} style={{ width: `${((qIndex + 1) / FULL_EXAM.length) * 100}%` }} /></div>
+      <div className="h-2 bg-gray-100 rounded-full mb-8"><div className={`h-full rounded-full transition-all ${mode === 'hardcore' ? 'bg-red-600' : 'bg-indigo-600'}`} style={{ width: `${((qIndex + 1) / FULL_EXAM.length) * 100}%` }} /></div>
       
-      <h3 className="text-xl font-bold mb-6">{question.q}</h3>
+      <h3 className="text-xl font-bold mb-8">{question.q}</h3>
       {mode === 'hardcore' && question.isCritical && (
           <div className="mb-4 flex items-center text-red-600 text-xs font-bold uppercase tracking-wider bg-red-50 p-2 rounded border border-red-200">
               <AlertOctagon size={16} className="mr-2" /> Pregunta Crítica - Fallar es fatal
