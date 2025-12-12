@@ -336,8 +336,8 @@ export const LearningModule = ({ module, onComplete, onBack }: { module: Module,
             )}
 
             <div className="w-full max-w-2xl text-center">
-                <div className="mb-8-105 transition-transform duration-300 inline-block p-6 bg-gray-50 rounded-full shadow-inner border border-gray-100">
-                    {React.cloneElement(currentContent.icon as React.ReactElement, { mb-8 })}
+                <div className="mb-4 transition-transform duration-300 inline-block p-6 bg-gray-50 rounded-full shadow-inner border border-gray-100">
+                    {React.cloneElement(currentContent.icon as React.ReactElement, { size: 56 })}
                 </div>
                 
                 <h3 className="text-2xl md:text-4xl font-black text-gray-800 mb-8 leading-tight flex flex-col md:flex-row items-center justify-center gap-3">
