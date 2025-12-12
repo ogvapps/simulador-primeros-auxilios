@@ -178,7 +178,7 @@ export const LearningModule = ({ module, onComplete, onBack }: { module: Module,
   // AI FUNCTIONS
   const getAi = () => {
      try {
-         return new GoogleGenAI({ apiKey: process.env.API_KEY });
+         return new GoogleGenAI({ apiKey: import.meta.env.VITE_GEMINI_API_KEY });
      } catch (e) {
          console.error(e);
          return null;
