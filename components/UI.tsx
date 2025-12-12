@@ -15,21 +15,16 @@ export const LoadingScreen = () => (
 );
 
 export const Footer = memo(() => (
-    <div className="w-full py-8 text-center text-gray-400 dark:text-gray-500 text-xs mt-auto border-t border-gray-100 dark:border-slate-800 bg-gray-50/50 dark:bg-slate-900/50">
-        <div className="flex flex-col items-center gap-1 mb-3">
-            <p className="font-semibold text-gray-600 dark:text-gray-400">Creado por ogvapps</p>
-            <a href="mailto:ogonzalezv01@educarex.es" className="text-blue-500 hover:text-blue-700 transition-colors font-medium">
-                ogonzalezv01@educarex.es
-            </a>
-        </div>
-        <div className="flex flex-col items-center gap-2 opacity-80">
-            <a rel="license" href="http://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank" className="hover:opacity-100 transition-opacity hover:scale-105 transform duration-200">
-                <img alt="Licencia Creative Commons" style={{ borderWidth: 0 }} src="https://i.creativecommons.org/l/by-nc-sa/4.0/88x31.png" />
-            </a>
-            <p className="max-w-xs mx-auto leading-tight text-[10px] text-gray-500 dark:text-gray-500 px-4">
-                Esta obra está bajo una <a rel="license" href="http://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank" className="underline hover:text-gray-800 dark:hover:text-gray-300">Licencia Creative Commons Atribución-NoComercial-CompartirIgual 4.0 Internacional</a>.
-            </p>
-        </div>
+    <div className="w-full py-4 text-center text-gray-400 dark:text-gray-500 text-xs mt-auto border-t border-gray-100 dark:border-slate-800 bg-gray-50/50 dark:bg-slate-900/50">
+    <div className="flex flex-col md:flex-row items-center justify-center gap-3 md:gap-6 px-4">
+      <span className="font-semibold text-gray-600 dark:text-gray-400">Creado por ogvapps</span>
+      <a href="mailto:ogonzalezv01@educarex.es" className="text-blue-500 hover:text-blue-700 transition-colors font-medium">
+        ogonzalezv01@educarex.es
+      </a>
+      <a rel="license" href="http://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank" className="hover:opacity-100 transition-opacity hover:scale-105 transform duration-200 flex items-center gap-2">
+        <img alt="Licencia Creative Commons" style={{ borderWidth: 0 }} src="https://i.creativecommons.org/l/by-nc-sa/4.0/88x31.png" className="h-5" />
+        <span className="text-[10px] text-gray-500 dark:text-gray-500 hidden md:inline">Licencia CC BY-NC-SA 4.0</span>
+      </a>
     </div>
 ));
 
