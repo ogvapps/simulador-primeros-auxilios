@@ -18,8 +18,7 @@ export const AiSimulatorGame = ({ onBack, onComplete }: { onBack: () => void, on
 
     useEffect(() => {
         try {
-            // Using process.env.API_KEY as per instructions
-            const genAI = new GoogleGenAI({ apiKey: process.env.API_KEY || '' });
+            const genAI = new GoogleGenAI({ apiKey: process.env.API_KEY });
             setAi(genAI);
         } catch (e) {
             console.error("Failed to init AI", e);
