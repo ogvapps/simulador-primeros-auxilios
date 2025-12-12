@@ -359,7 +359,14 @@ export const LearningModule = ({ module, onComplete, onBack }: { module: Module,
                 {showAiExplanation && (
                     <div className="bg-indigo-50 border border-indigo-100 p-4 rounded-xl text-left text-indigo-900 mb-6 animate-in slide-in-from-top-2">
                         <h4 className="font-bold text-sm uppercase tracking-wide mb-1 flex items-center gap-2"><Brain size={16}/> {t('aiTutorTitle')}</h4>
-                        <p className="text-sm md:text-base">{showAiExplanation}</p>
+                                        <p 
+                  className="text-sm md:text-base"
+                  dangerouslySetInnerHTML={{
+                    __html: showAiExplanation
+                      .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+                      .replace(/\*(.+?)\*/g, '<em>$1</em>')
+                  }}
+                />
                     </div>
                 )}
 
