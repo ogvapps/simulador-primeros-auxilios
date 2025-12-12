@@ -3,7 +3,7 @@ import {
   ShieldCheck, UserCheck, HeartPulse, Flame, BookOpen,
   CheckCircle2, XCircle, AlertTriangle, ArrowRight, ArrowLeft, Droplets,
   Wind, Award, Volume2, Frown, HardHat, Smile, Brain, Syringe, AirVent,
-  Activity, Gauge, Waves, BriefcaseMedical, Zap, MessageSquare, Siren,
+  Activity, Gauge, Waves, Briefcase, Zap, MessageSquare, Siren,
   RotateCcw, FileSpreadsheet, Users, Search, ThermometerSnowflake, Candy,
   GraduationCap, Trophy, VolumeX, Stethoscope, Layers, Crown, Phone
 } from 'lucide-react';
@@ -100,7 +100,7 @@ export const ICON_MAP: Record<string, React.ReactNode> = {
   epilepsia: <Activity size={48} className="text-indigo-500" />,
   diabetes: <Gauge size={48} className="text-blue-700" />,
   ansiedad: <Waves size={48} className="text-green-400" />,
-  botiquin: <BriefcaseMedical size={48} className="text-red-400" />,
+  botiquin: <Briefcase size={48} className="text-red-400" />,
   examen: <GraduationCap size={48} className="text-indigo-700" />,
   glosario: <BookOpen size={48} className="text-gray-600" />,
   certificado: <Award size={48} className="text-yellow-500" />,
@@ -234,7 +234,7 @@ export const MODULES: Module[] = [
       steps: [
         { title: 'Diente Roto', text: 'Si se rompe un trozo, intenta encontrarlo. Limpia suavemente con agua.', icon: <Search size={64} className="text-gray-500" /> },
         { title: 'Diente Arrancado', text: '¡El tiempo es oro! Coge el diente por la corona (la parte blanca), NUNCA por la raíz.', icon: <Smile size={64} className="text-gray-400" /> },
-        { title: 'Transporte', text: 'Llévalo en un vaso con leche, suero o saliva del propio paciente. Ve al dentista urgentemente.', icon: <BriefcaseMedical size={64} className="text-blue-500" /> }
+        { title: 'Transporte', text: 'Llévalo en un vaso con leche, suero o saliva del propio paciente. Ve al dentista urgentemente.', icon: <Briefcase size={64} className="text-blue-500" /> }
       ] 
     } 
   },
@@ -304,7 +304,7 @@ export const MODULES: Module[] = [
     id: 'botiquin', title: '16. Botiquín', description: 'Material esencial.', icon: 'botiquin', type: 'module', 
     content: { 
       steps: [
-        { title: 'Lo Básico', text: 'Un botiquín escolar o casero debe tener material de curas y protección.', icon: <BriefcaseMedical size={64} className="text-red-500" /> },
+        { title: 'Lo Básico', text: 'Un botiquín escolar o casero debe tener material de curas y protección.', icon: <Briefcase size={64} className="text-red-500" /> },
         { title: 'Protección', text: 'Guantes de un solo uso. Esencial para protegerte de infecciones al curar.', icon: <ShieldCheck size={64} className="text-blue-500" /> },
         { title: 'Curas', text: 'Suero fisiológico (limpiar), gasas estériles (cubrir/limpiar), antiséptico (clorhexidina), tiritas y esparadrapo.', icon: <Droplets size={64} className="text-cyan-500" /> },
         { title: 'Instrumental', text: 'Tijeras de punta redonda y pinzas.', icon: <ArchiveIcon size={64} className="text-gray-500" /> },
