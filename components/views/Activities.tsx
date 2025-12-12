@@ -168,7 +168,7 @@ export const LearningModule = ({ module, onComplete, onBack }: { module: Module,
   const [microTestLoading, setMicroTestLoading] = useState(false);
   
   const currentContent = module.content?.steps[step] || {title: '...', text: '', icon: <Activity size={64} className="text-gray-300" />};
-  const isGameStep = !!currentContent.interactiveComponent;
+  const isGameStep = !!(currentContent as any).interactiveComponent;
   const canAdvance = !isGameStep || gameDone;
   const totalSteps = module.content?.steps.length || 0;
   const progress = ((step + 1) / totalSteps) * 100;
@@ -369,12 +369,12 @@ export const LearningModule = ({ module, onComplete, onBack }: { module: Module,
 
                 {isGameStep && (
                     <div className="w-full bg-gray-50 rounded-2xl p-6 border-2 border-dashed border-gray-300">
-                         {currentContent.interactiveComponent === 'RcpGame' && <RcpGame onComplete={() => setGameDone(true)} />}
-                         {currentContent.interactiveComponent === 'BotiquinGame' && <BotiquinGame onComplete={() => setGameDone(true)} />}
-                         {currentContent.interactiveComponent === 'HeimlichGame' && <HeimlichGame onComplete={() => setGameDone(true)} />}
-                         {currentContent.interactiveComponent === 'SequenceGame_PAS' && <SequenceGame onComplete={() => setGameDone(true)} />}
-                         {currentContent.interactiveComponent === 'Chat112Game' && <Chat112Game onComplete={() => setGameDone(true)} />}
-                         {currentContent.interactiveComponent === 'TriageGame' && <TriageGame onComplete={() => setGameDone(true)} />}
+                         {(currentContent as any).interactiveComponent === 'RcpGame' && <RcpGame onComplete={() => setGameDone(true)} />}
+                         {(currentContent as any).interactiveComponent === 'BotiquinGame' && <BotiquinGame onComplete={() => setGameDone(true)} />}
+                         {(currentContent as any).interactiveComponent === 'HeimlichGame' && <HeimlichGame onComplete={() => setGameDone(true)} />}
+                         {(currentContent as any).interactiveComponent === 'SequenceGame_PAS' && <SequenceGame onComplete={() => setGameDone(true)} />}
+                         {(currentContent as any).interactiveComponent === 'Chat112Game' && <Chat112Game onComplete={() => setGameDone(true)} />}
+                         {(currentContent as any).interactiveComponent === 'TriageGame' && <TriageGame onComplete={() => setGameDone(true)} />}
                     </div>
                 )}
             </div>
