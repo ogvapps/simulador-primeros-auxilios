@@ -8,6 +8,7 @@ import { GeoTarget } from '../types';
 import { useLanguage } from '../contexts/LanguageContext';
 import { Select, Input, Button, Card } from './DesignSystem';
 import { BattleHost } from './games/ClassroomBattle'; // Import BattleHost
+import { deleteStudent, resetStudentProgress, loadStudentProgress } from '../services/studentService';
 
 export const AdminPinModal = ({ isOpen, onClose, onSuccess }: { isOpen: boolean, onClose: () => void, onSuccess: () => void }) => {
   const [pin, setPin] = useState('');
@@ -275,14 +276,75 @@ export const AdminPanel = ({ onBack, showToast }: { onBack: () => void, showToas
     return { total, passed, passRate, avgScore, moduleStats, pieData };
   }, [filteredUsers]);
 
-    const handleDelete = async (userId: string, e: React.MouseEvent) => {
-        // ... existing delete logic ...
-    };
-
+  const handleDelete = async (userId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (processingId) return;
+    
+    if (confirmDeleteId === userId) {
+      // Segunda confirmación - ejecutar eliminación
+      setProcessingId(`delete-${userId}`);
+      playSound('click');
+      
+      try {
+        const success = await deleteStudent(userId);
+        if (success) {
+          setUsers(users.filter(u => u.id !== userId));
+          showToast('Alumno eliminado correctamente', 'success');
+          playSound('success');
+        } else {
+          showToast('Error al eliminar alumno', 'error');
+          playSound('error');
+        }
+      } catch (error) {
+        showToast('Error al eliminar alumno', 'error');
+        playSound('error');
+      } finally {
+        setProcessingId(null);
+        setConfirmDeleteId(null);
+      }
+    } else {
+      // Primera confirmación
+      setConfirmDeleteId(userId);
+      playSound('click');
+      setTimeout(() => setConfirmDeleteId(null), 3000);
+    }
   const handleReset = async (userId: string, e: React.MouseEvent) => {
-       // ... existing reset logic ...
+    e.stopPropagation();
+    if (processingId) return;
+    
+    if (confirmResetId === userId) {
+      // Segunda confirmación - ejecutar reinicio
+      setProcessingId(`reset-${userId}`);
+      playSound('click');
+      
+      try {
+        const success = await resetStudentProgress(userId);
+        if (success) {
+          // Recargar la lista de usuarios
+          const updatedUser = await loadStudentProgress(userId);
+          if (updatedUser) {
+            setUsers(users.map(u => u.id === userId ? { ...u, progress: updatedUser.progreso } : u));
+          }
+          showToast('Progreso reiniciado correctamente', 'success');
+          playSound('success');
+        } else {
+          showToast('Error al reiniciar progreso', 'error');
+          playSound('error');
+        }
+      } catch (error) {
+        showToast('Error al reiniciar progreso', 'error');
+        playSound('error');
+      } finally {
+        setProcessingId(null);
+        setConfirmResetId(null);
+      }
+    } else {
+      // Primera confirmación
+      setConfirmResetId(userId);
+      playSound('click');
+      setTimeout(() => setConfirmResetId(null), 3000);
+    }
   };
-
   if (view === 'battle') {
       return <BattleHost onExit={() => setView('users')} />;
   }
