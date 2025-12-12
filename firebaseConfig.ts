@@ -3,24 +3,49 @@ import { getFirestore } from 'firebase/firestore';
 import { getAuth } from 'firebase/auth';
 import { getDatabase } from 'firebase/database';
 
+// Robustly access environment variables to prevent runtime crashes
+let env: any = {};
+
+try {
+  // Check if import.meta.env exists safely
+  const meta = import.meta as any;
+  if (typeof meta !== 'undefined' && meta.env) {
+    env = meta.env;
+  }
+} catch (e) {
+  console.warn("Error accessing import.meta.env, defaulting to empty object.", e);
+}
+
 const firebaseConfig = {
-  apiKey: "AIzaSyANi0ImaTKfxQUKwPZ0A48cvie5QKN0eFo",
-  authDomain: "primeros-auxilios-app.firebaseapp.com",
-  databaseURL: "https://primeros-auxilios-app-default-rtdb.firebaseio.com",
-  projectId: "primeros-auxilios-app",
-  storageBucket: "primeros-auxilios-app.firebasestorage.app",
-  messagingSenderId: "383085206122",
-  appId: "1:383085206122:web:87e987fd4f6c41a5f80813",
-  measurementId: "G-6FE3XD2QT5"
+  apiKey: env.VITE_FIREBASE_API_KEY,
+  authDomain: env.VITE_FIREBASE_AUTH_DOMAIN,
+  databaseURL: env.VITE_FIREBASE_DATABASE_URL,
+  projectId: env.VITE_FIREBASE_PROJECT_ID,
+  storageBucket: env.VITE_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+  appId: env.VITE_FIREBASE_APP_ID,
+  measurementId: env.VITE_FIREBASE_MEASUREMENT_ID
 };
 
 const appId = firebaseConfig.appId;
 
-export const isMock = !firebaseConfig.apiKey || firebaseConfig.apiKey === 'mock-key' || firebaseConfig.apiKey.includes('mock');
+// Determine if we are in mock mode (if keys are missing)
+export const isMock = !firebaseConfig.apiKey || !firebaseConfig.projectId || firebaseConfig.apiKey.includes('mock');
 
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
-const auth = getAuth(app);
-const rtdb = getDatabase(app); // Realtime Database for Multiplayer
+let app;
+let db;
+let auth;
+let rtdb;
+
+if (!isMock) {
+  try {
+    app = initializeApp(firebaseConfig);
+    db = getFirestore(app);
+    auth = getAuth(app);
+    rtdb = getDatabase(app);
+  } catch (error) {
+    console.error("Error initializing Firebase:", error);
+  }
+}
 
 export { app, db, auth, rtdb, appId };
