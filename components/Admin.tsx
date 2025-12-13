@@ -562,9 +562,9 @@ export const AdminPanel = ({ onBack, showToast }: { onBack: () => void, showToas
                 <div className="bg-white dark:bg-slate-800 rounded-b-xl shadow-sm overflow-hidden">
                 <div className="overflow-x-auto">
                     <table className="w-full text-left border-collapse">
-                    <thead className="bg-gray-50 dark:bg-slate-700 text-gray-600 dark:text-gray-300 uppercase text-xs font-semibold tracking-wider"><tr><th className="p-4 border-b dark:border-slate-600">Alumno</th><th className="p-4 border-b dark:border-slate-600">Clase</th><th className="p-4 border-b dark:border-slate-600">Rol</th><th className="p-4 border-b dark:border-slate-600 text-center">Progreso</th><th className="p-4 border-b dark:border-slate-600 text-center">Nivel</th><th className="p-4 border-b dark:border-slate-600 text-center">Examen</th><th className="p-4 border-b dark:border-slate-600 text-center">Nota</th><th className="p-4 border-b dark:border-slate-600 text-right">Acciones</th></tr></thead>
+                    <thead className="bg-gray-50 dark:bg-slate-700 text-gray-600 dark:text-gray-300 uppercase text-xs font-semibold tracking-wider"><tr><th className="p-4 border-b dark:border-slate-600">Alumno</th><<th className="p-4 border-b dark:border-slate-600">Email</th>th className="p-4 border-b dark:border-slate-600">Clase</th><th className="p-4 border-b dark:border-slate-600">Rol</th><th className="p-4 border-b dark:border-slate-600 text-center">Progreso</th><th className="p-4 border-b dark:border-slate-600 text-center">Nivel</th><th className="p-4 border-b dark:border-slate-600 text-center">Examen</th><th className="p-4 border-b dark:border-slate-600 text-center">Nota</th><th className="p-4 border-b dark:border-slate-600 text-right">Acciones</th></tr></thead>
                     <tbody className="divide-y divide-gray-100 dark:divide-slate-700">
-                        {loading ? (<tr><td colSpan={8} className="p-8 text-center text-gray-500">Cargando datos...</td></tr>) : filteredUsers.length === 0 ? (<tr><td colSpan={8} className="p-8 text-center text-gray-500">No se encontraron alumnos con los filtros actuales.</td></tr>) : (
+                        {loading ? (<tr><td 9 className="p-8 text-center text-gray-500">Cargando datos...</td></tr>) : filteredUsers.length === 0 ? (<tr><td 9 className="p-8 text-center text-gray-500">No se encontraron alumnos con los filtros actuales.</td></tr>) : (
                         filteredUsers.map((u) => {
                             const modCount = LEARNING_MODULE_IDS.filter(id => u.progress?.[`${id}Completed`]).length;
                             const modPercent = Math.round((modCount / LEARNING_MODULE_IDS.length) * 100);
@@ -578,7 +578,8 @@ export const AdminPanel = ({ onBack, showToast }: { onBack: () => void, showToas
                                 <td className="p-4 font-medium text-gray-900 dark:text-white flex items-center">
                                 {u.name}
                                 </td>
-                                <td className="p-4 text-gray-500 dark:text-gray-400 text-sm font-mono">{u.classCode || '-'}</td>
+                                              <td className="p-4 text-gray-500 dark:text-gray-400 text-sm">{u.email || '-'}</td>  
+                              <td className="p-4 text-gray-500 dark:text-gray-400 text-sm font-mono">{u.classCode || '-'}</td>
                                 <td className="p-4 text-gray-500 dark:text-gray-400 text-sm">{u.role}</td>
                                 <td className="p-4 text-center"><div className="w-24 mx-auto bg-gray-200 dark:bg-slate-600 rounded-full h-2"><div className="bg-blue-500 h-2 rounded-full" style={{ width: `${modPercent}%` }}></div></div><span className="text-xs text-gray-400 mt-1 inline-block">{modPercent}%</span></td>
                                 <td className="p-4 text-center"><span className="bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300 px-2 py-1 rounded-full text-xs font-bold">Lvl {u.progress?.level || 1}</span></td>
