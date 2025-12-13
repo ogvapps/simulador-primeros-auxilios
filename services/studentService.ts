@@ -146,8 +146,7 @@ export async function resetStudentProgress(studentId: string): Promise<boolean> 
       tiempoTotal: 0,
       intentosExamen: 0,
       racha: 0
-  };   
-        
+    }        
     // CRÍTICO: También actualizar el progreso real del usuario
     if (!isMock) {
       const userProgressRef = doc(db, 'artifacts', appId, 'users', studentId, 'progress', 'main');
