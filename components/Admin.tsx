@@ -322,8 +322,10 @@ export const AdminPanel = ({ onBack, showToast }: { onBack: () => void, showToas
         const success = await resetStudentProgress(userId);
         if (success) {
           // Recargar la lista de usuarios
-          const updatedUser = await loadStudentProgress(userId);
-          if (updatedUser) {
+        // Reload from user_summaries collection (where the UI reads from)
+        const summaryRef = doc(db, 'artifacts', appId, 'public', 'data', 'user_summaries', userId);
+        const summarySnap = await getDoc(summaryRef);
+        const updatedUser = summarySnap.exists() ? { id: summarySnap.id, ...summarySnap.data() } : null;          if (updatedUser) {
               setUsers(users.map(u => u.id === userId ? updatedUser : u));          }
           showToast('Progreso reiniciado correctamente', 'success');
           playSound('success');
