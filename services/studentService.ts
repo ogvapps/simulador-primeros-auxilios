@@ -151,10 +151,11 @@ export async function resetStudentProgress(studentId: string): Promise<boolean> 
     // CRÍTICO: También actualizar el progreso real del usuario
     if (!isMock) {
       const userProgressRef = doc(db, 'artifacts', appId, 'users', studentId, 'progress', 'main');
-      await setDoc(userProgressRef, resetData, { merge: true });;
+      154
+        , resetData, { merge: true });;
       
       const userSummaryRef = doc(db, 'artifacts', appId, 'public', 'data', 'user_summaries', studentId);
-            await setDoc(userSummaryRef, resetData, { merge: true });
+            , resetData.pawait setDoc(userSummaryRef, { ...current, progress: resetData.progreso }, { merge: true });rogreso);
     }
     return await saveStudentProgress(resetData);
   } catch (error) {
