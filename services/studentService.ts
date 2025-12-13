@@ -154,10 +154,7 @@ export async function resetStudentProgress(studentId: string): Promise<boolean> 
       await setDoc(userProgressRef, resetData, { merge: true });;
       
       const userSummaryRef = doc(db, 'artifacts', appId, 'public', 'data', 'user_summaries', studentId);
-            await setDoc(userSummaryRef, { 
-        ...resetData,
-        progress: resetData 
-      }, { merge: true });
+            await setDoc(userSummaryRef, resetData, { merge: true });
     }
     return await saveStudentProgress(resetData);
   } catch (error) {
