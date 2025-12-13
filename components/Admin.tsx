@@ -253,16 +253,16 @@ export const AdminPanel = ({ onBack, showToast }: { onBack: () => void, showToas
   const stats = useMemo(() => {
     // ... existing stats logic ...
     const total = filteredUsers.length;
-    const passed = filteredUsers.filter(u => u.progress?.examenPassed).length;
-    const failed = filteredUsers.filter(u => u.progress?.examenCompleted && !u.progress?.examenPassed).length;
+    const passed = filteredUsers.filter(u => u.progreso?.examenPassed).length;
+    const failed = filteredUsers.filter(u => u.progreso?.examenCompleted && !u.progreso?.examenPassed).length;
     const pending = total - passed - failed;
     
     const passRate = total ? Math.round((passed / total) * 100) : 0;
-    const totalScore = filteredUsers.reduce((acc, u) => acc + (u.progress?.examenScore || 0), 0);
+    const totalScore = filteredUsers.reduce((acc, u) => acc + (u.progreso?.examenScore || 0), 0);
     const avgScore = passed ? (totalScore / passed).toFixed(1) : '0.0';
 
     const moduleStats = LEARNING_MODULE_IDS.map(modId => {
-        const completedCount = filteredUsers.filter(u => u.progress?.[`${modId}Completed`]).length;
+        const completedCount = filteredUsers.filter(u => u.progreso?.[`${modId}Completed`]).length;
         const rate = total ? Math.round((completedCount / total) * 100) : 0;
         return { id: modId, rate, title: BADGE_DATA.find(b => b.id === modId)?.title || modId };
     }).sort((a, b) => a.rate - b.rate); 
@@ -568,7 +568,7 @@ export const AdminPanel = ({ onBack, showToast }: { onBack: () => void, showToas
                     <tbody className="divide-y divide-gray-100 dark:divide-slate-700">
                         {loading ? (<tr><td colSpan={9} className="p-8 text-center text-gray-500">Cargando datos...</td></tr>) : filteredUsers.length === 0 ? (<tr><td colSpan={9} className="p-8 text-center text-gray-500">No se encontraron alumnos con los filtros actuales.</td></tr>) : (
                         filteredUsers.map((u) => {
-                            const modCount = LEARNING_MODULE_IDS.filter(id => u.progress?.[`${id}Completed`]).length;
+                            const modCount = LEARNING_MODULE_IDS.filter(id => u.progreso?.[`${id}Completed`]).length;
                             const modPercent = Math.round((modCount / LEARNING_MODULE_IDS.length) * 100);
                             const isDeleting = processingId === `delete-${u.id}`;
                             const isResetting = processingId === `reset-${u.id}`;
@@ -584,9 +584,9 @@ export const AdminPanel = ({ onBack, showToast }: { onBack: () => void, showToas
                               <td className="p-4 text-gray-500 dark:text-gray-400 text-sm font-mono">{u.classCode || '-'}</td>
                                 <td className="p-4 text-gray-500 dark:text-gray-400 text-sm">{u.role}</td>
                                 <td className="p-4 text-center"><div className="w-24 mx-auto bg-gray-200 dark:bg-slate-600 rounded-full h-2"><div className="bg-blue-500 h-2 rounded-full" style={{ width: `${modPercent}%` }}></div></div><span className="text-xs text-gray-400 mt-1 inline-block">{modPercent}%</span></td>
-                                <td className="p-4 text-center"><span className="bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300 px-2 py-1 rounded-full text-xs font-bold">Lvl {u.progress?.level || 1}</span></td>
-                                <td className="p-4 text-center">{u.progress?.examenPassed ? <span className="bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300 px-2 py-1 rounded-full text-xs font-bold">Aprobado</span> : u.progress?.examenCompleted ? <span className="bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300 px-2 py-1 rounded-full text-xs font-bold">Suspenso</span> : <span className="bg-gray-100 text-gray-500 dark:bg-gray-700 dark:text-gray-300 px-2 py-1 rounded-full text-xs">Pendiente</span>}</td>
-                                <td className="p-4 text-center font-mono text-sm font-bold text-gray-700 dark:text-gray-200">{u.progress?.examenScore !== undefined ? u.progress.examenScore : '-'}</td>
+                                <td className="p-4 text-center"><span className="bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300 px-2 py-1 rounded-full text-xs font-bold">Lvl {u.progreso?.level || 1}</span></td>
+                                <td className="p-4 text-center">{u.progreso?.examenPassed ? <span className="bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300 px-2 py-1 rounded-full text-xs font-bold">Aprobado</span> : u.progreso?.examenCompleted ? <span className="bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300 px-2 py-1 rounded-full text-xs font-bold">Suspenso</span> : <span className="bg-gray-100 text-gray-500 dark:bg-gray-700 dark:text-gray-300 px-2 py-1 rounded-full text-xs">Pendiente</span>}</td>
+                                <td className="p-4 text-center font-mono text-sm font-bold text-gray-700 dark:text-gray-200">{u.progreso?.examenScore !== undefined ? u.progress.examenScore : '-'}</td>
                                 <td className="p-4 text-right space-x-2">
                                     <button 
                                         type="button"
