@@ -325,7 +325,8 @@ export const AdminPanel = ({ onBack, showToast }: { onBack: () => void, showToas
         // Reload from user_summaries collection (where the UI reads from)
         const summaryRef = doc(db, 'artifacts', appId, 'public', 'data', 'user_summaries', userId);
         const summarySnap = await getDoc(summaryRef);
-        const updatedUser = summarySnap.exists() ? { id: summarySnap.id, ...summarySnap.data() } : null;          if (updatedUser) {
+        const updatedUser = summarySnap.exists() ? { id: summarySnap.id, ...summarySnap.data() } : null;        
+          if (updatedUser) {
               setUsers(users.map(u => u.id === userId ? updatedUser : u));          }
           showToast('Progreso reiniciado correctamente', 'success');
           playSound('success');
@@ -586,7 +587,7 @@ export const AdminPanel = ({ onBack, showToast }: { onBack: () => void, showToas
                                 <td className="p-4 text-center"><div className="w-24 mx-auto bg-gray-200 dark:bg-slate-600 rounded-full h-2"><div className="bg-blue-500 h-2 rounded-full" style={{ width: `${modPercent}%` }}></div></div><span className="text-xs text-gray-400 mt-1 inline-block">{modPercent}%</span></td>
                                 <td className="p-4 text-center"><span className="bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300 px-2 py-1 rounded-full text-xs font-bold">Lvl {u.progreso?.level || 1}</span></td>
                                 <td className="p-4 text-center">{u.progreso?.examenPassed ? <span className="bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300 px-2 py-1 rounded-full text-xs font-bold">Aprobado</span> : u.progreso?.examenCompleted ? <span className="bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300 px-2 py-1 rounded-full text-xs font-bold">Suspenso</span> : <span className="bg-gray-100 text-gray-500 dark:bg-gray-700 dark:text-gray-300 px-2 py-1 rounded-full text-xs">Pendiente</span>}</td>
-                                <td className="p-4 text-center font-mono text-sm font-bold text-gray-700 dark:text-gray-200">{u.progreso?.examenScore !== undefined ? u.progress.examenScore : '-'}</td>
+                                <td className="p-4 text-center font-mono text-sm font-bold text-gray-700 dark:text-gray-200">{u.progreso?.examenScore !== undefined ? u.progreso.examenScore : '-'}</td>
                                 <td className="p-4 text-right space-x-2">
                                     <button 
                                         type="button"
