@@ -266,7 +266,23 @@ const AppContent = () => {
     };
 
     if (loading) return <div className="flex h-screen items-center justify-center text-red-600 dark:bg-slate-900"><Activity className="animate-spin mr-2"/> Cargando simulador...</div>;
-    if (!profile) return <UserEntryForm />;
+      if (!profile) return (
+    <div className="min-h-screen bg-gray-50 dark:bg-slate-950 text-gray-800 dark:text-gray-100 flex flex-col items-center justify-center p-4">
+      <UserEntryForm />
+      <button
+        onClick={() => setShowAdminModal(true)}
+        className="mt-6 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg shadow-md transition-all flex items-center gap-2"
+        title="Panel de Administrador"
+      >
+        🔐 Administrador
+      </button>
+      <AdminPinModal
+        isOpen={showAdminModal}
+        onClose={() => setShowAdminModal(false)}
+        onSuccess={handleAdminSuccess}
+      />
+    </div>
+  );
 
     return (
         <div className="min-h-screen bg-gray-50 dark:bg-slate-950 text-gray-800 dark:text-gray-100 flex flex-col font-sans transition-colors duration-300">
