@@ -622,3 +622,5 @@ export const AdminPanel = ({ onBack, showToast }: { onBack: () => void, showToas
     </div>
   );
 };
+
+  export default AdminPanel;
