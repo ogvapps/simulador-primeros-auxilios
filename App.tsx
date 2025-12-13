@@ -91,9 +91,7 @@ const UserEntryForm = () => {
             placeholder="tu.email@ejemplo.com"
             required
             error={error && !email.includes('@') ? error : ''}
-          />
-            />
-            <div className="grid grid-cols-2 gap-4">
+          />          <div className="grid grid-cols-2 gap-4">
                 <Select 
                     label="Rol / Curso"
                     value={role}
