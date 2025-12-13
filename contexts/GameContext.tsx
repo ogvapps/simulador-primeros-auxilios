@@ -268,7 +268,7 @@ export const GameProvider = ({ children }: { children?: ReactNode }) => {
   const createProfile = async (name: string, role: string, classCode: string = '', email: string = '') => {
     if (!user) return;
     
-    const data = { name, role, classCode: classCode.toUpperCase(, email) };
+    const data = { name, role, classCode: classCode.toUpperCase(), email };
     const initProgress = { xp: 0, level: 1, streak: 1, lastLoginDate: new Date().toDateString() };
 
     if (isMock) {
