@@ -132,9 +132,21 @@ export async function resetStudentProgress(studentId: string): Promise<boolean> 
       tiempoTotal: 0,
       intentosExamen: 0,
       racha: 0,
-      progreso: {}
-    };
-    
+      progreso: {
+      actividadActual: 'inicio',
+      moduloActual: 0,
+      puntuacion: 0,
+      xp: 0,
+      nivel: 1,
+      pasCompleted: false,
+      evaluacionCompleted: false,
+      svbCompleted: false,
+      traumasCompleted: false,
+      examenCompleted: false,
+      tiempoTotal: 0,
+      intentosExamen: 0,
+      racha: 0
+  };    
         
     // CRÍTICO: También actualizar el progreso real del usuario
     if (!isMock) {
