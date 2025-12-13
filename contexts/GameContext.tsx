@@ -5,6 +5,7 @@ import { auth, db, appId, isMock } from '../firebaseConfig';
 import { UserProfile, UserProgress, Badge } from '../types';
 import { LEVELS, XP_REWARDS, BADGE_DATA } from '../constants';
 import { playSound as playSoundUtil } from '../utils';
+import { saveStudentProgress } from '../services/studentService';
 
 interface GameContextType {
   user: User | any | null;
@@ -233,9 +234,59 @@ export const GameProvider = ({ children }: { children?: ReactNode }) => {
         await setDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'progress', 'main'), newProg, { merge: true });
         await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'user_summaries', user.uid), { progress: newProg }, { merge: true });
     }
+
+        // Actualizar también en el sistema de estudiantes si el perfil existe
+    if (profile) {
+      await saveStudentProgress({
+        studentId: user.uid,
+        nombre: profile.name,
+        clase: profile.classCode || '',
+        rol: profile.role,
+        fechaInicio: progress.lastLoginDate || new Date().toISOString(),
+        ultimaActividad: new Date().toISOString(),
+        actividadActual: key.replace('Completed', ''),
+        moduloActual: newLevel,
+        puntuacion: newXp,
+        xp: newXp,
+        nivel: newLevel,
+        pasCompleted: newProg.pasCompleted || false,
+        evaluacionCompleted: newProg.evaluacionCompleted || false,
+        svbCompleted: newProg.svbCompleted || false,
+        traumasCompleted: newProg.traumasCompleted || false,
+        examenCompleted: newProg.examenCompleted || false,
+        tiempoTotal: 0,
+        intentosExamen: 0,
+        racha: newProg.streak || 0,
+        progreso: newProg
+      });
+    }
   };
 
-  const createProfile = async (name: string, role: string, classCode: string = '') => {
+  
+  
+      // También guardar en el sistema de estudiantes
+    await saveStudentProgress({
+      studentId: user.uid,
+      nombre: name,
+      clase: classCode,
+      rol: role,
+      fechaInicio: new Date().toISOString(),
+      ultimaActividad: new Date().toISOString(),
+      actividadActual: 'inicio',
+      moduloActual: 0,
+      puntuacion: 0,
+      xp: 0,
+      nivel: 1,
+      pasCompleted: false,
+      evaluacionCompleted: false,
+      svbCompleted: false,
+      traumasCompleted: false,
+      examenCompleted: false,
+      tiempoTotal: 0,
+      intentosExamen: 0,
+      racha: 1,
+      progreso: initProgress
+    });= async (name: string, role: string, classCode: string = '') => {
     if (!user) return;
     const data = { name, role, classCode: classCode.toUpperCase() };
     const initProgress = { xp: 0, level: 1, streak: 1, lastLoginDate: new Date().toDateString() };
