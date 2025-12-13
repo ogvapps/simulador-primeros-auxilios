@@ -26,6 +26,7 @@ export interface UserProfile {
   name: string;
   role: string;
   classCode?: string; // New: Class management
+    email?: string; // Email del usuario
   lastUpdate?: string;
 }
 
