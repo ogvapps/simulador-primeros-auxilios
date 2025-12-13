@@ -82,6 +82,7 @@ const UserEntryForm = () => {
                 placeholder="Ej. Ana Pérez"
                 required
                 error={error}
+                            />
                         <Input 
             label="Email"
             type="email"
