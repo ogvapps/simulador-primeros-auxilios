@@ -308,6 +308,7 @@ export const AdminPanel = ({ onBack, showToast }: { onBack: () => void, showToas
       playSound('click');
       setTimeout(() => setConfirmDeleteId(null), 3000);
     }
+      };
   const handleReset = async (userId: string, e: React.MouseEvent) => {
     e.stopPropagation();
     if (processingId) return;
