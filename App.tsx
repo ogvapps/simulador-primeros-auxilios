@@ -268,7 +268,7 @@ const AppContent = () => {
     if (loading) return <div className="flex h-screen items-center justify-center text-red-600 dark:bg-slate-900"><Activity className="animate-spin mr-2"/> Cargando simulador...</div>;
   
   // Allow admin view without profile
-  if (view === 'admin') return <Admin />;
+  if (view === 'admin') return <AdminPanel />;
 
       if (!profile) return (
     <div className="min-h-screen bg-gray-50 dark:bg-slate-950 text-gray-800 dark:text-gray-100 flex flex-col items-center justify-center p-4">
