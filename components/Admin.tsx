@@ -324,8 +324,7 @@ export const AdminPanel = ({ onBack, showToast }: { onBack: () => void, showToas
           // Recargar la lista de usuarios
           const updatedUser = await loadStudentProgress(userId);
           if (updatedUser) {
-            setUsers(users.map(u => u.id === userId ? { ...u, progress: updatedUser.progreso } : u));
-          }
+              setUsers(users.map(u => u.id === userId ? updatedUser : u));          }
           showToast('Progreso reiniciado correctamente', 'success');
           playSound('success');
         } else {
