@@ -30,7 +30,7 @@ const firebaseConfig = {
 const appId = firebaseConfig.appId;
 
 // Determine if we are in mock mode (if keys are missing)
-export const isMock = !firebaseConfig.apiKey || !firebaseConfig.projectId || firebaseConfig.apiKey.includes('mock');
+export const isMock = false; // Force real mode with Firebase
 
 let app;
 let db;
