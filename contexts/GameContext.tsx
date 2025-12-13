@@ -264,31 +264,11 @@ export const GameProvider = ({ children }: { children?: ReactNode }) => {
 
   
   
-      // También guardar en el sistema de estudiantes
-    await saveStudentProgress({
-      studentId: user.uid,
-      nombre: name,
-      clase: classCode,
-      rol: role,
-      fechaInicio: new Date().toISOString(),
-      ultimaActividad: new Date().toISOString(),
-      actividadActual: 'inicio',
-      moduloActual: 0,
-      puntuacion: 0,
-      xp: 0,
-      nivel: 1,
-      pasCompleted: false,
-      evaluacionCompleted: false,
-      svbCompleted: false,
-      traumasCompleted: false,
-      examenCompleted: false,
-      tiempoTotal: 0,
-      intentosExamen: 0,
-      racha: 1,
-      progreso: initProgress
-    });= async (name: string, role: string, classCode: string = '') => {
+
+  const createProfile = async (name: string, role: string, classCode: string = '', email: string = '') => {
     if (!user) return;
-    const data = { name, role, classCode: classCode.toUpperCase() };
+    
+    const data = { name, role, classCode: classCode.toUpperCase(, email) };
     const initProgress = { xp: 0, level: 1, streak: 1, lastLoginDate: new Date().toDateString() };
 
     if (isMock) {
