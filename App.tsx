@@ -40,6 +40,7 @@ const UserEntryForm = () => {
     const [name, setName] = useState('');
     const [role, setRole] = useState('Alumno 1º ESO');
     const [classCode, setClassCode] = useState(''); // New: Class Code
+    const [email, setEmail] = useState(''); // Nuevo: Email del usuario
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [error, setError] = useState('');
 
@@ -48,10 +49,14 @@ const UserEntryForm = () => {
         if (!name.trim()) {
             setError("Por favor, introduce tu nombre");
             return;
+              if (!email.trim() || !email.includes('@')) {
+      setError("Por favor, introduce un email válido");
+      return;
+    }
         }
         setIsSubmitting(true);
         try {
-            await createProfile(name, role, classCode);
+            await createProfile(name, role, classCode, email);
         } catch (e) {
             console.error(e);
             setError("Error al crear perfil");
@@ -77,6 +82,15 @@ const UserEntryForm = () => {
                 placeholder="Ej. Ana Pérez"
                 required
                 error={error}
+                        <Input 
+            label="Email"
+            type="email"
+            value={email}
+            onChange={(e) => { setEmail(e.target.value); setError(''); }}
+            placeholder="tu.email@ejemplo.com"
+            required
+            error={error && !email.includes('@') ? error : ''}
+          />
             />
             <div className="grid grid-cols-2 gap-4">
                 <Select 
