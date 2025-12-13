@@ -157,6 +157,7 @@ export const EmergencyView = memo(({ onExit }: { onExit: () => void }) => {
 
 export const LearningModule = ({ module, onComplete, onBack }: { module: Module, onComplete: () => void, onBack: () => void }) => {
   const { t } = useLanguage();
+      const { updateProgress } = useGame();
   const [step, setStep] = useState(0);
   const [gameDone, setGameDone] = useState(false);
   const [showAiExplanation, setShowAiExplanation] = useState<string | null>(null);
@@ -265,6 +266,7 @@ export const LearningModule = ({ module, onComplete, onBack }: { module: Module,
           proceed();
       } else {
           playSound('error');
+                updateProgress('streak', 0); // Reset streak on incorrect answer
           // Shake effect or feedback could go here
           alert("¡Incorrecto! Lee de nuevo el paso.");
           setShowMicroTest(false); // Close to let them read again
