@@ -76,7 +76,7 @@ const DonutChart = ({ data, size = 150 }: { data: { label: string, value: number
 
 export const AdminPanel = ({ onBack, showToast }: { onBack: () => void, showToast: (msg: string, type: 'success' | 'error' | 'info') => void }) => {
   const { t } = useLanguage();
-  const [users, setUsers] = useState<any[]>([]);
+  // Realtime sync - users come from useRealtimeStudents hook   const { students: users, loading: realtimeLoading } = useRealtimeStudents('default');
   const [geoTargets, setGeoTargets] = useState<GeoTarget[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedClass, setSelectedClass] = useState<string>('all');
@@ -98,7 +98,8 @@ export const AdminPanel = ({ onBack, showToast }: { onBack: () => void, showToas
       incorrectFeedback: ''
   });
 
-  useEffect(() => {
+/* DISABLED - Now using useRealtimeStudents hook for real-time sync
+    useEffect(() => {
     // Load Users
     if (isMock) {
         setUsers([
@@ -123,6 +124,7 @@ export const AdminPanel = ({ onBack, showToast }: { onBack: () => void, showToas
             }
             setLoading(false);
         });
+  */
     }
   }, []);
 
