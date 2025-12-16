@@ -9,6 +9,7 @@ import { useLanguage } from '../contexts/LanguageContext';
 import { Select, Input, Button, Card } from './DesignSystem';
 import { BattleHost } from './games/ClassroomBattle'; // Import BattleHost
 import { deleteStudent, resetStudentProgress, loadStudentProgress } from '../services/studentService';
+import { useRealtimeStudents } from '../hooks/useRealtimeStudents';
 
 export const AdminPinModal = ({ isOpen, onClose, onSuccess }: { isOpen: boolean, onClose: () => void, onSuccess: () => void }) => {
   const [pin, setPin] = useState('');
