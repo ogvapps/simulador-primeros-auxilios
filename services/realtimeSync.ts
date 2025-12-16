@@ -52,8 +52,7 @@ export function subscribeToStudents(
     
     // Filtrar por clase y convertir a array
     const students: StudentProgress[] = Object.values(data).filter(
-      (student: any) => student.clase === clase
-    );
+      (student: any) => !clase || student.clase === clase    );
     
     callback(students);
   });
