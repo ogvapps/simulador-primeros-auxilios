@@ -125,9 +125,6 @@ export const AdminPanel = ({ onBack, showToast }: { onBack: () => void, showToas
             setLoading(false);
         });
   */
-    }
-  }, []);
-
   // Extract unique classes
   const classes = useMemo(() => {
       const cls = new Set<string>();
