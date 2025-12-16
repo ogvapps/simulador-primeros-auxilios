@@ -5,6 +5,7 @@
 
 import { doc, getDoc, setDoc, updateDoc, deleteDoc, collection, query, where, getDocs } from 'firebase/firestore';
 import { db, appId, isMock } from '../firebaseConfig';
+import { saveStudentRealtime, deleteStudentRealtime } from './realtimeSync';
 
 // Tipos para el progreso del estudiante
 export interface StudentProgress {
@@ -73,6 +74,9 @@ export async function saveStudentProgress(progress: StudentProgress): Promise<bo
       ...progress,
       ultimaActividad: timestamp
     };
+
+        // Guardar en Realtime Database para sincronización
+    await saveStudentRealtime(dataToSave);
     
     if (isMock) {
       // Modo mock: guardar en localStorage
@@ -167,6 +171,8 @@ export async function resetStudentProgress(studentId: string): Promise<boolean> 
  */
 export async function deleteStudent(studentId: string): Promise<boolean> {
   try {
+        // Eliminar de Realtime Database
+    await deleteStudentRealtime(studentId);
     if (isMock) {
       // Modo mock: eliminar de localStorage
       localStorage.removeItem(`pas_student_${studentId}`);
