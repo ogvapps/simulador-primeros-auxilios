@@ -80,7 +80,7 @@ export const AdminPanel = ({ onBack, showToast }: { onBack: () => void, showToas
   const [geoTargets, setGeoTargets] = useState<GeoTarget[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedClass, setSelectedClass] = useState<string>('all');
-  const [view, setView] = useState<'users' | 'geolocations' | 'scenarios' | 'battle'>('users');    const { students: users, loading: realtimeLoading } = useRealtimeStudents('');
+  const [view, setView] = useState<'users' | 'geolocations' | 'scenarios' | 'battle'>('users');    const { students: users, loading:  } = useRealtimeStudents('');
   const [processingId, setProcessingId] = useState<string | null>(null); 
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const [confirmResetId, setConfirmResetId] = useState<string | null>(null);
@@ -564,7 +564,7 @@ export const AdminPanel = ({ onBack, showToast }: { onBack: () => void, showToas
                     <table className="w-full text-left border-collapse">
                     <thead className="bg-gray-50 dark:bg-slate-700 text-gray-600 dark:text-gray-300 uppercase text-xs font-semibold tracking-wider"><tr><th className="p-4 border-b dark:border-slate-600">Alumno</th><th className="p-4 border-b dark:border-slate-600">Email</th><th className="p-4 border-b dark:border-slate-600">Clase</th><th className="p-4 border-b dark:border-slate-600">Rol</th><th className="p-4 border-b dark:border-slate-600 text-center">Progreso</th><th className="p-4 border-b dark:border-slate-600 text-center">Nivel</th><th className="p-4 border-b dark:border-slate-600 text-center">Examen</th><th className="p-4 border-b dark:border-slate-600 text-center">Nota</th><th className="p-4 border-b dark:border-slate-600 text-right">Acciones</th></tr></thead>
                     <tbody className="divide-y divide-gray-100 dark:divide-slate-700">
-                        {loading ? (<tr><td colSpan={9} className="p-8 text-center text-gray-500">Cargando datos...</td></tr>) : filteredUsers.length === 0 ? (<tr><td colSpan={9} className="p-8 text-center text-gray-500">No se encontraron alumnos con los filtros actuales.</td></tr>) : (
+                        {realtimeLoading ? (<tr><td colSpan={9} className="p-8 text-center text-gray-500">Cargando datos...</td></tr>) : filteredUsers.length === 0 ? (<tr><td colSpan={9} className="p-8 text-center text-gray-500">No se encontraron alumnos con los filtros actuales.</td></tr>) : (
                         filteredUsers.map((u) => {
                             const modCount = LEARNING_MODULE_IDS.filter(id => u.progreso?.[`${id}Completed`]).length;
                             const modPercent = Math.round((modCount / LEARNING_MODULE_IDS.length) * 100);
