@@ -79,7 +79,7 @@ export const AdminPanel = ({ onBack, showToast }: { onBack: () => void, showToas
   const { t } = useLanguage();
   const [geoTargets, setGeoTargets] = useState<GeoTarget[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedClass, setSelectedClass] = useState<string>('all');
+  const [selectedClass, setSelectedClass] = useState('all');
   const [view, setView] = useState<'users' | 'geolocations' | 'scenarios' | 'battle'>('users');    const { students: users, loading: realtimeLoading } = useRealtimeStudents('');
   const [processingId, setProcessingId] = useState<string | null>(null); 
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
