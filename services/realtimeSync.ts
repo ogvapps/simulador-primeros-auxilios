@@ -11,7 +11,7 @@ export function subscribeToStudents(
   callback: (students: StudentProgress[]) => void
 ): () => void {
   // Path a user_summaries en Firestore
-  const summariesPath = `artifacts/${appId}/public/data/user_summaries`;
+  const summariesPath = `artifacts/${appId}/users`;
   
   // Query con o sin filtro de clase
   let q;
@@ -71,7 +71,7 @@ export function subscribeToStudent(
   studentId: string,
   callback: (student: StudentProgress | null) => void
 ): () => void {
-  const summariesPath = `artifacts/${appId}/public/data/user_summaries`;
+  const summariesPath = `artifacts/${appId}/users`;
   const docRef = collection(db, summariesPath);
   
   const unsubscribe = onSnapshot(docRef, (snapshot) => {
