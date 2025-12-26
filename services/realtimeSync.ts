@@ -1,64 +1,67 @@
-import { ref, set, onValue, off, remove } from 'firebase/database';
-import { rtdb } from '../firebaseConfig';
+import { collection, onSnapshot, query, where } from 'firebase/firestore';
+import { db, appId } from '../firebaseConfig';
 import { StudentProgress } from './studentService';
 
 /**
- * Guarda el progreso de un estudiante en Realtime Database
- */
-export async function saveStudentRealtime(progress: StudentProgress): Promise<boolean> {
-  try {
-    const studentRef = ref(rtdb, `students/${progress.studentId}`);
-    await set(studentRef, {
-      ...progress,
-      ultimaActividad: new Date().toISOString()
-    });
-    return true;
-  } catch (error) {
-    console.error('Error guardando en Realtime DB:', error);
-    return false;
-  }
-}
-
-/**
- * Elimina un estudiante de Realtime Database
- */
-export async function deleteStudentRealtime(studentId: string): Promise<boolean> {
-  try {
-    const studentRef = ref(rtdb, `students/${studentId}`);
-    await remove(studentRef);
-    return true;
-  } catch (error) {
-    console.error('Error eliminando de Realtime DB:', error);
-    return false;
-  }
-}
-
-/**
- * Suscribe un listener a cambios en todos los estudiantes
+ * Suscribe un listener a cambios en todos los estudiantes desde Firestore
  * Devuelve función de cleanup para desuscribirse
  */
 export function subscribeToStudents(
   clase: string,
   callback: (students: StudentProgress[]) => void
 ): () => void {
-  const studentsRef = ref(rtdb, 'students');
+  // Path a user_summaries en Firestore
+  const summariesPath = `artifacts/${appId}/public/data/user_summaries`;
   
-  const listener = onValue(studentsRef, (snapshot) => {
-    const data = snapshot.val();
-    if (!data) {
-      callback([]);
-      return;
-    }
+  // Query con o sin filtro de clase
+  let q;
+  if (clase && clase.trim() !== '') {
+    q = query(
+      collection(db, summariesPath),
+      where('classCode', '==', clase)
+    );
+  } else {
+    q = query(collection(db, summariesPath));
+  }
+  
+  // Listener en tiempo real
+  const unsubscribe = onSnapshot(q, (snapshot) => {
+    const students: StudentProgress[] = [];
     
-    // Filtrar por clase y convertir a array
-    const students: StudentProgress[] = Object.values(data).filter(
-      (student: any) => !clase || student.clase === clase    );
+    snapshot.forEach((doc) => {
+      const data = doc.data();
+      students.push({
+        studentId: doc.id,
+        nombre: data.name || '',
+        clase: data.classCode || '',
+        rol: data.role || '',
+        email: data.email || '',
+        fechaInicio: data.progress?.lastLoginDate || '',
+        ultimaActividad: data.lastUpdate || '',
+        actividadActual: '',
+        moduloActual: data.progress?.level || 1,
+        puntuacion: data.progress?.xp || 0,
+        xp: data.progress?.xp || 0,
+        nivel: data.progress?.level || 1,
+        pasCompleted: data.progress?.pasCompleted || false,
+        evaluacionCompleted: data.progress?.evaluacionCompleted || false,
+        svbCompleted: data.progress?.svbCompleted || false,
+        traumasCompleted: data.progress?.traumasCompleted || false,
+        examenCompleted: data.progress?.examenCompleted || false,
+        tiempoTotal: 0,
+        intentosExamen: 0,
+        racha: data.progress?.streak || 0,
+        progreso: data.progress || {}
+      });
+    });
     
     callback(students);
+  }, (error) => {
+    console.error('Error subscribing to students:', error);
+    callback([]);
   });
   
-  // Función de cleanup
-  return () => off(studentsRef, 'value', listener);
+  return unsubscribe;
 }
 
 /**
@@ -68,12 +71,40 @@ export function subscribeToStudent(
   studentId: string,
   callback: (student: StudentProgress | null) => void
 ): () => void {
-  const studentRef = ref(rtdb, `students/${studentId}`);
+  const summariesPath = `artifacts/${appId}/public/data/user_summaries`;
+  const docRef = collection(db, summariesPath);
   
-  const listener = onValue(studentRef, (snapshot) => {
-    const data = snapshot.val();
-    callback(data || null);
+  const unsubscribe = onSnapshot(docRef, (snapshot) => {
+    const doc = snapshot.docs.find(d => d.id === studentId);
+    if (doc && doc.exists()) {
+      const data = doc.data();
+      callback({
+        studentId: doc.id,
+        nombre: data.name || '',
+        clase: data.classCode || '',
+        rol: data.role || '',
+        email: data.email || '',
+        fechaInicio: data.progress?.lastLoginDate || '',
+        ultimaActividad: data.lastUpdate || '',
+        actividadActual: '',
+        moduloActual: data.progress?.level || 1,
+        puntuacion: data.progress?.xp || 0,
+        xp: data.progress?.xp || 0,
+        nivel: data.progress?.level || 1,
+        pasCompleted: data.progress?.pasCompleted || false,
+        evaluacionCompleted: data.progress?.evaluacionCompleted || false,
+        svbCompleted: data.progress?.svbCompleted || false,
+        traumasCompleted: data.progress?.traumasCompleted || false,
+        examenCompleted: data.progress?.examenCompleted || false,
+        tiempoTotal: 0,
+        intentosExamen: 0,
+        racha: data.progress?.streak || 0,
+        progreso: data.progress || {}
+      });
+    } else {
+      callback(null);
+    }
   });
   
-  return () => off(studentRef, 'value', listener);
+  return unsubscribe;
 }
