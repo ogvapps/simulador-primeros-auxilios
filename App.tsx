@@ -281,7 +281,12 @@ const AppContent = () => {
     if (loading) return <div className="flex h-screen items-center justify-center text-red-600 dark:bg-slate-900"><Activity className="animate-spin mr-2"/> Cargando simulador...</div>;
   
   // Allow admin view without profile
-  if (view === 'admin') return <AdminPanel onBack={() => { setView('home'); setActiveTab('map'); }} showToast={showToast} />;
+  if (view === 'admin') return <AdminPanel onBack={() => { setView('home'); setActiveTab('map'); }} s// Limpiar sesión del usuario
+        if (isMock && user) {
+          localStorage.removeItem(`pas_profile_${user.uid}`);
+        }
+        window.location.reload();
+      }} showToast={showToast} />;
 
       if (!profile) return (
     <div className="min-h-screen bg-gray-50 dark:bg-slate-950 text-gray-800 dark:text-gray-100 flex flex-col items-center justify-center p-4">
@@ -460,7 +465,12 @@ const AppContent = () => {
 
                                 {activeTab === 'admin' && (
                                     <Suspense fallback={<LoadingScreen />}>
-                                        <AdminPanel onBack={() => { setView('home'); setActiveTab('map'); }} showToast={showToast} />
+                                        <AdminPanel onBack={() => { setView('home'); setActiveTab('map'); }} // Limpiar sesión del usuario
+              if (isMock && user) {
+                localStorage.removeItem(`pas_profile_${user.uid}`);
+              }
+              window.location.reload();
+            }} showToast={showToast} />
                                     </Suspense>
                                 )}
                             </>
