@@ -1,0 +1,18 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // User Profiles: Users can read/write ONLY their own profile
+    match /artifacts/{appId}/users/{userId}/{document=**} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // Public Summaries (Leaderboard):
+    // Anyone can read (for leaderboard)
+    // Only owner can write their own summary
+    match /artifacts/{appId}/public/data/user_summaries/{userId} {
+      allow read: if true;
+      allow write: if request.auth != null && request.auth.uid == userId;
+    }
+  }
+}
