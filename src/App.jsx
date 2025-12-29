@@ -1504,8 +1504,8 @@ const UserEntryForm = ({ onSubmit, playSound }) => {
               >
                 <GraduationCap size={14} /> Acceso Docente / Admin
               </button>
-            </div>
-          )}
+            )}
+          </div>
         </form>
       </div>
     </div>
