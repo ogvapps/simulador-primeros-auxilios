@@ -165,8 +165,16 @@ export const TRANSLATIONS = {
                 excellent: "Excelente",
                 good: "Bueno",
                 average: "Promedio",
+                average: "Promedio",
                 below: "Por Debajo"
-            }
+            },
+            needData: "Necesitamos más compañeros para comparar",
+            minStudents: "Se requieren al menos 2 estudiantes",
+            top: "Top",
+            performance: "Tu Rendimiento",
+            vsClassmates: "vs. {n} compañeros",
+            betterThan: "¡Vas mejor que el",
+            ofClass: "de tu clase!"
         },
         streak: {
             current: "Racha Actual",
@@ -348,7 +356,14 @@ export const TRANSLATIONS = {
                 good: "Good",
                 average: "Average",
                 below: "Below Average"
-            }
+            },
+            needData: "Need more classmates for comparison",
+            minStudents: "At least 2 students required",
+            top: "Top",
+            performance: "Your Performance",
+            vsClassmates: "vs. {n} classmates",
+            betterThan: "You're performing better than",
+            ofClass: "of your class!"
         },
         streak: {
             current: "Current Streak",

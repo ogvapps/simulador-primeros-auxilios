@@ -46,8 +46,8 @@ const BenchmarkCard = ({ student, db, firebaseConfigId, t }) => {
         return (
             <div className="bg-slate-50 p-6 rounded-2xl border border-slate-200 text-center">
                 <Target className="mx-auto text-slate-300 mb-2" size={32} />
-                <p className="text-slate-500 text-sm font-bold">Need more classmates for comparison</p>
-                <p className="text-slate-400 text-xs mt-1">At least 2 students required</p>
+                <p className="text-slate-500 text-sm font-bold">{t?.benchmark?.needData}</p>
+                <p className="text-slate-400 text-xs mt-1">{t?.benchmark?.minStudents}</p>
             </div>
         );
     }
@@ -66,7 +66,7 @@ const BenchmarkCard = ({ student, db, firebaseConfigId, t }) => {
                     <Icon size={20} className={iconColor} />
                     <div>
                         <p className="font-bold text-slate-800 text-sm">{label}</p>
-                        <p className="text-xs text-slate-500">Top {100 - data.percentile}%</p>
+                        <p className="text-xs text-slate-500">{t?.benchmark?.top || 'Top'} {100 - data.percentile}%</p>
                     </div>
                 </div>
                 <div className="text-right">
@@ -90,8 +90,8 @@ const BenchmarkCard = ({ student, db, firebaseConfigId, t }) => {
                         <Trophy size={24} className="text-white" />
                     </div>
                     <div>
-                        <h3 className="font-black text-blue-900">Your Performance</h3>
-                        <p className="text-xs text-blue-600">vs. {benchmark.classSize} classmates</p>
+                        <h3 className="font-black text-blue-900">{t?.benchmark?.performance}</h3>
+                        <p className="text-xs text-blue-600">{(t?.benchmark?.vsClassmates || '').replace('{n}', benchmark.classSize)}</p>
                     </div>
                 </div>
                 <div className={`px-3 py-1 rounded-full ${tier.bg} ${tier.border} border-2`}>
@@ -109,7 +109,7 @@ const BenchmarkCard = ({ student, db, firebaseConfigId, t }) => {
 
             <div className="bg-white/50 rounded-xl p-3 text-center">
                 <p className="text-xs text-slate-600 font-bold">
-                    You're performing better than <span className="text-blue-600 text-lg font-black">{benchmark.xp.percentile}%</span> of your class!
+                    {t?.benchmark?.betterThan} <span className="text-blue-600 text-lg font-black">{benchmark.xp.percentile}%</span> {t?.benchmark?.ofClass}
                 </p>
             </div>
         </div>
