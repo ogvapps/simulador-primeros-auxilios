@@ -3,7 +3,7 @@ import { AlertTriangle, Clock, Send, X } from 'lucide-react';
 import ExamComponent from '../dashboard/ExamComponent';
 
 const SurpriseExamModal = ({ questions, onComplete, onClose, t, playSound, currentXp, onUsePowerup }) => {
-    const [timeLeft, setTimeLeft] = useState(600); // 10 minutes in seconds
+    const [timeLeft, setTimeLeft] = useState(120); // 2 minutes in seconds
     const [submitted, setSubmitted] = useState(false);
 
     useEffect(() => {

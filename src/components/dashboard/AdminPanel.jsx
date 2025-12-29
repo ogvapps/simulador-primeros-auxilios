@@ -725,6 +725,28 @@ const AdminPanel = ({ onBack, db, firebaseConfigId, playSound, t, modules, addTo
                                 <div className="bg-yellow-50 p-4 rounded-xl border border-yellow-100 text-center"><p className="text-yellow-600 text-xs font-bold uppercase">{t?.admin?.detail?.xp || "XP"}</p><p className="text-3xl font-black text-yellow-800">{selectedStudent.progress?.xp || 0}</p></div>
                             </div>
 
+                            <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 mb-6">
+                                <h4 className="font-bold text-slate-700 mb-4 flex items-center gap-2">
+                                    <BookOpen size={20} className="text-brand-500" /> {t?.admin?.detail?.modules || "Progreso Detallado de Módulos"}
+                                </h4>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                                    {badgeModules.map(m => {
+                                        const isCompleted = selectedStudent.progress?.[`${m.id}Completed`];
+                                        return (
+                                            <div key={m.id} className={`flex items-center gap-3 p-3 rounded-lg border ${isCompleted ? 'bg-green-50 border-green-200' : 'bg-white border-slate-100'}`}>
+                                                <div className={`w-8 h-8 rounded-full flex items-center justify-center ${isCompleted ? 'bg-green-100 text-green-600' : 'bg-slate-100 text-slate-300'}`}>
+                                                    {isCompleted ? <CheckCircle2 size={16} /> : <div className="w-2 h-2 rounded-full bg-slate-300" />}
+                                                </div>
+                                                <div className="flex-1 min-w-0">
+                                                    <p className={`text-sm font-bold truncate ${isCompleted ? 'text-slate-800' : 'text-slate-400'}`}>{m.title}</p>
+                                                    {isCompleted && <p className="text-[10px] text-green-600 font-bold">COMPLETADO</p>}
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+
                             {/* Exam Evolution Chart */}
                             <div className="bg-white p-4 rounded-xl border border-slate-200 mb-6 shadow-sm">
                                 <h4 className="font-bold text-slate-700 mb-4 flex items-center gap-2">
