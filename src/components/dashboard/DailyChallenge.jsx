@@ -7,11 +7,19 @@ const DailyChallenge = ({ scenarios, t, onComplete, onClose, playSound }) => {
     const [result, setResult] = useState(null); // 'correct' | 'wrong'
 
     useEffect(() => {
-        // Pick a random scenario based on the day of the year to be consistent for all users? 
-        // Or just random for now. Random is more fun for a simulator.
         if (scenarios && scenarios.length > 0) {
-            const random = scenarios[Math.floor(Math.random() * scenarios.length)];
-            setScenario(random);
+            // Pick a random scenario based on the day of the year (Deterministic for all users on the same day)
+            const today = new Date();
+            // Create a unique integer for the day: YYYYMMDD
+            const dateHash = today.getFullYear() * 10000 + (today.getMonth() + 1) * 100 + today.getDate();
+
+            // USE LARGE PRIME HASH TO ENSURE GOOD DISTRIBUTION EVEN FOR CLOSE DATES
+            // 2654435761 is Knuth's multiplicative hash constant (2^32 / phi)
+            const index = Math.abs((dateHash * 2654435761) % scenarios.length);
+
+            console.log("Pool:", scenarios.length, "Index:", index); // DEBUG
+
+            setScenario(scenarios[index]);
         }
     }, [scenarios]);
 

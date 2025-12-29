@@ -2,17 +2,20 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     
-    // User Profiles: Users can read/write ONLY their own profile
+    // User Profiles:
+    // Allow read/write for own user.
+    // RELAXED RULE: Allow write for any auth user to enable Admin Panel actions (Client-side PIN protected).
+    // In a real production environment with untrusted users, use Custom Claims or Admin SDK.
     match /artifacts/{appId}/users/{userId}/{document=**} {
-      allow read, write: if request.auth != null && request.auth.uid == userId;
+      allow read, write: if request.auth != null;
     }
 
     // Public Summaries (Leaderboard):
     // Anyone can read (for leaderboard)
-    // Only owner can write their own summary
+    // Write permitted for all auth users to support Admin updates.
     match /artifacts/{appId}/public/data/user_summaries/{userId} {
       allow read: if true;
-      allow write: if request.auth != null && request.auth.uid == userId;
+      allow write: if request.auth != null;
     }
   }
 }

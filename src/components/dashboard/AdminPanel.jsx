@@ -22,6 +22,7 @@ const AdminPanel = ({ onBack, db, firebaseConfigId, playSound, t, modules, addTo
     const [showExportMenu, setShowExportMenu] = useState(false);
     const [viewMode, setViewMode] = useState('list'); // list, analytics, settings, live
     const [selectedIds, setSelectedIds] = useState([]);
+    const [confirmModal, setConfirmModal] = useState({ show: false, student: null });
 
     const badgeModules = useMemo(() => {
         if (!modules) return [];
@@ -69,7 +70,7 @@ const AdminPanel = ({ onBack, db, firebaseConfigId, playSound, t, modules, addTo
 
     const filteredStudents = useMemo(() => {
         return students.filter(s => {
-            const matchSearch = s.name.toLowerCase().includes(searchTerm.toLowerCase()) || (s.email && s.email.toLowerCase().includes(searchTerm.toLowerCase()));
+            const matchSearch = (s.name || '').toLowerCase().includes(searchTerm.toLowerCase()) || (s.email && s.email.toLowerCase().includes(searchTerm.toLowerCase()));
             const matchRole = roleFilter === 'todos' || s.role === roleFilter;
             return matchSearch && matchRole;
         });
@@ -110,6 +111,40 @@ const AdminPanel = ({ onBack, db, firebaseConfigId, playSound, t, modules, addTo
         } catch (error) {
             console.error("Error resetting user:", error);
             if (playSound) playSound('error');
+        }
+    };
+
+    const handleToggleBlock = (student) => {
+        setConfirmModal({ show: true, student });
+    };
+
+    const confirmBlockAction = async () => {
+        const student = confirmModal.student;
+        if (!student) return;
+
+        const isBlocked = student.blocked;
+
+        console.log("Processing block action:", { studentId: student.userId, firebaseConfigId, isBlocked });
+
+        try {
+            const uid = student.userId;
+            if (!uid) throw new Error("Student ID is missing");
+
+            await updateDoc(doc(db, 'artifacts', firebaseConfigId, 'users', uid, 'profile', 'main'), { blocked: !isBlocked });
+            await updateDoc(doc(db, 'artifacts', firebaseConfigId, 'public', 'data', 'user_summaries', uid), { blocked: !isBlocked });
+
+            if (playSound) playSound('success');
+            addToast(isBlocked ? "Usuario desbloqueado" : "Usuario bloqueado", 'success');
+
+            // Update local state
+            setStudents(prev => prev.map(s => s.userId === uid ? { ...s, blocked: !isBlocked } : s));
+        } catch (error) {
+            console.error("Error toggling block DETAILED:", error);
+            if (error.code) console.error("Firestore Error Code:", error.code);
+            addToast(`Error: ${error.message}`, 'error');
+            if (playSound) playSound('error');
+        } finally {
+            setConfirmModal({ show: false, student: null });
         }
     };
 
@@ -593,13 +628,13 @@ const AdminPanel = ({ onBack, db, firebaseConfigId, playSound, t, modules, addTo
                                 <tbody className="divide-y divide-slate-100">
                                     {filteredStudents.length === 0 ? <tr><td colSpan="6" className="p-8 text-center text-slate-400 italic">No students found</td></tr> :
                                         filteredStudents.map((s, idx) => (
-                                            <tr key={idx} onClick={() => setSelectedStudent(s)} className={`hover:bg-brand-50/30 transition-colors group cursor-pointer border-l-4 ${selectedIds.includes(s.userId) ? 'bg-brand-50 border-l-brand-500' : 'border-l-transparent'}`}>
+                                            <tr key={idx} onClick={() => setSelectedStudent(s)} className={`hover:bg-brand-50/30 transition-colors group cursor-pointer border-l-4 ${selectedIds.includes(s.userId) ? 'bg-brand-50 border-l-brand-500' : 'border-l-transparent'} ${s.blocked ? 'bg-red-50/50' : ''}`}>
                                                 <td className="p-5" onClick={(e) => e.stopPropagation()}>
                                                     <input type="checkbox" checked={selectedIds.includes(s.userId)} onChange={() => toggleSelect(s.userId)} className="w-4 h-4 rounded border-slate-300 text-brand-600 focus:ring-brand-500" />
                                                 </td>
                                                 <td className="p-5 font-bold text-slate-800 flex items-center gap-3">
                                                     <div className={`w-8 h-8 rounded-full flex items-center justify-center text-lg font-bold bg-slate-100 text-slate-500 shadow-sm border border-slate-200`}>
-                                                        {presentationMode ? '*' : (STORE_ITEMS.avatars.find(a => a.id === s.progress?.activeAvatar)?.icon || s.name.charAt(0))}
+                                                        {presentationMode ? '*' : (STORE_ITEMS.avatars.find(a => a.id === s.progress?.activeAvatar)?.icon || (s.name || '?').charAt(0))}
                                                     </div>
                                                     {presentationMode ? `Student ${idx + 1}` : s.name}
                                                 </td>
@@ -619,6 +654,13 @@ const AdminPanel = ({ onBack, db, firebaseConfigId, playSound, t, modules, addTo
                                                                     title="Download Progress PDF"
                                                                 >
                                                                     <Download size={18} />
+                                                                </button>
+                                                                <button
+                                                                    onClick={(e) => { e.stopPropagation(); handleToggleBlock(s); }}
+                                                                    className={`p-2 transition-colors ${s.blocked ? 'text-red-500 hover:text-red-700' : 'text-slate-400 hover:text-red-500'}`}
+                                                                    title={s.blocked ? "Unblock User" : "Block User"}
+                                                                >
+                                                                    {s.blocked ? <UserCheck size={18} /> : <EyeOff size={18} />}
                                                                 </button>
                                                                 <button
                                                                     onClick={(e) => { e.stopPropagation(); handleDelete(s); }}
@@ -699,6 +741,38 @@ const AdminPanel = ({ onBack, db, firebaseConfigId, playSound, t, modules, addTo
                             </div>
                         </div>
                         <div className="p-4 border-t border-slate-100 bg-slate-50 flex justify-end"><button onClick={() => setSelectedStudent(null)} className="px-6 py-2 bg-slate-800 text-white font-bold rounded-lg hover:bg-slate-900">{t?.admin?.detail?.close || "Close"}</button></div>
+                    </div>
+                </div>
+            )}
+            {/* Confirmation Modal */}
+            {confirmModal.show && confirmModal.student && (
+                <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 backdrop-blur-sm animate-in fade-in">
+                    <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 transform transition-all scale-100">
+                        <div className="flex items-center gap-4 mb-4">
+                            <div className={`p-3 rounded-full ${confirmModal.student.blocked ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'}`}>
+                                {confirmModal.student.blocked ? <UserCheck size={24} /> : <EyeOff size={24} />}
+                            </div>
+                            <h3 className="text-xl font-bold text-slate-800">
+                                {confirmModal.student.blocked ? (t?.admin?.confirmUnblockTitle || "Desbloquear Usuario") : (t?.admin?.confirmBlockTitle || "Bloquear Usuario")}
+                            </h3>
+                        </div>
+                        <p className="text-slate-600 mb-6">
+                            {(t?.admin?.confirmActionBody || "¿Estás seguro de que quieres {action} a {name}?").replace('{action}', confirmModal.student.blocked ? 'desbloquear' : 'bloquear').replace('{name}', confirmModal.student.name || 'este usuario')}
+                        </p>
+                        <div className="flex justify-end gap-3">
+                            <button
+                                onClick={() => setConfirmModal({ show: false, student: null })}
+                                className="px-4 py-2 bg-slate-100 text-slate-700 font-bold rounded-lg hover:bg-slate-200 transition-colors"
+                            >
+                                {t?.common?.cancel || "Cancelar"}
+                            </button>
+                            <button
+                                onClick={confirmBlockAction}
+                                className={`px-4 py-2 font-bold rounded-lg text-white transition-colors ${confirmModal.student.blocked ? 'bg-green-600 hover:bg-green-700' : 'bg-red-600 hover:bg-red-700'}`}
+                            >
+                                {confirmModal.student.blocked ? (t?.common?.unblock || "Desbloquear") : (t?.common?.block || "Bloquear")}
+                            </button>
+                        </div>
                     </div>
                 </div>
             )}

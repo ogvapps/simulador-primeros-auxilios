@@ -2,7 +2,7 @@ import React, { useState, useEffect, Suspense } from 'react';
 import { initializeApp } from 'firebase/app';
 import { getAuth, onAuthStateChanged, signInWithCustomToken, signInAnonymously, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut } from 'firebase/auth';
 import { getFirestore, doc, onSnapshot, setDoc, getDoc, updateDoc } from 'firebase/firestore';
-import { Activity, HeartPulse, Sparkles, BookOpen, AlertTriangle, Play, Star, Printer, BadgeCheck, XCircle, Award, ShoppingBag, Trophy, Flame, FileText, Download, Moon, Sun, CheckCircle2, ArrowLeft, User } from 'lucide-react';
+import { Activity, HeartPulse, Sparkles, BookOpen, AlertTriangle, Play, Star, Printer, BadgeCheck, XCircle, Award, ShoppingBag, Trophy, Flame, FileText, Download, Moon, Sun, CheckCircle2, ArrowLeft, User, UserCheck, GraduationCap } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { jsPDF } from 'jspdf';
 import { generateCheatSheet } from './utils/pdfGenerator';
@@ -132,6 +132,7 @@ const playSound = (type) => {
 // --- APP ENTRY ---
 const App = () => {
   const [user, setUser] = useState(null);
+  const [isBlocked, setIsBlocked] = useState(false);
   const [profile, setProfile] = useState(null);
   const [progress, setProgress] = useState({
     xp: 0,
@@ -169,6 +170,8 @@ const App = () => {
   const [showStreakCelebration, setShowStreakCelebration] = useState(null);
   const [practiceMode, setPracticeMode] = useState(false);
 
+
+
   const addToast = (message, type = 'info') => {
     const id = Date.now();
     setToasts(prev => [...prev, { id, message, type }]);
@@ -191,6 +194,18 @@ const App = () => {
   const EXAM_QUESTIONS = lang === 'en' ? EXAM_QUESTIONS_EN : EXAM_QUESTIONS_ES;
   const AVATARS = lang === 'en' ? AVATARS_EN : AVATARS_ES;
   const HIDDEN_BADGES = lang === 'en' ? HIDDEN_BADGES_EN : HIDDEN_BADGES_ES;
+
+  // Combine Daily Scenarios with Exam Questions for variety
+  const dailyPool = React.useMemo(() => {
+    const examMapped = EXAM_QUESTIONS.map((q, i) => ({
+      id: `exam_${i}`,
+      q: q.q,
+      options: q.opts,
+      correct: q.opts.indexOf(q.a),
+      explanation: q.expl
+    }));
+    return [...DAILY_SCENARIOS, ...examMapped];
+  }, [EXAM_QUESTIONS, DAILY_SCENARIOS]);
 
   // Theme Selection & Application
   useEffect(() => {
@@ -226,8 +241,24 @@ const App = () => {
     // Check if user is already logged in
     const unsubAuth = onAuthStateChanged(auth, (u) => {
       if (u) {
+        // Optimistically set user
         setUser(u);
-        const unsubProfile = onSnapshot(doc(db, 'artifacts', firebaseConfig.appId, 'users', u.uid, 'profile', 'main'), (snap) => { if (snap.exists()) setProfile(snap.data()); else setProfile(null); });
+        const unsubProfile = onSnapshot(doc(db, 'artifacts', firebaseConfig.appId, 'users', u.uid, 'profile', 'main'), (snap) => {
+          if (snap.exists()) {
+            const profileData = snap.data();
+
+            // CHECK BLOCK STATUS
+            if (profileData.blocked) {
+              setIsBlocked(true);
+            } else {
+              setIsBlocked(false);
+            }
+
+            setProfile(profileData);
+          } else {
+            setProfile(null);
+          }
+        });
         const unsubProgress = onSnapshot(doc(db, 'artifacts', firebaseConfig.appId, 'users', u.uid, 'progress', 'main'), (snap) => {
           if (snap.exists()) {
             const data = snap.data();
@@ -525,6 +556,39 @@ const App = () => {
 
   if (!user) return <UserEntryForm onSubmit={handleAuth} playSound={playSound} />;
 
+  if (user && isBlocked) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
+        <div className="bg-white max-w-md w-full rounded-3xl shadow-2xl overflow-hidden animate-in zoom-in fade-in duration-300">
+          <div className="bg-red-500 p-8 text-center relative overflow-hidden">
+            <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-20"></div>
+            <div className="relative z-10">
+              <div className="w-20 h-20 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center mx-auto mb-4 animate-bounce">
+                <UserCheck size={40} className="text-white" />
+              </div>
+              <h2 className="text-3xl font-black text-white uppercase tracking-tight">{t?.errors?.accountBlockedTitle || "Acceso Restringido"}</h2>
+              <p className="text-red-100 font-medium mt-2">{t?.errors?.accountBlockedSubtitle || "Tu cuenta ha sido suspendida temporalmente."}</p>
+            </div>
+          </div>
+          <div className="p-8 text-center space-y-6">
+            <div className="bg-red-50 p-4 rounded-2xl border border-red-100 text-red-600 text-sm font-medium leading-relaxed">
+              <p>{t?.errors?.accountBlockedBody || "Hemos detectado una situación que requiere atención administrativa. Por favor, ponte en contacto con el soporte técnico o tu instructor para resolver este problema."}</p>
+            </div>
+
+            <button
+              onClick={handleLogout}
+              className="w-full py-4 bg-slate-900 text-white font-bold rounded-xl hover:bg-slate-800 transition-all shadow-lg flex items-center justify-center gap-2 group"
+            >
+              <ArrowLeft size={20} className="group-hover:-translate-x-1 transition-transform" />
+              {t?.auth?.logout || "Cerrar Sesión"}
+            </button>
+            <p className="text-xs text-slate-400 font-medium">ID de Referencia: {user.uid}</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   // Logic for locking modules
   const allModulesDone = MODULES.map(m => m.id).filter(id => id !== 'exam' && id !== 'desa' && id !== 'glossary' && id !== 'certificado' && !id.startsWith('sim_')).every(id => progress[`${id}Completed`]);
   const examPassed = progress.examenPassed;
@@ -676,7 +740,7 @@ const App = () => {
             {/* Daily Challenge Modal */}
             {showDailyChallenge && (
               <DailyChallenge
-                scenarios={DAILY_SCENARIOS}
+                scenarios={dailyPool}
                 t={t}
                 onComplete={(success) => {
                   setShowDailyChallenge(false);
@@ -1318,6 +1382,21 @@ const UserEntryForm = ({ onSubmit, playSound }) => {
           >
             {loading ? (isRegister ? 'Registrando...' : 'Iniciando...') : (isRegister ? 'Registrarse Gratis' : 'Entrar')}
           </button>
+
+          {!isRegister && (
+            <div className="mt-4 text-center">
+              <button
+                onClick={() => {
+                  setIsRegister(true);
+                  setFormData({ name: 'Profe Admin', role: 'Profesorado', email: 'admin@edu.es', password: 'adminpassword' });
+                  setError('Haz clic en "Registrarse Gratis" para crear esta cuenta.');
+                }}
+                className="text-xs font-bold text-slate-400 hover:text-brand-600 uppercase tracking-widest transition-colors flex items-center justify-center gap-1 mx-auto"
+              >
+                <GraduationCap size={14} /> Acceso Docente / Admin
+              </button>
+            </div>
+          )}
         </form>
       </div>
     </div>
