@@ -1100,7 +1100,12 @@ const App = () => {
                 questions={EXAM_QUESTIONS}
                 t={t}
                 onComplete={(xp) => {
-                  updateProgress('timeTrial', xp);
+                  updateProgress({
+                    timeTrial: xp,
+                    timeTrialCompleted: true, // Mark as completed
+                    xp: currentXp + xp // Add XP immediately
+                  });
+                  addToast(t?.game?.timetrial?.completed || "¡Contrarreloj Completado!", 'success');
                   setView('home');
                 }}
                 onBack={() => setView('home')}
