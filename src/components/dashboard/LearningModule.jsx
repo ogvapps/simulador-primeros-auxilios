@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { ArrowLeft, ArrowRight, ExternalLink, Volume2, CheckCircle2, ChevronRight, Brain, Lightbulb, AlertOctagon } from 'lucide-react';
 import { RcpGame, BotiquinGame, HeimlichGame, Chat112Game, SequenceGame, TriageGame } from '../games/MiniGames';
 import CPRHero from '../games/CPRHero';
