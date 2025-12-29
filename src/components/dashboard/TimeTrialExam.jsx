@@ -87,6 +87,11 @@ const TimeTrialExam = ({ questions, t, onComplete, onBack, playSound }) => {
 
     // --- RENDER HELPERS ---
 
+    useEffect(() => {
+        // AGGRESSIVE DEBUGGING
+        alert(`DEBUG v1.6 LOADED`);
+    }, []);
+
     if (gameState === 'intro') {
         return (
             <div className="min-h-screen bg-slate-900 flex items-center justify-center p-4 font-sans text-white">
@@ -120,8 +125,8 @@ const TimeTrialExam = ({ questions, t, onComplete, onBack, playSound }) => {
                         <button onClick={onBack} className="mt-4 text-slate-500 hover:text-white underline">{t?.game?.timetrial?.back || "Volver"}</button>
 
                         {/* DEBUGGER FOR USER FEEDBACK */}
-                        <div className="mt-6 p-2 bg-black/30 rounded text-xs text-slate-600 font-mono">
-                            DEBUG: v1.5 | Q: {localQuestions.length} | State: {gameState} | Clicks: {clickCount}
+                        <div className="mt-6 p-2 bg-red-900/50 border border-red-500 rounded text-xs text-white font-mono font-bold">
+                            DEBUG: v1.6 | Q: {localQuestions?.length || 0} | S: {gameState} | C: {clickCount}
                         </div>
                     </div>
                 </div>
