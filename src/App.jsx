@@ -540,7 +540,7 @@ const App = () => {
   };
 
   const handleModuleClick = (mod) => {
-    playSound('click');
+    try { playSound('click'); } catch (e) { }
     if (mod.type === 'desa') setShowDesa(true);
     else if (mod.type === 'exam') setView('exam');
     else if (mod.type === 'glossary') setView('glossary');
@@ -1116,7 +1116,7 @@ const App = () => {
 
           {
             view === 'glossary' && (
-              <div className="max-w-4xl mx-auto bg-white p-10 rounded-3xl shadow-xl animate-in fade-in slide-in-from-bottom-8">
+              <div className="max-w-4xl mx-auto bg-white p-10 rounded-3xl shadow-xl animate-in fade-in slide-in-from-bottom-8 pb-32">
                 <div className="flex items-center mb-10 pb-6 border-b border-slate-100">
                   <button onClick={() => setView('home')} className="mr-6 hover:bg-slate-50 p-3 rounded-xl transition-colors"><BookOpen /></button>
                   <h2 className="text-4xl font-black text-slate-800 tracking-tight">Glosario</h2>

@@ -16,7 +16,7 @@ const ErrorHeatmap = ({ students, questionBank, t }) => {
     }, [students, questionBank]);
 
     const exportCSV = () => {
-        const headers = ['Question #', 'Question Text', 'Total Attempts', 'Wrong Answers', 'Error Rate %'];
+        const headers = ['Pregunta #', 'Texto Pregunta', 'Intentos Totales', 'Respuestas Incorrectas', 'Tasa Error %'];
         const rows = heatmapData.map(stat => [
             stat.questionIndex + 1,
             `"${stat.question}"`,
@@ -38,8 +38,8 @@ const ErrorHeatmap = ({ students, questionBank, t }) => {
         return (
             <div className="bg-white p-8 rounded-2xl border border-slate-200 text-center">
                 <AlertTriangle className="mx-auto text-slate-300 mb-4" size={48} />
-                <p className="text-slate-500 font-bold">No exam data yet</p>
-                <p className="text-slate-400 text-sm mt-2">Students need to complete exams to generate the heatmap</p>
+                <p className="text-slate-500 font-bold">Sin datos de exámenes</p>
+                <p className="text-slate-400 text-sm mt-2">Los estudiantes deben completar exámenes para generar el mapa de calor.</p>
             </div>
         );
     }
@@ -50,12 +50,12 @@ const ErrorHeatmap = ({ students, questionBank, t }) => {
             <div className="flex justify-between items-center">
                 <div>
                     <h3 className="text-2xl font-black text-slate-800 flex items-center gap-2">
-                        📊 Error Heatmap
+                        📊 Mapa de Errores (Heatmap)
                     </h3>
-                    <p className="text-slate-500 text-sm mt-1">Identify which questions students struggle with most</p>
+                    <p className="text-slate-500 text-sm mt-1">Identifica las preguntas más difíciles para los alumnos</p>
                 </div>
                 <button onClick={exportCSV} className="px-4 py-2 bg-green-600 text-white rounded-lg font-bold hover:bg-green-700 flex items-center gap-2">
-                    <Download size={18} /> Export CSV
+                    <Download size={18} /> Exportar CSV
                 </button>
             </div>
 
@@ -63,15 +63,15 @@ const ErrorHeatmap = ({ students, questionBank, t }) => {
             <div className="flex gap-4 text-sm font-bold">
                 <div className="flex items-center gap-2">
                     <div className="w-4 h-4 bg-green-500 rounded"></div>
-                    <span className="text-slate-600">Easy (&lt;30%)</span>
+                    <span className="text-slate-600">Fácil (&lt;30%)</span>
                 </div>
                 <div className="flex items-center gap-2">
                     <div className="w-4 h-4 bg-yellow-500 rounded"></div>
-                    <span className="text-slate-600">Medium (30-60%)</span>
+                    <span className="text-slate-600">Medio (30-60%)</span>
                 </div>
                 <div className="flex items-center gap-2">
                     <div className="w-4 h-4 bg-red-500 rounded"></div>
-                    <span className="text-slate-600">Hard (&gt;60%)</span>
+                    <span className="text-slate-600">Difícil (&gt;60%)</span>
                 </div>
             </div>
 
@@ -99,7 +99,7 @@ const ErrorHeatmap = ({ students, questionBank, t }) => {
                                 </div>
                                 <div className="text-right">
                                     <p className={`text-3xl font-black ${colors.text}`}>{stat.errorRate}%</p>
-                                    <p className="text-xs text-slate-500 uppercase font-bold">Error Rate</p>
+                                    <p className="text-xs text-slate-500 uppercase font-bold">Tasa Error</p>
                                 </div>
                             </div>
 
@@ -131,29 +131,29 @@ const ErrorHeatmap = ({ students, questionBank, t }) => {
                         <div className="grid grid-cols-3 gap-4 mb-4">
                             <div className="bg-blue-50 p-4 rounded-xl text-center border border-blue-200">
                                 <p className="text-2xl font-black text-blue-700">{selectedQuestion.totalAttempts}</p>
-                                <p className="text-xs text-blue-600 font-bold uppercase">Total Attempts</p>
+                                <p className="text-xs text-blue-600 font-bold uppercase">Intentos Totales</p>
                             </div>
                             <div className="bg-red-50 p-4 rounded-xl text-center border border-red-200">
                                 <p className="text-2xl font-black text-red-700">{selectedQuestion.wrongAnswers}</p>
-                                <p className="text-xs text-red-600 font-bold uppercase">Wrong Answers</p>
+                                <p className="text-xs text-red-600 font-bold uppercase">Respuestas Incorrectas</p>
                             </div>
                             <div className="bg-green-50 p-4 rounded-xl text-center border border-green-200">
                                 <p className="text-2xl font-black text-green-700">{selectedQuestion.totalAttempts - selectedQuestion.wrongAnswers}</p>
-                                <p className="text-xs text-green-600 font-bold uppercase">Correct</p>
+                                <p className="text-xs text-green-600 font-bold uppercase">Correctas</p>
                             </div>
                         </div>
 
                         {selectedQuestion.mostCommonWrongAnswer !== undefined && (
                             <div className="bg-orange-50 p-4 rounded-xl border border-orange-200">
-                                <p className="font-bold text-orange-800 mb-2">⚠️ Most Common Mistake</p>
+                                <p className="font-bold text-orange-800 mb-2">⚠️ Error Más Común</p>
                                 <p className="text-sm text-orange-700">
-                                    Option {selectedQuestion.mostCommonWrongAnswer + 1} was chosen incorrectly {selectedQuestion.mostCommonWrongAnswerCount} times
+                                    La opción {selectedQuestion.mostCommonWrongAnswer + 1} fue elegida incorrectamente {selectedQuestion.mostCommonWrongAnswerCount} veces
                                 </p>
                             </div>
                         )}
 
                         <button onClick={() => setSelectedQuestion(null)} className="w-full mt-4 py-2 bg-slate-800 text-white rounded-lg font-bold hover:bg-slate-900">
-                            Close
+                            Cerrar
                         </button>
                     </div>
                 </div>

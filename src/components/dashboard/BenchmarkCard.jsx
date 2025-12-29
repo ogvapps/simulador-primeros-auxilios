@@ -46,8 +46,8 @@ const BenchmarkCard = ({ student, db, firebaseConfigId, t }) => {
         return (
             <div className="bg-slate-50 p-6 rounded-2xl border border-slate-200 text-center">
                 <Target className="mx-auto text-slate-300 mb-2" size={32} />
-                <p className="text-slate-500 text-sm font-bold">{t?.benchmark?.needData}</p>
-                <p className="text-slate-400 text-xs mt-1">{t?.benchmark?.minStudents}</p>
+                <p className="text-slate-500 text-sm font-bold">{t?.benchmark?.needData || "Necesita más datos"}</p>
+                <p className="text-slate-400 text-xs mt-1">{t?.benchmark?.minStudents || "Se requieren al menos 2 estudiantes"}</p>
             </div>
         );
     }
@@ -90,8 +90,8 @@ const BenchmarkCard = ({ student, db, firebaseConfigId, t }) => {
                         <Trophy size={24} className="text-white" />
                     </div>
                     <div>
-                        <h3 className="font-black text-blue-900">{t?.benchmark?.performance}</h3>
-                        <p className="text-xs text-blue-600">{(t?.benchmark?.vsClassmates || '').replace('{n}', benchmark.classSize)}</p>
+                        <h3 className="font-black text-blue-900">{t?.benchmark?.performance || "Rendimiento Relativo"}</h3>
+                        <p className="text-xs text-blue-600">{(t?.benchmark?.vsClassmates || 'vs {n} compañeros').replace('{n}', benchmark.classSize)}</p>
                     </div>
                 </div>
                 <div className={`px-3 py-1 rounded-full ${tier.bg} ${tier.border} border-2`}>
@@ -100,16 +100,16 @@ const BenchmarkCard = ({ student, db, firebaseConfigId, t }) => {
             </div>
 
             <div className="space-y-2 mb-4">
-                <MetricRow icon={Zap} label="XP" data={benchmark.xp} iconColor="text-yellow-600" />
-                <MetricRow icon={Target} label="Level" data={benchmark.level} iconColor="text-blue-600" />
+                <MetricRow icon={Zap} label="XP Total" data={benchmark.xp} iconColor="text-yellow-600" />
+                <MetricRow icon={Target} label="Nivel" data={benchmark.level} iconColor="text-blue-600" />
                 {benchmark.examScore && (
-                    <MetricRow icon={Award} label="Exam Score" data={benchmark.examScore} iconColor="text-green-600" />
+                    <MetricRow icon={Award} label="Nota Examen" data={benchmark.examScore} iconColor="text-green-600" />
                 )}
             </div>
 
             <div className="bg-white/50 rounded-xl p-3 text-center">
                 <p className="text-xs text-slate-600 font-bold">
-                    {t?.benchmark?.betterThan} <span className="text-blue-600 text-lg font-black">{benchmark.xp.percentile}%</span> {t?.benchmark?.ofClass}
+                    {t?.benchmark?.betterThan || "Mejor que el"} <span className="text-blue-600 text-lg font-black">{benchmark.xp.percentile}%</span> {t?.benchmark?.ofClass || "de la clase"}
                 </p>
             </div>
         </div>
