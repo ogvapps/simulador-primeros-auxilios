@@ -425,11 +425,22 @@ const App = () => {
         else if (key.endsWith('Completed') && value === true && !updated[key]) xpGain = XP_REWARDS.MODULE_COMPLETE;
         else if (typeof value === 'number' && !['xp', 'level', 'currentStreak', 'examAttempts'].includes(key)) xpGain = value;
 
-        const newXp = (updated.xp || 0) + (xpGain * multiplier);
+        const currentXp = updated.xp || 0;
+        const currentLifetimeXp = updated.lifetimeXp !== undefined ? updated.lifetimeXp : currentXp; // Backfill if missing
+
+        let newXp = currentXp + (xpGain * multiplier);
+        let newLifetimeXp = currentLifetimeXp;
+
+        // Only positive gains contribute to Lifetime XP (Rank)
+        if (xpGain > 0) {
+          newLifetimeXp += (xpGain * multiplier);
+        }
+
         let newLevel = updated.level || 1;
+        // Recalculate level based on Lifetime XP (Rank) - Fair system
         const nextLevelConfig = LEVELS.find(l => l.level === newLevel + 1);
 
-        if (nextLevelConfig && newXp >= nextLevelConfig.minXp) {
+        if (nextLevelConfig && newLifetimeXp >= nextLevelConfig.minXp) {
           newLevel++;
           setShowLevelUp(true);
           playSound('levelup');
@@ -438,7 +449,7 @@ const App = () => {
           setTimeout(() => setShowLevelUp(false), 4000);
         }
 
-        updated = { ...updated, xp: newXp, level: newLevel };
+        updated = { ...updated, xp: newXp, lifetimeXp: newLifetimeXp, level: newLevel };
 
         // Handle nested keys
         if (typeof key === 'string' && key.includes('.')) {

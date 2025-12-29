@@ -24,14 +24,15 @@ const Leaderboard = ({ db, firebaseConfigId, onBack, currentUserId, t }) => {
                             id: d.userId || doc.id,
                             name: d.name || 'Anónimo',
                             xp: d.progress.xp || 0,
+                            lifetimeXp: d.progress.lifetimeXp !== undefined ? d.progress.lifetimeXp : (d.progress.xp || 0), // Fallback for old users
                             level: d.progress.level || 1,
                             avatar: d.avatarId || 'default'
                         });
                     }
                 });
 
-                // Sort DESC by XP
-                users.sort((a, b) => b.xp - a.xp);
+                // Sort DESC by Lifetime XP (Prestige)
+                users.sort((a, b) => b.lifetimeXp - a.lifetimeXp);
                 setLeaders(users.slice(0, 50)); // Top 50
             } catch (err) {
                 console.error("Error fetching leaderboard:", err);
@@ -123,8 +124,8 @@ const Leaderboard = ({ db, firebaseConfigId, onBack, currentUserId, t }) => {
 
                                                 {/* XP */}
                                                 <div className="text-right flex-shrink-0 pl-2">
-                                                    <p className="font-black text-2xl text-slate-800">{user.xp.toLocaleString()}</p>
-                                                    <p className="text-xs font-bold text-slate-400 uppercase">XP</p>
+                                                    <p className="font-black text-2xl text-slate-800">{user.lifetimeXp.toLocaleString()}</p>
+                                                    <p className="text-xs font-bold text-slate-400 uppercase">XP TOTAL</p>
                                                 </div>
                                             </div>
                                         </React.Fragment>

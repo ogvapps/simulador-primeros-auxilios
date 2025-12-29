@@ -34,7 +34,10 @@ const TimeTrialExam = ({ questions, t, onComplete, onBack, playSound }) => {
         return () => clearInterval(interval);
     }, [gameState, timeLeft]);
 
+    const [clickCount, setClickCount] = useState(0);
+
     const handleStart = () => {
+        setClickCount(c => c + 1);
         try {
             if (playSound) playSound('click');
         } catch (e) {
@@ -115,6 +118,11 @@ const TimeTrialExam = ({ questions, t, onComplete, onBack, playSound }) => {
                         )}
 
                         <button onClick={onBack} className="mt-4 text-slate-500 hover:text-white underline">{t?.game?.timetrial?.back || "Volver"}</button>
+
+                        {/* DEBUGGER FOR USER FEEDBACK */}
+                        <div className="mt-6 p-2 bg-black/30 rounded text-xs text-slate-600 font-mono">
+                            DEBUG: v1.5 | Q: {localQuestions.length} | State: {gameState} | Clicks: {clickCount}
+                        </div>
                     </div>
                 </div>
             </div>
