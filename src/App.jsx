@@ -86,45 +86,58 @@ const auth = getAuth(app);
 // --- SOUND ENGINE ---
 const audioCtx = typeof window !== 'undefined' ? new (window.AudioContext || window.webkitAudioContext)() : null;
 const playSound = (type) => {
-  if (!audioCtx || audioCtx.state === 'closed') return;
-  if (localStorage.getItem('app_muted') === 'true') return;
+  try {
+    if (!audioCtx || audioCtx.state === 'closed') return;
+    if (localStorage.getItem('app_muted') === 'true') return;
 
-  const osc = audioCtx.createOscillator();
-  const gain = audioCtx.createGain();
-  osc.connect(gain);
-  gain.connect(audioCtx.destination);
-  const now = audioCtx.currentTime;
+    if (audioCtx.state === 'suspended') {
+      audioCtx.resume().catch(() => { });
+    }
 
-  if (type === 'success') {
-    osc.type = 'sine'; osc.frequency.setValueAtTime(523.25, now); osc.frequency.exponentialRampToValueAtTime(1046.5, now + 0.1);
-    gain.gain.setValueAtTime(0.1, now); gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3); osc.start(now); osc.stop(now + 0.3);
-  } else if (type === 'error') {
-    osc.type = 'sawtooth'; osc.frequency.setValueAtTime(150, now); osc.frequency.linearRampToValueAtTime(100, now + 0.2);
-    gain.gain.setValueAtTime(0.1, now); gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3); osc.start(now); osc.stop(now + 0.3);
-  } else if (type === 'click') {
-    osc.type = 'triangle'; osc.frequency.setValueAtTime(800, now);
-    gain.gain.setValueAtTime(0.05, now); gain.gain.exponentialRampToValueAtTime(0.001, now + 0.05); osc.start(now); osc.stop(now + 0.05);
-  } else if (type === 'fanfare') {
-    [0, 0.1, 0.2, 0.4].forEach((delay, i) => {
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    const now = audioCtx.currentTime;
+
+    if (type === 'success') {
+      osc.type = 'sine'; osc.frequency.setValueAtTime(523.25, now); osc.frequency.exponentialRampToValueAtTime(1046.5, now + 0.1);
+      gain.gain.setValueAtTime(0.1, now); gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3); osc.start(now); osc.stop(now + 0.3);
+    } else if (type === 'error') {
+      osc.type = 'sawtooth'; osc.frequency.setValueAtTime(150, now); osc.frequency.linearRampToValueAtTime(100, now + 0.2);
+      gain.gain.setValueAtTime(0.1, now); gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3); osc.start(now); osc.stop(now + 0.3);
+    } else if (type === 'click') {
+      osc.type = 'triangle'; osc.frequency.setValueAtTime(800, now);
+      gain.gain.setValueAtTime(0.05, now); gain.gain.exponentialRampToValueAtTime(0.001, now + 0.05); osc.start(now); osc.stop(now + 0.05);
+    } else if (type === 'fanfare') {
+      [0, 0.1, 0.2, 0.4].forEach((delay, i) => {
+        const o = audioCtx.createOscillator(); const g = audioCtx.createGain(); o.connect(g); g.connect(audioCtx.destination);
+        o.frequency.value = [440, 554, 659, 880][i]; g.gain.setValueAtTime(0.1, now + delay); g.gain.exponentialRampToValueAtTime(0.001, now + delay + 0.5);
+        o.start(now + delay); o.stop(now + delay + 0.5);
+      });
+    } else if (type === 'levelup') {
       const o = audioCtx.createOscillator(); const g = audioCtx.createGain(); o.connect(g); g.connect(audioCtx.destination);
-      o.frequency.value = [440, 554, 659, 880][i]; g.gain.setValueAtTime(0.1, now + delay); g.gain.exponentialRampToValueAtTime(0.001, now + delay + 0.5);
-      o.start(now + delay); o.stop(now + delay + 0.5);
-    });
-  } else if (type === 'levelup') {
-    const o = audioCtx.createOscillator(); const g = audioCtx.createGain(); o.connect(g); g.connect(audioCtx.destination);
-    o.type = 'square'; o.frequency.setValueAtTime(440, now); o.frequency.linearRampToValueAtTime(880, now + 0.5);
-    g.gain.setValueAtTime(0.1, now); g.gain.linearRampToValueAtTime(0, now + 0.5);
-    o.start(now); o.stop(now + 0.5);
-  } else if (type === 'alarm') {
-    const o = audioCtx.createOscillator(); const g = audioCtx.createGain(); o.connect(g); g.connect(audioCtx.destination);
-    o.type = 'sawtooth'; o.frequency.setValueAtTime(800, now); o.frequency.linearRampToValueAtTime(600, now + 0.3);
-    g.gain.setValueAtTime(0.05, now); g.gain.linearRampToValueAtTime(0, now + 0.3);
-    o.start(now); o.stop(now + 0.3);
-  } else if (type === 'powerup') {
-    const o = audioCtx.createOscillator(); const g = audioCtx.createGain(); o.connect(g); g.connect(audioCtx.destination);
-    o.type = 'sine'; o.frequency.setValueAtTime(300, now); o.frequency.linearRampToValueAtTime(800, now + 0.4);
-    g.gain.setValueAtTime(0.1, now); g.gain.linearRampToValueAtTime(0, now + 0.4);
-    o.start(now); o.stop(now + 0.4);
+      o.type = 'square'; o.frequency.setValueAtTime(440, now); o.frequency.linearRampToValueAtTime(880, now + 0.5);
+      g.gain.setValueAtTime(0.1, now); g.gain.linearRampToValueAtTime(0, now + 0.5);
+      o.start(now); o.stop(now + 0.5);
+    } else if (type === 'alarm') {
+      const o = audioCtx.createOscillator(); const g = audioCtx.createGain(); o.connect(g); g.connect(audioCtx.destination);
+      o.type = 'sawtooth'; o.frequency.setValueAtTime(800, now); o.frequency.linearRampToValueAtTime(600, now + 0.3);
+      g.gain.setValueAtTime(0.05, now); g.gain.linearRampToValueAtTime(0, now + 0.3);
+      o.start(now); o.stop(now + 0.3);
+    } else if (type === 'powerup') {
+      const o = audioCtx.createOscillator(); const g = audioCtx.createGain(); o.connect(g); g.connect(audioCtx.destination);
+      o.type = 'sine'; o.frequency.setValueAtTime(220, now); o.frequency.linearRampToValueAtTime(880, now + 0.3);
+      g.gain.setValueAtTime(0.1, now); g.gain.linearRampToValueAtTime(0, now + 0.3);
+      o.start(now); o.stop(now + 0.3);
+    } else if (type === 'gameover') {
+      const o = audioCtx.createOscillator(); const g = audioCtx.createGain(); o.connect(g); g.connect(audioCtx.destination);
+      o.type = 'sawtooth'; o.frequency.setValueAtTime(440, now); o.frequency.linearRampToValueAtTime(110, now + 0.5);
+      g.gain.setValueAtTime(0.1, now); g.gain.linearRampToValueAtTime(0, now + 0.5);
+      o.start(now); o.stop(now + 0.5);
+    }
+  } catch (e) {
+    console.warn("Audio error:", e);
   }
 };
 
@@ -251,6 +264,14 @@ const App = () => {
         const unsubProfile = onSnapshot(doc(db, 'artifacts', firebaseConfig.appId, 'users', u.uid, 'profile', 'main'), (snap) => {
           if (snap.exists()) {
             const profileData = snap.data();
+
+            // Sync to Public Summary for Admin Panel (Fix empty admin panel)
+            setDoc(doc(db, 'artifacts', firebaseConfig.appId, 'public', 'data', 'user_summaries', u.uid), {
+              userId: u.uid,
+              name: profileData.name || u.displayName || 'Estudiante',
+              email: u.email,
+              lastUpdate: new Date().toISOString()
+            }, { merge: true }).catch(err => console.log("Sync warning", err));
 
             // CHECK BLOCK STATUS
             if (profileData.blocked) {
@@ -472,7 +493,14 @@ const App = () => {
 
       // Persist
       await setDoc(doc(db, 'artifacts', firebaseConfig.appId, 'users', user.uid, 'progress', 'main'), updated, { merge: true });
-      await setDoc(doc(db, 'artifacts', firebaseConfig.appId, 'public', 'data', 'user_summaries', user.uid), { progress: updated, lastUpdate: new Date().toISOString() }, { merge: true });
+      // Sync to Public Summary for Admin Panel
+      const summaryRef = doc(db, 'artifacts', firebaseConfig.appId, 'public', 'data', 'user_summaries', user.uid);
+      await setDoc(summaryRef, {
+        progress: updated,
+        lastUpdate: new Date().toISOString(),
+        name: profile?.name || user.displayName || 'Estudiante',
+        email: user.email
+      }, { merge: true });
 
     } catch (error) {
       console.error("Error updating progress:", error);
@@ -1131,25 +1159,37 @@ const App = () => {
                 </div>
 
                 {/* Glossary Completion Action */}
-                {!progress.glossaryCompleted && (
-                  <div className="mt-8 bg-brand-50 border-2 border-brand-100 rounded-2xl p-6 text-center animate-in slide-in-from-bottom-4">
-                    <h3 className="font-bold text-brand-800 text-lg mb-2">¿Has revisado todos los términos?</h3>
-                    <p className="text-brand-600 mb-6 text-sm">Completa este módulo para ganar tu recompensa de XP.</p>
-                    <button
-                      onClick={() => {
-                        updateProgress('glossaryCompleted', true);
-                        playSound('success');
-                        addToast('¡Módulo Glosario Completado!', 'success');
-                        confetti();
-                        setView('home');
-                      }}
-                      className="bg-brand-600 hover:bg-brand-700 text-white font-bold py-3 px-8 rounded-xl shadow-lg hover:scale-105 transition-all flex items-center justify-center gap-2 mx-auto"
-                    >
-                      <CheckCircle2 size={20} />
-                      Marcar como Leído (+{XP_REWARDS.MODULE_COMPLETE} XP)
-                    </button>
-                  </div>
-                )}
+                {/* Glossary Completion Action */}
+                <div className="mt-8 bg-brand-50 border-2 border-brand-100 rounded-2xl p-6 text-center animate-in slide-in-from-bottom-4">
+                  {!progress.glossaryCompleted ? (
+                    <>
+                      <h3 className="font-bold text-brand-800 text-lg mb-2">¿Has revisado todos los términos?</h3>
+                      <p className="text-brand-600 mb-6 text-sm">Completa este módulo para ganar tu recompensa de XP.</p>
+                      <button
+                        onClick={() => {
+                          updateProgress('glossaryCompleted', true);
+                          try { playSound('success'); } catch (e) { }
+                          addToast('¡Módulo Glosario Completado!', 'success');
+                          confetti();
+                          setView('home');
+                        }}
+                        className="bg-brand-600 hover:bg-brand-700 text-white font-bold py-3 px-8 rounded-xl shadow-lg hover:scale-105 transition-all flex items-center justify-center gap-2 mx-auto"
+                      >
+                        <CheckCircle2 size={20} />
+                        Marcar como Leído (+{XP_REWARDS.MODULE_COMPLETE} XP)
+                      </button>
+                    </>
+                  ) : (
+                    <div className="flex flex-col items-center justify-center gap-2 text-emerald-600 animate-in zoom-in">
+                      <div className="bg-emerald-100 p-3 rounded-full">
+                        <CheckCircle2 size={32} />
+                      </div>
+                      <h3 className="font-bold text-lg">¡Módulo Completado!</h3>
+                      <p className="text-sm opacity-80">Ya has recibido tu recompensa por este módulo.</p>
+                      <button onClick={() => setView('home')} className="mt-4 text-emerald-700 font-bold hover:underline">Volver al Inicio</button>
+                    </div>
+                  )}
+                </div>
               </div>
             )
           }
