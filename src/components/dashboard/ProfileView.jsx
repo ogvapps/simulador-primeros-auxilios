@@ -1,12 +1,16 @@
-import React, { useState } from 'react';
-import { ShoppingBag, Star, Zap, Palette, User, Check, ArrowLeft, Trophy } from 'lucide-react';
-import { STORE_ITEMS, getLocalizedName, getLocalizedDescription } from '../../data/storeCatalog';
+import Link from 'next/link'; // Not needed, removed
+import InsigniasPanel from './InsigniasPanel';
+import {
+    MODULES_ES, MODULES_EN,
+    HIDDEN_BADGES_ES, HIDDEN_BADGES_EN
+} from '../../data/constants';
 
-const ProfileView = ({ progress, onEquipAvatar, onEquipTheme, onBack, t, lang = 'es', currentXp }) => {
+const ProfileView = ({ progress, profile, onEquipAvatar, onEquipTheme, onBack, t, lang = 'es', currentXp }) => {
     const [activeTab, setActiveTab] = useState('inventory'); // 'inventory', 'stats'
 
     const inventory = progress.inventory || { avatars: ['default'], themes: [], powerups: {} };
-    const activeAvatar = progress.activeAvatar || 'default';
+    // Use profile prop for active selections if available, otherwise fallback
+    const activeAvatar = profile?.avatarId || progress.activeAvatar || 'default';
     const activeTheme = progress.activeTheme || 'default';
 
     const renderInventory = () => {
@@ -153,7 +157,7 @@ const ProfileView = ({ progress, onEquipAvatar, onEquipTheme, onBack, t, lang = 
                             {STORE_ITEMS.avatars.find(a => a.id === activeAvatar)?.icon || '👤'}
                         </div>
                         <div className="text-center md:text-left">
-                            <h3 className="text-3xl font-black">{progress.name || 'Estudiante'}</h3>
+                            <h3 className="text-3xl font-black">{profile?.name || progress.name || 'Estudiante'}</h3>
                             <div className="flex flex-wrap justify-center md:justify-start gap-4 mt-2">
                                 <span className="flex items-center gap-1 bg-white/20 px-3 py-1 rounded-full font-bold text-sm">
                                     <Star size={14} className="text-yellow-300 fill-yellow-300" /> Nivel {progress.level || 1}
@@ -184,10 +188,21 @@ const ProfileView = ({ progress, onEquipAvatar, onEquipTheme, onBack, t, lang = 
             </div>
 
             {activeTab === 'inventory' ? renderInventory() : (
-                <div className="bg-white border border-slate-100 rounded-3xl p-8 text-center animate-in zoom-in-95 duration-500">
-                    <Trophy size={48} className="mx-auto text-yellow-500 mb-4" />
-                    <h3 className="text-xl font-bold mb-2">Próximamente Analytics Detallados</h3>
-                    <p className="text-slate-500">Estamos preparando gráficas de tu evolución semanal.</p>
+                <div className="space-y-6">
+                    {/* Render Insignias (Stats) here */}
+                    <InsigniasPanel
+                        progress={progress}
+                        currentLevel={progress.level}
+                        currentXp={currentXp}
+                        t={t}
+                        modules={lang === 'en' ? MODULES_EN : MODULES_ES}
+                        hiddenBadges={lang === 'en' ? HIDDEN_BADGES_EN : HIDDEN_BADGES_ES}
+                    />
+
+                    <div className="bg-white border border-slate-100 rounded-3xl p-8 text-center animate-in zoom-in-95 duration-500 mt-4">
+                        <h3 className="text-lg font-bold text-slate-600 mb-2">Exámenes Realizados</h3>
+                        <div className="text-4xl font-black text-brand-500">{progress.examAttempts?.length || 0}</div>
+                    </div>
                 </div>
             )}
         </div>

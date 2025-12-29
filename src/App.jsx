@@ -1257,6 +1257,7 @@ const App = () => {
           {view === 'profile' && (
             <ProfileView
               progress={progress}
+              profile={profile}
               t={t}
               lang={lang}
               currentXp={currentXp}
