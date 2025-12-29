@@ -1,18 +1,21 @@
 import React, { useState, useEffect } from 'react';
-import { Timer, Zap, CheckCircle2, XCircle, ArrowRight, Trophy, AlertTriangle } from 'lucide-react';
+import { Timer, Zap, CheckCircle2, XCircle, Trophy } from 'lucide-react';
+// Validate imports if necessary, assuming constants are passed or we can import them as fallback
+// import { EXAM_QUESTIONS_ES } from '../../data/constants';
 
 const TimeTrialExam = ({ questions, t, onComplete, onBack, playSound }) => {
+    // Game State: 'intro', 'playing', 'finished'
+    const [gameState, setGameState] = useState('intro');
+
     const [localQuestions, setLocalQuestions] = useState([]);
     const [currentIndex, setCurrentIndex] = useState(0);
     const [score, setScore] = useState(0);
-    const [timeLeft, setTimeLeft] = useState(60); // 60 seconds
-    const [isActive, setIsActive] = useState(false);
-    const [isFinished, setIsFinished] = useState(false);
+    const [timeLeft, setTimeLeft] = useState(60);
     const [selectedAnswer, setSelectedAnswer] = useState(null);
 
     // Initial Setup: Pick 10 random questions
     useEffect(() => {
-        if (questions) {
+        if (questions && questions.length > 0) {
             const shuffled = [...questions].sort(() => 0.5 - Math.random());
             setLocalQuestions(shuffled.slice(0, 10));
         }
@@ -21,19 +24,23 @@ const TimeTrialExam = ({ questions, t, onComplete, onBack, playSound }) => {
     // Timer Logic
     useEffect(() => {
         let interval = null;
-        if (isActive && timeLeft > 0 && !isFinished) {
+        if (gameState === 'playing' && timeLeft > 0) {
             interval = setInterval(() => {
                 setTimeLeft(time => time - 1);
             }, 1000);
-        } else if (timeLeft === 0 && isActive) {
+        } else if (timeLeft === 0 && gameState === 'playing') {
             handleFinish();
         }
         return () => clearInterval(interval);
-    }, [isActive, timeLeft, isFinished]);
+    }, [gameState, timeLeft]);
 
     const handleStart = () => {
-        setIsActive(true);
-        if (playSound) playSound('click');
+        try {
+            if (playSound) playSound('click');
+        } catch (e) {
+            console.error("Audio error", e);
+        }
+        setGameState('playing');
     };
 
     const handleAnswer = (optionIndex) => {
@@ -41,22 +48,19 @@ const TimeTrialExam = ({ questions, t, onComplete, onBack, playSound }) => {
         setSelectedAnswer(optionIndex);
 
         const currentQ = localQuestions[currentIndex];
-        // Fix: logic for 'a' (string) vs 'correct' (index)
-        // If data has 'a' (string), compare string. If 'correct' (index), compare index.
+        // Fix for 'a' (string) vs 'correct' (index)
         const isCorrect = currentQ.a
             ? currentQ.opts[optionIndex] === currentQ.a
             : optionIndex === currentQ.correct;
 
         if (isCorrect) {
-            if (playSound) playSound('success');
+            try { if (playSound) playSound('success'); } catch (e) { }
             setScore(s => s + 1);
         } else {
-            if (playSound) playSound('error');
-            // Penalty? Maybe time penalty?
+            try { if (playSound) playSound('error'); } catch (e) { }
             setTimeLeft(t => Math.max(0, t - 5)); // -5 seconds penalty
         }
 
-        // Auto advance after short delay
         setTimeout(() => {
             if (currentIndex < localQuestions.length - 1) {
                 setCurrentIndex(i => i + 1);
@@ -68,20 +72,19 @@ const TimeTrialExam = ({ questions, t, onComplete, onBack, playSound }) => {
     };
 
     const handleFinish = () => {
-        setIsActive(false);
-        setIsFinished(true);
-        if (playSound) playSound('fanfare');
-        // Do NOT call onComplete here. Wait for user to review score.
+        setGameState('finished');
+        try { if (playSound) playSound('fanfare'); } catch (e) { }
     };
 
     const handleExit = () => {
-        // Calculate XP: Score * 20 + TimeBonus
         const bonus = Math.max(0, Math.floor(timeLeft / 2));
         const totalXp = (score * 20) + bonus;
         onComplete(totalXp);
     }
 
-    if (!isActive && !isFinished) {
+    // --- RENDER HELPERS ---
+
+    if (gameState === 'intro') {
         return (
             <div className="min-h-screen bg-slate-900 flex items-center justify-center p-4 font-sans text-white">
                 <div className="max-w-md w-full bg-slate-800 rounded-3xl p-8 text-center border-4 border-yellow-500 shadow-2xl relative overflow-hidden">
@@ -107,12 +110,17 @@ const TimeTrialExam = ({ questions, t, onComplete, onBack, playSound }) => {
                     )}
 
                     <button onClick={onBack} className="mt-4 text-slate-500 hover:text-white underline">{t?.game?.timetrial?.back || "Volver"}</button>
+
+                    {/* DEBUGGER FOR USER FEEDBACK */}
+                    <div className="mt-6 p-2 bg-black/30 rounded text-xs text-slate-600 font-mono">
+                        DEBUG: v1.3 | Q: {localQuestions.length} | State: {gameState}
+                    </div>
                 </div>
             </div>
         );
     }
 
-    if (isFinished) {
+    if (gameState === 'finished') {
         return (
             <div className="min-h-screen bg-slate-900 flex items-center justify-center p-4 font-sans text-white">
                 <div className="max-w-md w-full bg-slate-800 rounded-3xl p-8 text-center border border-slate-700 shadow-2xl">
@@ -137,8 +145,13 @@ const TimeTrialExam = ({ questions, t, onComplete, onBack, playSound }) => {
         );
     }
 
+    // PLAYING STATE
     const currentQ = localQuestions[currentIndex];
-    if (!currentQ) return null; // Safety check
+
+    // Safety check: if playing but no question, error or finish
+    if (!currentQ) {
+        return <div className="p-10 text-white text-center">Error: Pregunta no encontrada. <button onClick={onBack}>Volver</button></div>;
+    }
 
     const options = currentQ.opts || currentQ.options;
 
