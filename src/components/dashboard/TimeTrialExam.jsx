@@ -34,7 +34,10 @@ const TimeTrialExam = ({ questions, t, onComplete, onBack, playSound }) => {
         return () => clearInterval(interval);
     }, [gameState, timeLeft]);
 
+    const [clickCount, setClickCount] = useState(0);
+
     const handleStart = () => {
+        setClickCount(c => c + 1);
         try {
             if (playSound) playSound('click');
         } catch (e) {
@@ -88,32 +91,38 @@ const TimeTrialExam = ({ questions, t, onComplete, onBack, playSound }) => {
         return (
             <div className="min-h-screen bg-slate-900 flex items-center justify-center p-4 font-sans text-white">
                 <div className="max-w-md w-full bg-slate-800 rounded-3xl p-8 text-center border-4 border-yellow-500 shadow-2xl relative overflow-hidden">
-                    <div className="absolute top-0 left-0 w-full h-full bg-yellow-500/10 animate-pulse"></div>
-                    <Zap className="mx-auto text-yellow-500 mb-6 animate-bounce" size={64} />
-                    <h1 className="text-4xl font-black mb-2 uppercase italic tracking-tighter">{t?.game?.timetrial?.title || "Contrarreloj"}</h1>
-                    <p className="text-slate-400 mb-8 text-lg">
-                        {t?.game?.timetrial?.subtitle || "10 Preguntas. 60 Segundos."}<br />
-                        <span className="text-red-400 font-bold">{t?.game?.timetrial?.penalty || "Fallar resta 5 segundos."}</span>
-                    </p>
+                    {/* Decorative Background - Added pointer-events-none to prevent click blocking */}
+                    <div className="absolute top-0 left-0 w-full h-full bg-yellow-500/10 animate-pulse pointer-events-none"></div>
 
-                    {localQuestions.length > 0 ? (
-                        <button
-                            onClick={handleStart}
-                            className="w-full bg-yellow-500 hover:bg-yellow-400 text-slate-900 font-black text-xl py-4 rounded-xl shadow-[0_0_20px_rgba(234,179,8,0.5)] hover:scale-105 transition-all"
-                        >
-                            {t?.game?.timetrial?.start || "¡EMPEZAR YA!"}
-                        </button>
-                    ) : (
-                        <div className="p-4 bg-slate-700 rounded-xl text-slate-300">
-                            <p className="animate-pulse">Cargando preguntas...</p>
+                    {/* Content Wrapper to ensure Z-Index above background */}
+                    <div className="relative z-10">
+                        <Zap className="mx-auto text-yellow-500 mb-6 animate-bounce" size={64} />
+                        <h1 className="text-4xl font-black mb-2 uppercase italic tracking-tighter">{t?.game?.timetrial?.title || "Contrarreloj"}</h1>
+                        <p className="text-slate-400 mb-8 text-lg">
+                            {t?.game?.timetrial?.subtitle || "10 Preguntas. 60 Segundos."}<br />
+                            <span className="text-red-400 font-bold">{t?.game?.timetrial?.penalty || "Fallar resta 5 segundos."}</span>
+                        </p>
+
+                        {localQuestions.length > 0 ? (
+                            <button
+                                type="button"
+                                onClick={handleStart}
+                                className="w-full bg-yellow-500 hover:bg-yellow-400 text-slate-900 font-black text-xl py-4 rounded-xl shadow-[0_0_20px_rgba(234,179,8,0.5)] hover:scale-105 transition-all active:scale-95"
+                            >
+                                {t?.game?.timetrial?.start || "¡EMPEZAR YA!"}
+                            </button>
+                        ) : (
+                            <div className="p-4 bg-slate-700 rounded-xl text-slate-300">
+                                <p className="animate-pulse">Cargando preguntas...</p>
+                            </div>
+                        )}
+
+                        <button onClick={onBack} className="mt-4 text-slate-500 hover:text-white underline">{t?.game?.timetrial?.back || "Volver"}</button>
+
+                        {/* DEBUGGER FOR USER FEEDBACK */}
+                        <div className="mt-6 p-2 bg-black/30 rounded text-xs text-slate-600 font-mono">
+                            DEBUG: v1.4 | Q: {localQuestions.length} | State: {gameState} | Clicks: {clickCount}
                         </div>
-                    )}
-
-                    <button onClick={onBack} className="mt-4 text-slate-500 hover:text-white underline">{t?.game?.timetrial?.back || "Volver"}</button>
-
-                    {/* DEBUGGER FOR USER FEEDBACK */}
-                    <div className="mt-6 p-2 bg-black/30 rounded text-xs text-slate-600 font-mono">
-                        DEBUG: v1.3 | Q: {localQuestions.length} | State: {gameState}
                     </div>
                 </div>
             </div>
