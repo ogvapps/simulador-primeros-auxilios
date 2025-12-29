@@ -136,7 +136,7 @@ const ExamComponent = ({
     if (finished) {
         return (
             <div className="min-h-[80vh] flex items-center justify-center p-4">
-                <div className="bg-white p-8 md:p-12 rounded-3xl shadow-2xl max-w-3xl w-full border border-slate-100 animate-in zoom-in duration-500">
+                <div className="bg-white p-6 md:p-12 rounded-3xl shadow-2xl max-w-3xl w-full border border-slate-100 animate-in zoom-in duration-500">
                     <div className="text-center mb-10">
                         {isPass ? (
                             <div className="mb-6 relative inline-block">
@@ -292,29 +292,57 @@ const ExamComponent = ({
                                 );
                             }
 
+                            // Feedback State Logic
+                            const isAnswered = answers[qIndex] !== undefined;
+                            const isSelected = answers[qIndex] === opt;
+                            const isCorrect = opt === question.a;
+
+                            let feedbackClass = 'border-slate-200 hover:border-brand-300 hover:bg-slate-50 text-slate-600';
+
+                            if (isAnswered) {
+                                if (isCorrect) feedbackClass = 'bg-green-100 border-green-500 text-green-800 font-bold';
+                                else if (isSelected) feedbackClass = 'bg-red-100 border-red-500 text-red-800 opacity-60';
+                                else feedbackClass = 'opacity-50 blur-[1px]';
+                            } else if (isSelected) {
+                                // Should not happen if we disable after answer, but good fallback
+                                feedbackClass = 'border-brand-500 bg-brand-50 text-brand-800';
+                            }
+
                             return (
                                 <button
                                     key={opt}
-                                    onClick={() => handleSelect(opt)}
+                                    onClick={() => !isAnswered && handleSelect(opt)}
+                                    disabled={isAnswered}
                                     className={`
-                            w-full text-left p-5 rounded-2xl border-2 transition-all duration-200 font-bold text-lg
-                            ${answers[qIndex] === opt
-                                            ? 'border-brand-500 bg-brand-50 text-brand-800 shadow-brand-100 shadow-lg transform scale-[1.02]'
-                                            : 'border-slate-200 hover:border-brand-300 hover:bg-slate-50 text-slate-600'}
+                            w-full text-left p-5 rounded-2xl border-2 transition-all duration-200 font-bold text-lg flex items-center justify-between
+                            ${feedbackClass}
                         `}
                                 >
-                                    {opt}
+                                    <span className="flex-1 pr-2">{opt}</span>
+                                    {isAnswered && isCorrect && <CheckCircle2 size={24} className="text-green-600" />}
+                                    {isAnswered && isSelected && !isCorrect && <XCircle size={24} className="text-red-600" />}
                                 </button>
                             )
                         })}
                     </div>
+
+                    {/* Immediate Explanation Feedback */}
+                    {answers[qIndex] && (
+                        <div className={`mt-6 p-4 rounded-xl border-l-4 animate-in slide-in-from-bottom-2 ${answers[qIndex] === question.a ? 'bg-green-50 border-green-500 text-green-800' : 'bg-red-50 border-red-500 text-red-800'}`}>
+                            <div className="font-bold flex items-center gap-2 mb-2">
+                                {answers[qIndex] === question.a ? <CheckCircle2 size={20} /> : <XCircle size={20} />}
+                                {answers[qIndex] === question.a ? (t?.exam?.correct || "¡Correcto!") : (t?.exam?.wrong || "Incorrecto")}
+                            </div>
+                            <p className="text-sm opacity-90">{question.expl}</p>
+                        </div>
+                    )}
                 </div>
 
                 {/* Nav */}
                 <div className="flex justify-between mt-10 pt-6 border-t border-slate-100">
                     <button
                         onClick={() => setQIndex(i => i - 1)}
-                        disabled={qIndex === 0}
+                        disabled={qIndex === 0} // Allow going back to review
                         className="text-slate-400 font-bold hover:text-slate-600 disabled:opacity-30 disabled:hover:text-slate-400 transition-colors px-4 py-2"
                     >
                         {t?.common?.prev || "Anterior"}

@@ -9,15 +9,10 @@ const DailyChallenge = ({ scenarios, t, onComplete, onClose, playSound }) => {
     useEffect(() => {
         if (scenarios && scenarios.length > 0) {
             // Pick a random scenario based on the day of the year (Deterministic for all users on the same day)
-            const today = new Date();
-            // Create a unique integer for the day: YYYYMMDD
-            const dateHash = today.getFullYear() * 10000 + (today.getMonth() + 1) * 100 + today.getDate();
+            // Pick a random scenario (True Random as requested)
+            const index = Math.floor(Math.random() * scenarios.length);
 
-            // USE LARGE PRIME HASH TO ENSURE GOOD DISTRIBUTION EVEN FOR CLOSE DATES
-            // 2654435761 is Knuth's multiplicative hash constant (2^32 / phi)
-            const index = Math.abs((dateHash * 2654435761) % scenarios.length);
-
-            console.log("Pool:", scenarios.length, "Index:", index); // DEBUG
+            console.log("Pool:", scenarios.length, "Index:", index);
 
             setScenario(scenarios[index]);
         }
@@ -32,11 +27,10 @@ const DailyChallenge = ({ scenarios, t, onComplete, onClose, playSound }) => {
 
         if (isCorrect) {
             if (playSound) playSound('success');
-            // Wait a bit then callback
-            setTimeout(() => onComplete(true), 2500);
+            // Manual close
         } else {
             if (playSound) playSound('error');
-            setTimeout(() => onComplete(false), 3000);
+            // Manual close
         }
     };
 
@@ -44,7 +38,7 @@ const DailyChallenge = ({ scenarios, t, onComplete, onClose, playSound }) => {
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/80 backdrop-blur-sm animate-in fade-in">
-            <div className="bg-white rounded-3xl max-w-lg w-full p-8 shadow-2xl relative overflow-hidden">
+            <div className="bg-white rounded-3xl max-w-lg w-full p-6 md:p-8 shadow-2xl relative overflow-hidden max-h-[90vh] overflow-y-auto">
                 <button onClick={() => onClose()} className="absolute top-4 right-4 text-slate-400 hover:text-slate-600">
                     <XCircle size={24} />
                 </button>
@@ -86,7 +80,13 @@ const DailyChallenge = ({ scenarios, t, onComplete, onClose, playSound }) => {
                         <div className="font-bold flex items-center gap-2 mb-1">
                             {result === 'correct' ? (t?.daily?.correct || '¡CORRECTO! +50 XP') : (t?.daily?.wrong || 'FALLO - Vuelve mañana')}
                         </div>
-                        <p>{scenario.explanation}</p>
+                        <p className="mb-4">{scenario.explanation}</p>
+                        <button
+                            onClick={() => onComplete(result === 'correct')}
+                            className="w-full py-3 rounded-lg bg-slate-900 text-white font-bold hover:bg-slate-800 transition-colors flex items-center justify-center gap-2"
+                        >
+                            {t?.common?.continue || "Continuar"} <ArrowRight size={16} />
+                        </button>
                     </div>
                 )}
             </div>

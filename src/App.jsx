@@ -1,6 +1,6 @@
 import React, { useState, useEffect, Suspense } from 'react';
 import { initializeApp } from 'firebase/app';
-import { getAuth, onAuthStateChanged, signInWithCustomToken, signInAnonymously, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut } from 'firebase/auth';
+import { getAuth, onAuthStateChanged, signInWithCustomToken, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut } from 'firebase/auth';
 import { getFirestore, doc, onSnapshot, setDoc, getDoc, updateDoc } from 'firebase/firestore';
 import { Activity, HeartPulse, Sparkles, BookOpen, AlertTriangle, Play, Star, Printer, BadgeCheck, XCircle, Award, ShoppingBag, Trophy, Flame, FileText, Download, Moon, Sun, CheckCircle2, ArrowLeft, User, UserCheck, GraduationCap } from 'lucide-react';
 import confetti from 'canvas-confetti';
@@ -241,6 +241,11 @@ const App = () => {
     // Check if user is already logged in
     const unsubAuth = onAuthStateChanged(auth, (u) => {
       if (u) {
+        // Enforce No Anonymous
+        if (u.isAnonymous) {
+          signOut(auth);
+          return;
+        }
         // Optimistically set user
         setUser(u);
         const unsubProfile = onSnapshot(doc(db, 'artifacts', firebaseConfig.appId, 'users', u.uid, 'profile', 'main'), (snap) => {
@@ -598,644 +603,734 @@ const App = () => {
   const activeAvatarIcon = STORE_ITEMS.avatars.find(a => a.id === activeAvatarId)?.icon || '👤';
 
   return (
-    <Layout
-      view={view}
-      setView={setView}
-      profile={{ ...profile, activeAvatarIcon }}
-      currentLevel={currentLevel}
-      currentXp={currentXp}
-      muted={muted}
-      toggleMute={toggleMute}
-      darkMode={darkMode}
-      toggleDarkMode={toggleDarkMode}
-      onAdminClick={() => setShowAdminModal(true)}
-      onLogout={handleLogout}
-      onDeleteAccount={() => setView('deleteAccount')}
-      streak={progress.streak || 0}
-      lang={lang}
-      toggleLang={() => setLang(l => l === 'es' ? 'en' : 'es')}
-      t={t}
-      onProfileClick={() => setView('profile')}
-      isSaving={isSaving}
-    >
-      <ToastContainer toasts={toasts} removeToast={removeToast} />
-      <Suspense fallback={<DashboardSkeleton />}>
-        <LegalDisclaimer t={t} />
-        {/* GLOBAL FX */}
-        {showLevelUp && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center pointer-events-none bg-black/20 backdrop-blur-sm">
-            <div className="bg-white p-10 rounded-3xl shadow-2xl animate-in zoom-in fade-in duration-500 text-center border-4 border-yellow-400 relative overflow-hidden">
-              {/* Sparkles */}
-              <div className="absolute top-0 left-0 w-full h-full bg-yellow-400/10 animate-pulse"></div>
-              <Star size={80} className="mx-auto mb-4 animate-spin-slow text-yellow-500 fill-yellow-500" />
-              <h2 className="text-5xl font-black uppercase mb-2 text-slate-900 tracking-tighter">¡Nivel {currentLevel}!</h2>
-              <p className="text-2xl font-bold text-slate-600">Nuevo Rango Desbloqueado</p>
-              <div className="mt-4 inline-block bg-yellow-100 text-yellow-800 px-6 py-2 rounded-full font-black text-lg border-2 border-yellow-400">
-                {LEVELS[currentLevel - 1].name}
+    <>
+      <Layout
+        view={view}
+        setView={setView}
+        profile={{ ...profile, activeAvatarIcon }}
+        currentLevel={currentLevel}
+        currentXp={currentXp}
+        muted={muted}
+        toggleMute={toggleMute}
+        darkMode={darkMode}
+        toggleDarkMode={toggleDarkMode}
+        onAdminClick={() => setShowAdminModal(true)}
+        onLogout={handleLogout}
+        onDeleteAccount={() => setView('deleteAccount')}
+        streak={progress.streak || 0}
+        lang={lang}
+        toggleLang={() => setLang(l => l === 'es' ? 'en' : 'es')}
+        t={t}
+        onProfileClick={() => setView('profile')}
+        isSaving={isSaving}
+      >
+        <ToastContainer toasts={toasts} removeToast={removeToast} />
+        <Suspense fallback={<DashboardSkeleton />}>
+          <LegalDisclaimer t={t} />
+          {/* GLOBAL FX */}
+          {showLevelUp && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center pointer-events-none bg-black/20 backdrop-blur-sm">
+              <div className="bg-white p-10 rounded-3xl shadow-2xl animate-in zoom-in fade-in duration-500 text-center border-4 border-yellow-400 relative overflow-hidden">
+                {/* Sparkles */}
+                <div className="absolute top-0 left-0 w-full h-full bg-yellow-400/10 animate-pulse"></div>
+                <Star size={80} className="mx-auto mb-4 animate-spin-slow text-yellow-500 fill-yellow-500" />
+                <h2 className="text-5xl font-black uppercase mb-2 text-slate-900 tracking-tighter">¡Nivel {currentLevel}!</h2>
+                <p className="text-2xl font-bold text-slate-600">Nuevo Rango Desbloqueado</p>
+                <div className="mt-4 inline-block bg-yellow-100 text-yellow-800 px-6 py-2 rounded-full font-black text-lg border-2 border-yellow-400">
+                  {LEVELS[currentLevel - 1].name}
+                </div>
               </div>
             </div>
-          </div>
-        )}
+          )}
 
-        {/* VIEW ROUTER */}
-        {view === 'home' && (
-          <div className="space-y-8 pb-20">
-            {/* Dashboard Header / Hero */}
-            <div className="flex flex-col md:flex-row items-end justify-between gap-4 mb-6 animate-in slide-in-from-top-4">
-              <div>
-                <h1 className="text-3xl md:text-4xl font-black text-slate-900 dark:text-white mb-2">
-                  {t?.home?.welcome || "Tu Entrenamiento"}
-                </h1>
-                <p className="text-slate-500 dark:text-slate-400 font-medium max-w-xl">
-                  {t?.home?.subtitle || "Completa todos los módulos teóricos para desbloquear el examen final y obtener tu certificado."}
-                </p>
-              </div>
+          {/* VIEW ROUTER */}
+          {view === 'home' && (
+            <div className="space-y-8 pb-20">
+              {/* Dashboard Header / Hero */}
 
-              <button
-                onClick={() => {
-                  generateCheatSheet();
-                  playSound('success');
-                }}
-
-
-                className="flex items-center gap-2 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 px-4 py-3 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 hover:border-brand-300 hover:text-brand-600 dark:hover:text-brand-400 font-bold transition-all text-sm mb-2 md:mb-0"
-              >
-                <FileText size={18} />
-                <span className="hidden md:inline">{t?.home?.cheatSheet || "Ficha Resumen"}</span>
-                <span className="md:hidden">PDF</span>
-                <Download size={14} className="opacity-50" />
-              </button>
-
-
-
-
-              <div className="flex gap-2">
-                <button
-                  onClick={() => setView('shop')}
-                  className="flex flex-col items-center justify-center w-16 h-16 bg-white dark:bg-slate-800 rounded-2xl border-2 border-slate-100 dark:border-slate-700 shadow-sm hover:border-yellow-400 hover:scale-105 transition-all group"
-                  title={t?.home?.shop}
-                >
-                  <div className="bg-yellow-100 dark:bg-yellow-900/30 text-yellow-600 dark:text-yellow-400 p-2 rounded-lg mb-1 group-hover:bg-yellow-400 group-hover:text-yellow-900 transition-colors">
-                    <ShoppingBag size={20} className="stroke-[3]" />
+              {/* MOBILE USER HEADER */}
+              <div className="md:hidden w-full bg-white dark:bg-slate-800 p-4 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-700 mb-6 flex items-center justify-between animate-in slide-in-from-top-2">
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 bg-brand-100 dark:bg-brand-900/50 rounded-full flex items-center justify-center text-2xl border-2 border-white dark:border-slate-600 shadow-sm">
+                    {profile?.activeAvatarIcon || '👤'}
                   </div>
-                  <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase">{t?.home?.shop}</span>
-                </button>
-                <button
-                  onClick={() => setView('profile')}
-                  className="flex flex-col items-center justify-center w-16 h-16 bg-white dark:bg-slate-800 rounded-2xl border-2 border-slate-100 dark:border-slate-700 shadow-sm hover:border-orange-400 hover:scale-105 transition-all group"
-                  title={t?.profile?.backpack_btn || "Mochila"}
-                >
-                  <div className="bg-orange-50 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400 p-2 rounded-lg mb-1 group-hover:bg-orange-500 group-hover:text-white transition-colors">
-                    <User size={20} className="stroke-[3]" />
-                  </div>
-                  <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase">P.A.S.</span>
-                </button>
-                <button
-                  onClick={() => setView('leaderboard')}
-                  className="flex flex-col items-center justify-center w-16 h-16 bg-white dark:bg-slate-800 rounded-2xl border-2 border-slate-100 dark:border-slate-700 shadow-sm hover:border-brand-400 hover:scale-105 transition-all group"
-                  title={t?.home?.rank}
-                >
-                  <div className="bg-brand-50 dark:bg-brand-900/30 text-brand-600 dark:text-brand-400 p-2 rounded-lg mb-1 group-hover:bg-brand-500 group-hover:text-white transition-colors">
-                    <Trophy size={20} className="stroke-[3]" />
-                  </div>
-                  <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase">Rank</span>
-                </button>
-              </div>
-
-            </div>
-
-            {/* Daily Challenge Card */}
-            {(() => {
-              const today = new Date().toDateString();
-              const lastPlayed = progress.lastDailyChallenge ? new Date(progress.lastDailyChallenge).toDateString() : null;
-              const canPlay = today !== lastPlayed;
-
-              return (
-                <div className="bg-gradient-to-r from-violet-600 to-indigo-600 rounded-3xl p-1 shadow-lg shadow-indigo-200 mt-4 mb-8">
-                  <div className="bg-white/10 backdrop-blur-sm rounded-[22px] p-6 sm:p-8 flex flex-col md:flex-row items-center justify-between gap-6">
-                    <div className="flex-1 text-white">
-                      <div className="flex items-center gap-2 text-indigo-200 font-bold uppercase tracking-wider text-xs mb-2">
-                        <Sparkles size={16} className="text-yellow-300" /> {t?.home?.dailyChallenge?.new}
-                      </div>
-                      <h2 className="text-3xl font-black mb-2">{t?.home?.dailyChallenge?.title}</h2>
-                      <p className="text-indigo-100 font-medium">{t?.home?.dailyChallenge?.desc}</p>
+                  <div>
+                    <h2 className="font-black text-slate-800 dark:text-white text-lg leading-tight">{profile?.name || 'Agente'}</h2>
+                    <div className="flex items-center gap-2 text-xs font-bold text-slate-500 dark:text-slate-400">
+                      <span className="bg-slate-100 dark:bg-slate-700 px-2 py-0.5 rounded-md">Lvl {currentLevel}</span>
+                      <span className="text-brand-600 dark:text-brand-400">{currentXp} XP</span>
                     </div>
-                    {canPlay ? (
-                      <button
-                        onClick={() => setShowDailyChallenge(true)}
-                        className="bg-white text-indigo-600 font-black py-3 px-8 rounded-xl shadow-xl hover:scale-105 active:scale-95 transition-all flex items-center gap-2"
-                      >
-                        <Play fill="currentColor" size={20} /> {t?.home?.dailyChallenge?.play}
-                      </button>
-                    ) : (
-                      <button disabled className="bg-indigo-800/50 text-indigo-300 font-bold py-3 px-8 rounded-xl cursor-not-allowed flex items-center gap-2">
-                        <CheckCircle2 size={20} /> {t?.home?.dailyChallenge?.completed}
-                      </button>
-                    )}
                   </div>
                 </div>
-              );
-            })()}
+                <div className="bg-brand-50 dark:bg-brand-900/30 p-2 rounded-xl text-brand-600 dark:text-brand-400" onClick={() => setView('profile')}>
+                  <UserCheck size={20} />
+                </div>
+              </div>
 
-            {/* Daily Challenge Modal */}
-            {showDailyChallenge && (
-              <DailyChallenge
-                scenarios={dailyPool}
-                t={t}
-                onComplete={(success) => {
-                  setShowDailyChallenge(false);
-                  const updates = {
-                    lastDailyChallenge: new Date().toISOString()
-                  };
+              <div className="flex flex-col md:flex-row items-end justify-between gap-4 mb-6 animate-in slide-in-from-top-4">
+                <div>
+                  <h1 className="text-3xl md:text-4xl font-black text-slate-900 dark:text-white mb-2">
+                    {t?.home?.welcome || "Tu Entrenamiento"}
+                  </h1>
+                  <p className="text-slate-500 dark:text-slate-400 font-medium max-w-xl">
+                    {t?.home?.subtitle || "Completa todos los módulos teóricos para desbloquear el examen final y obtener tu certificado."}
+                  </p>
+                </div>
 
-                  if (success) {
-                    updates.xp = (progress.xp || 0) + 50;
-                    addToast(t?.toasts?.dailySuccess || "¡Desafío completado! +50 XP", 'success');
-                  }
+                <button
+                  onClick={() => {
+                    generateCheatSheet();
+                    playSound('success');
+                  }}
 
-                  updateProgress(updates);
-                }}
-                onClose={() => setShowDailyChallenge(false)}
-                playSound={playSound}
-              />
-            )}
 
-            {/* Hero Banner for Guardia Mode */}
-            {currentLevel >= 3 ? (
-              <div className="bg-slate-900 text-white rounded-3xl shadow-xl overflow-hidden relative group cursor-pointer border-2 border-slate-700 hover:border-red-500 transition-colors" onClick={() => setView('guardia')}>
-                <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-30"></div>
-                <div className="absolute top-0 right-0 p-32 bg-red-600 rounded-full blur-[100px] opacity-20 group-hover:opacity-40 transition-opacity"></div>
+                  className="flex items-center gap-2 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 px-4 py-3 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 hover:border-brand-300 hover:text-brand-600 dark:hover:text-brand-400 font-bold transition-all text-sm mb-2 md:mb-0"
+                >
+                  <FileText size={18} />
+                  <span className="hidden md:inline">{t?.home?.cheatSheet || "Ficha Resumen"}</span>
+                  <span className="md:hidden">PDF</span>
+                  <Download size={14} className="opacity-50" />
+                </button>
 
-                <div className="relative p-8 md:p-10 flex flex-col md:flex-row justify-between items-center gap-6">
-                  <div className="flex-1">
-                    <div className="inline-flex items-center gap-2 bg-red-500/20 text-red-400 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider mb-3 border border-red-500/30">
-                      <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse"></span> Acceso Restringido
+
+
+
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => setView('shop')}
+                    className="flex flex-col items-center justify-center w-16 h-16 bg-white dark:bg-slate-800 rounded-2xl border-2 border-slate-100 dark:border-slate-700 shadow-sm hover:border-yellow-400 hover:scale-105 transition-all group"
+                    title={t?.home?.shop}
+                  >
+                    <div className="bg-yellow-100 dark:bg-yellow-900/30 text-yellow-600 dark:text-yellow-400 p-2 rounded-lg mb-1 group-hover:bg-yellow-400 group-hover:text-yellow-900 transition-colors">
+                      <ShoppingBag size={20} className="stroke-[3]" />
                     </div>
-                    <h2 className="text-3xl md:text-5xl font-black mb-2 italic tracking-tighter">
-                      MODO GUARDIA
-                    </h2>
-                    <p className="text-slate-400 text-lg font-medium max-w-lg">
-                      Pon a prueba tus reflejos en situaciones de emergencia real. Contrarreloj.
-                    </p>
+                    <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase">{t?.home?.shop}</span>
+                  </button>
+                  <button
+                    onClick={() => setView('profile')}
+                    className="flex flex-col items-center justify-center w-16 h-16 bg-white dark:bg-slate-800 rounded-2xl border-2 border-slate-100 dark:border-slate-700 shadow-sm hover:border-orange-400 hover:scale-105 transition-all group"
+                    title={t?.profile?.backpack_btn || "Mochila"}
+                  >
+                    <div className="bg-orange-50 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400 p-2 rounded-lg mb-1 group-hover:bg-orange-500 group-hover:text-white transition-colors">
+                      <User size={20} className="stroke-[3]" />
+                    </div>
+                    <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase">P.A.S.</span>
+                  </button>
+                  <button
+                    onClick={() => setView('leaderboard')}
+                    className="flex flex-col items-center justify-center w-16 h-16 bg-white dark:bg-slate-800 rounded-2xl border-2 border-slate-100 dark:border-slate-700 shadow-sm hover:border-brand-400 hover:scale-105 transition-all group"
+                    title={t?.home?.rank}
+                  >
+                    <div className="bg-brand-50 dark:bg-brand-900/30 text-brand-600 dark:text-brand-400 p-2 rounded-lg mb-1 group-hover:bg-brand-500 group-hover:text-white transition-colors">
+                      <Trophy size={20} className="stroke-[3]" />
+                    </div>
+                    <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase">Rank</span>
+                  </button>
+                </div>
+
+              </div>
+
+              {/* Daily Challenge Card */}
+              {(() => {
+                const today = new Date().toDateString();
+                const lastPlayed = progress.lastDailyChallenge ? new Date(progress.lastDailyChallenge).toDateString() : null;
+                const canPlay = today !== lastPlayed;
+
+                return (
+                  <div className="bg-gradient-to-r from-violet-600 to-indigo-600 rounded-3xl p-1 shadow-lg shadow-indigo-200 mt-4 mb-8">
+                    <div className="bg-white/10 backdrop-blur-sm rounded-[22px] p-6 sm:p-8 flex flex-col md:flex-row items-center justify-between gap-6">
+                      <div className="flex-1 text-white">
+                        <div className="flex items-center gap-2 text-indigo-200 font-bold uppercase tracking-wider text-xs mb-2">
+                          <Sparkles size={16} className="text-yellow-300" /> {t?.home?.dailyChallenge?.new}
+                        </div>
+                        <h2 className="text-3xl font-black mb-2">{t?.home?.dailyChallenge?.title}</h2>
+                        <p className="text-indigo-100 font-medium">{t?.home?.dailyChallenge?.desc}</p>
+                      </div>
+                      {canPlay ? (
+                        <button
+                          onClick={() => setShowDailyChallenge(true)}
+                          className="bg-white text-indigo-600 font-black py-3 px-8 rounded-xl shadow-xl hover:scale-105 active:scale-95 transition-all flex items-center gap-2"
+                        >
+                          <Play fill="currentColor" size={20} /> {t?.home?.dailyChallenge?.play}
+                        </button>
+                      ) : (
+                        <button disabled className="bg-indigo-800/50 text-indigo-300 font-bold py-3 px-8 rounded-xl cursor-not-allowed flex items-center gap-2">
+                          <CheckCircle2 size={20} /> {t?.home?.dailyChallenge?.completed}
+                        </button>
+                      )}
+                    </div>
                   </div>
-                  <button className="bg-red-600 hover:bg-red-500 text-white font-bold py-4 px-8 rounded-2xl shadow-lg shadow-red-900/50 transform group-hover:scale-105 transition-all flex items-center gap-3 text-lg">
-                    <Play fill="currentColor" /> INICIAR TURNO
+                );
+              })()}
+
+              {/* Daily Challenge Modal */}
+              {showDailyChallenge && (
+                <DailyChallenge
+                  scenarios={dailyPool}
+                  t={t}
+                  onComplete={(success) => {
+                    setShowDailyChallenge(false);
+                    const updates = {
+                      lastDailyChallenge: new Date().toISOString()
+                    };
+
+                    if (success) {
+                      updates.xp = (progress.xp || 0) + 50;
+                      addToast(t?.toasts?.dailySuccess || "¡Desafío completado! +50 XP", 'success');
+                    }
+
+                    updateProgress(updates);
+                  }}
+                  onClose={() => setShowDailyChallenge(false)}
+                  playSound={playSound}
+                />
+              )}
+
+              {/* Hero Banner for Guardia Mode */}
+              {currentLevel >= 3 ? (
+                <div className="bg-slate-900 text-white rounded-3xl shadow-xl overflow-hidden relative group cursor-pointer border-2 border-slate-700 hover:border-red-500 transition-colors" onClick={() => setView('guardia')}>
+                  <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-30"></div>
+                  <div className="absolute top-0 right-0 p-32 bg-red-600 rounded-full blur-[100px] opacity-20 group-hover:opacity-40 transition-opacity"></div>
+
+                  <div className="relative p-8 md:p-10 flex flex-col md:flex-row justify-between items-center gap-6">
+                    <div className="flex-1">
+                      <div className="inline-flex items-center gap-2 bg-red-500/20 text-red-400 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider mb-3 border border-red-500/30">
+                        <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse"></span> Acceso Restringido
+                      </div>
+                      <h2 className="text-3xl md:text-5xl font-black mb-2 italic tracking-tighter">
+                        MODO GUARDIA
+                      </h2>
+                      <p className="text-slate-400 text-lg font-medium max-w-lg">
+                        Pon a prueba tus reflejos en situaciones de emergencia real. Contrarreloj.
+                      </p>
+                    </div>
+                    <button className="bg-red-600 hover:bg-red-500 text-white font-bold py-4 px-8 rounded-2xl shadow-lg shadow-red-900/50 transform group-hover:scale-105 transition-all flex items-center gap-3 text-lg">
+                      <Play fill="currentColor" /> INICIAR TURNO
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm flex items-center gap-6">
+                  <div className="w-16 h-16 rounded-2xl bg-slate-100 dark:bg-slate-900 flex items-center justify-center text-slate-400">
+                    <AlertTriangle size={32} />
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-slate-800 dark:text-white text-lg">Modo Guardia Bloqueado</h3>
+                    <p className="text-slate-500 dark:text-slate-400 text-sm">Alcanza el <span className="font-bold text-brand-600 dark:text-brand-400">Nivel 3 ({LEVELS[2].name})</span> para desbloquear el simulador de guardia.</p>
+                    <div className="w-full bg-slate-100 dark:bg-slate-900 h-2 rounded-full mt-3 overflow-hidden">
+                      <div className="h-full bg-slate-300 dark:bg-slate-600" style={{ width: `${(currentXp / 400) * 100}%` }}></div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Module Grid */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+                {MODULES.map(m => {
+                  let isLocked = false;
+                  if (m.type === 'exam') isLocked = !allModulesDone;
+                  else if (m.type === 'certificate' || m.type === 'desa') isLocked = !examPassed;
+
+                  return (
+                    <ModuleCard
+                      key={m.id}
+                      module={m}
+                      progress={progress}
+                      onClick={() => handleModuleClick(m)}
+                      isLocked={isLocked}
+                      t={t}
+                    />
+                  );
+                })}
+              </div>
+            </div>
+          )
+          }
+
+          {
+            view === 'deleteAccount' && (
+              <div className="flex flex-col items-center justify-center min-h-[60vh] text-center p-6 animate-in fade-in zoom-in">
+                <div className="bg-red-50 p-6 rounded-full mb-6 text-red-600 animate-pulse border-4 border-red-100">
+                  <AlertTriangle size={64} />
+                </div>
+                <h2 className="text-4xl font-black text-slate-800 mb-4 tracking-tight">¿Estás seguro?</h2>
+                <p className="text-slate-500 max-w-lg mb-8 text-lg font-medium leading-relaxed">
+                  Esta acción es <strong>irreversible</strong>. Borraremos todo tu progreso, nivel, medallas y certificados obtenidos.
+                </p>
+                <div className="flex flex-col sm:flex-row gap-4 w-full max-w-md">
+                  <button onClick={handleAccountDeletion} className="flex-1 bg-red-600 hover:bg-red-700 text-white font-bold py-4 px-8 rounded-2xl shadow-xl shadow-red-200 transition-all flex items-center justify-center gap-2">
+                    <XCircle size={20} />
+                    Sí, Borrar Todo
+                  </button>
+                  <button onClick={() => setView('home')} className="flex-1 bg-white hover:bg-slate-50 text-slate-700 border-2 border-slate-200 font-bold py-4 px-8 rounded-2xl transition-all flex items-center justify-center gap-2">
+                    Cancelar
                   </button>
                 </div>
               </div>
-            ) : (
-              <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm flex items-center gap-6">
-                <div className="w-16 h-16 rounded-2xl bg-slate-100 dark:bg-slate-900 flex items-center justify-center text-slate-400">
-                  <AlertTriangle size={32} />
-                </div>
-                <div>
-                  <h3 className="font-bold text-slate-800 dark:text-white text-lg">Modo Guardia Bloqueado</h3>
-                  <p className="text-slate-500 dark:text-slate-400 text-sm">Alcanza el <span className="font-bold text-brand-600 dark:text-brand-400">Nivel 3 ({LEVELS[2].name})</span> para desbloquear el simulador de guardia.</p>
-                  <div className="w-full bg-slate-100 dark:bg-slate-900 h-2 rounded-full mt-3 overflow-hidden">
-                    <div className="h-full bg-slate-300 dark:bg-slate-600" style={{ width: `${(currentXp / 400) * 100}%` }}></div>
-                  </div>
-                </div>
-              </div>
-            )}
+            )
+          }
 
-            {/* Module Grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-              {MODULES.map(m => {
-                let isLocked = false;
-                if (m.type === 'exam') isLocked = !allModulesDone;
-                else if (m.type === 'certificate' || m.type === 'desa') isLocked = !examPassed;
+          {
+            view === 'module' && activeModule && (
+              <LearningModule
+                module={activeModule}
+                t={t}
+                onComplete={() => { updateProgress(`${activeModule.id}Completed`, true); setView('home'); }}
+                onBack={() => setView('home')}
+                playSound={playSound}
+              />
+            )
+          }
 
-                return (
-                  <ModuleCard
-                    key={m.id}
-                    module={m}
-                    progress={progress}
-                    onClick={() => handleModuleClick(m)}
-                    isLocked={isLocked}
-                    t={t}
-                  />
-                );
-              })}
-            </div>
-          </div>
-        )
-        }
+          {
+            view === 'roleplay' && activeModule && (
+              <RoleplayGame
+                scenarioId={activeModule.id}
+                scenario={ROLEPLAY_SCENARIOS[activeModule.id]}
+                t={t}
+                onComplete={() => { updateProgress(`${activeModule.id}Completed`, true); setView('home'); }}
+                onBack={() => setView('home')}
+                playSound={playSound}
+              />
+            )
+          }
 
-        {
-          view === 'deleteAccount' && (
-            <div className="flex flex-col items-center justify-center min-h-[60vh] text-center p-6 animate-in fade-in zoom-in">
-              <div className="bg-red-50 p-6 rounded-full mb-6 text-red-600 animate-pulse border-4 border-red-100">
-                <AlertTriangle size={64} />
-              </div>
-              <h2 className="text-4xl font-black text-slate-800 mb-4 tracking-tight">¿Estás seguro?</h2>
-              <p className="text-slate-500 max-w-lg mb-8 text-lg font-medium leading-relaxed">
-                Esta acción es <strong>irreversible</strong>. Borraremos todo tu progreso, nivel, medallas y certificados obtenidos.
-              </p>
-              <div className="flex flex-col sm:flex-row gap-4 w-full max-w-md">
-                <button onClick={handleAccountDeletion} className="flex-1 bg-red-600 hover:bg-red-700 text-white font-bold py-4 px-8 rounded-2xl shadow-xl shadow-red-200 transition-all flex items-center justify-center gap-2">
-                  <XCircle size={20} />
-                  Sí, Borrar Todo
-                </button>
-                <button onClick={() => setView('home')} className="flex-1 bg-white hover:bg-slate-50 text-slate-700 border-2 border-slate-200 font-bold py-4 px-8 rounded-2xl transition-all flex items-center justify-center gap-2">
-                  Cancelar
-                </button>
-              </div>
-            </div>
-          )
-        }
-
-        {
-          view === 'module' && activeModule && (
-            <LearningModule
-              module={activeModule}
-              t={t}
-              onComplete={() => { updateProgress(`${activeModule.id}Completed`, true); setView('home'); }}
-              onBack={() => setView('home')}
-              playSound={playSound}
-            />
-          )
-        }
-
-        {
-          view === 'roleplay' && activeModule && (
-            <RoleplayGame
-              scenarioId={activeModule.id}
-              scenario={ROLEPLAY_SCENARIOS[activeModule.id]}
-              t={t}
-              onComplete={() => { updateProgress(`${activeModule.id}Completed`, true); setView('home'); }}
-              onBack={() => setView('home')}
-              playSound={playSound}
-            />
-          )
-        }
-
-        {
-          view === 'exam' && randomizedExamQuestions && (
-            <ExamComponent
-              questions={randomizedExamQuestions}
-              t={t}
-              attempts={Array.isArray(progress.examAttempts) ? progress.examAttempts.length : (progress.examAttempts || 0)}
-              currentXp={currentXp}
-              inventory={progress.inventory || { powerups: {} }}
-              onUsePowerup={(id, cost) => {
-                if (cost > 0) {
-                  const newXp = currentXp - cost;
-                  updateProgress('xp', newXp);
-                } else {
-                  // Consume from inventory
-                  const currentCount = progress.inventory?.powerups?.[id] || 0;
-                  if (currentCount > 0) {
-                    updateProgress(`inventory.powerups.${id}`, currentCount - 1);
-                  }
-                }
-              }}
-              onAnswer={(isCorrect) => {
-                const { newStreak, milestone } = updateStreak(currentStreak, isCorrect);
-                setCurrentStreak(newStreak);
-
-                const updates = { currentStreak: newStreak };
-                if (milestone) {
-                  setShowStreakCelebration(milestone.count);
-                  playSound('fanfare');
-                  if (milestone.xp) {
-                    updates.xp = (progress.xp || 0) + milestone.xp;
-                    addToast(`+${milestone.xp} XP - ${milestone.name}!`, 'success');
-                  }
-                }
-                updateProgress(updates);
-              }}
-              onComplete={(rawScore, passed, answers, insuranceUsed, xpMultiplier = 1) => {
-                // 1. Calculate base grade (0-10) using actual question count
-                const qCount = randomizedExamQuestions ? randomizedExamQuestions.length : 40;
-                const baseGrade = (rawScore / qCount) * 10;
-
-                // 2. Determine max possible grade based on previous attempts
-                const currentAttemptsData = progress.examAttempts || 0;
-                const attemptCount = Array.isArray(currentAttemptsData) ? currentAttemptsData.length : (Number(currentAttemptsData) || 0);
-                const maxGradeAllowed = Math.max(5, 10 - attemptCount);
-
-                // 3. Apply Cap
-                let finalGrade = Math.min(baseGrade, maxGradeAllowed);
-                finalGrade = Math.max(0, finalGrade);
-
-                // 4. Determine Pass (>= 5)
-                const isApproved = finalGrade >= 5;
-
-                // 5. Update Progress History
-                const oldAttempts = Array.isArray(progress.examAttempts) ? progress.examAttempts : [];
-                let newAttempts = [...oldAttempts];
-
-                if (!(!isApproved && insuranceUsed)) {
-                  newAttempts.push({
-                    score: rawScore,
-                    grade: finalGrade,
-                    passed: isApproved,
-                    answers,
-                    date: new Date().toISOString(),
-                    type: 'normal'
-                  });
-                } else {
-                  playSound('powerup');
-                }
-
-                if (isApproved) {
-                  const updates = {
-                    examenPassed: true,
-                    examenCompleted: true,
-                    examAttempts: newAttempts,
-                    examenScore: finalGrade.toFixed(2)
-                  };
-                  if (answers) updates.examAnswers = answers;
-
-                  updateProgress(updates, null, xpMultiplier);
-                  if (xpMultiplier > 1) addToast("¡XP DOBLE ACTIVADO!", 'success');
-                  playSound('success');
-                  confetti();
-                } else {
-                  const updates = {
-                    examAttempts: newAttempts,
-                    examenScore: finalGrade.toFixed(2)
-                  };
-                  if (answers) updates.examAnswers = answers;
-                  updateProgress(updates);
-                }
-
-                setView('home');
-              }}
-              onBack={() => setView('home')}
-              playSound={playSound}
-            />
-          )
-        }
-
-        {
-          view === 'guardia' && (
-            <GuardiaGame
-              onExit={() => setView('home')}
-              onComplete={(xp) => updateProgress('guardiaXp', xp)}
-              playSound={playSound}
-            />
-          )
-        }
-
-        {
-          view === 'store' && (
-            <StoreComponent
-              currentXp={currentXp}
-              inventory={progress.inventory || {}}
-              onPurchase={handleStorePurchase}
-              onBack={() => setView('home')}
-              t={t}
-            />
-          )
-        }
-
-        {
-          view === 'admin' && (
-            <AdminPanel
-              onBack={() => setView('home')}
-              db={db}
-              firebaseConfigId={firebaseConfig.appId}
-              playSound={playSound}
-              t={t}
-              modules={MODULES}
-              addToast={addToast}
-            />
-          )
-        }
-
-        {
-          view === 'shop' && (
-            <StoreComponent
-              currentXp={currentXp}
-              inventory={progress.inventory || {}}
-              onPurchase={handleStorePurchase}
-              onBack={() => setView('home')}
-              t={t}
-            />
-          )
-        }
-
-        {
-          view === 'leaderboard' && (
-            <Leaderboard
-              db={db}
-              firebaseConfigId={firebaseConfig.appId}
-              onBack={() => setView('home')}
-              currentUserId={user?.uid}
-              t={t}
-            />
-          )
-        }
-
-        {
-          view === 'timeTrial' && (
-            <TimeTrialExam
-              questions={EXAM_QUESTIONS}
-              t={t}
-              onComplete={(xp) => {
-                updateProgress('timeTrial', xp);
-                setView('home');
-              }}
-              onBack={() => setView('home')}
-              playSound={playSound}
-            />
-          )
-        }
-
-        {
-          view === 'glossary' && (
-            <div className="max-w-4xl mx-auto bg-white p-10 rounded-3xl shadow-xl animate-in fade-in slide-in-from-bottom-8">
-              <div className="flex items-center mb-10 pb-6 border-b border-slate-100">
-                <button onClick={() => setView('home')} className="mr-6 hover:bg-slate-50 p-3 rounded-xl transition-colors"><BookOpen /></button>
-                <h2 className="text-4xl font-black text-slate-800 tracking-tight">Glosario</h2>
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {GLOSSARY.map((item, idx) => (
-                  <div key={idx} className="p-6 rounded-2xl border border-slate-100 hover:border-brand-200 hover:bg-brand-50/30 transition-all hover:shadow-md group bg-slate-50/50">
-                    <h3 className="font-bold text-xl text-brand-600 mb-2 group-hover:text-brand-700">{item.t}</h3>
-                    <p className="text-slate-600 font-medium leading-relaxed">{item.d}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )
-        }
-
-        {
-          view === 'profile' && (
-            <div className="max-w-5xl mx-auto space-y-8 animate-in slide-in-from-bottom-4 fade-in duration-500 pb-20">
-              {/* Header with Back Button */}
-              <div className="flex items-center gap-4">
-                <button onClick={() => setView('home')} className="bg-white p-3 rounded-xl shadow-sm hover:shadow-md transition-all text-slate-500 hover:text-brand-600">
-                  <ArrowLeft />
-                </button>
-                <h1 className="text-3xl font-black text-slate-900">Tu Perfil de Agente</h1>
-              </div>
-
-              <InsigniasPanel
-                progress={progress}
-                currentLevel={currentLevel}
+          {
+            view === 'exam' && randomizedExamQuestions && (
+              <ExamComponent
+                questions={randomizedExamQuestions}
+                t={t}
+                attempts={Array.isArray(progress.examAttempts) ? progress.examAttempts.length : (progress.examAttempts || 0)}
                 currentXp={currentXp}
+                inventory={progress.inventory || { powerups: {} }}
+                onUsePowerup={(id, cost) => {
+                  if (cost > 0) {
+                    const newXp = currentXp - cost;
+                    updateProgress('xp', newXp);
+                  } else {
+                    // Consume from inventory
+                    const currentCount = progress.inventory?.powerups?.[id] || 0;
+                    if (currentCount > 0) {
+                      updateProgress(`inventory.powerups.${id}`, currentCount - 1);
+                    }
+                  }
+                }}
+                onAnswer={(isCorrect) => {
+                  const { newStreak, milestone } = updateStreak(currentStreak, isCorrect);
+                  setCurrentStreak(newStreak);
+
+                  const updates = { currentStreak: newStreak };
+                  if (milestone) {
+                    setShowStreakCelebration(milestone.count);
+                    playSound('fanfare');
+                    if (milestone.xp) {
+                      updates.xp = (progress.xp || 0) + milestone.xp;
+                      addToast(`+${milestone.xp} XP - ${milestone.name}!`, 'success');
+                    }
+                  }
+                  updateProgress(updates);
+                }}
+                onComplete={(rawScore, passed, answers, insuranceUsed, xpMultiplier = 1) => {
+                  // 1. Calculate base grade (0-10) using actual question count
+                  const qCount = randomizedExamQuestions ? randomizedExamQuestions.length : 40;
+                  const baseGrade = (rawScore / qCount) * 10;
+
+                  // 2. Determine max possible grade based on previous attempts
+                  const currentAttemptsData = progress.examAttempts || 0;
+                  const attemptCount = Array.isArray(currentAttemptsData) ? currentAttemptsData.length : (Number(currentAttemptsData) || 0);
+                  const maxGradeAllowed = Math.max(5, 10 - attemptCount);
+
+                  // 3. Apply Cap
+                  let finalGrade = Math.min(baseGrade, maxGradeAllowed);
+                  finalGrade = Math.max(0, finalGrade);
+
+                  // 4. Determine Pass (>= 5)
+                  const isApproved = finalGrade >= 5;
+
+                  // 5. Update Progress History
+                  const oldAttempts = Array.isArray(progress.examAttempts) ? progress.examAttempts : [];
+                  let newAttempts = [...oldAttempts];
+
+                  if (!(!isApproved && insuranceUsed)) {
+                    newAttempts.push({
+                      score: rawScore,
+                      grade: finalGrade,
+                      passed: isApproved,
+                      answers,
+                      date: new Date().toISOString(),
+                      type: 'normal'
+                    });
+                  } else {
+                    playSound('powerup');
+                  }
+
+                  if (isApproved) {
+                    const updates = {
+                      examenPassed: true,
+                      examenCompleted: true,
+                      examAttempts: newAttempts,
+                      examenScore: finalGrade.toFixed(2)
+                    };
+                    // Remap answers to global indices for Heatmap
+                    if (answers && randomizedExamQuestions) {
+                      const globalAnswers = {};
+                      Object.entries(answers).forEach(([localIdx, ans]) => {
+                        const q = randomizedExamQuestions[localIdx];
+                        if (q && q._originalIndex !== undefined) {
+                          globalAnswers[q._originalIndex] = ans;
+                        }
+                      });
+                      updates.examAnswers = globalAnswers;
+                      // Also update the attempt entry itself if needed by heatmap (heatmap uses examAttempts)
+                      newAttempts[newAttempts.length - 1].answers = globalAnswers;
+                    } else if (answers) {
+                      updates.examAnswers = answers; // Fallback
+                    }
+
+                    updateProgress(updates, null, xpMultiplier);
+                    if (xpMultiplier > 1) addToast("¡XP DOBLE ACTIVADO!", 'success');
+                    playSound('success');
+                    confetti();
+                  } else {
+                    const updates = {
+                      examAttempts: newAttempts,
+                      examenScore: finalGrade.toFixed(2)
+                    };
+
+                    // Remap answers to global indices for Heatmap
+                    if (answers && randomizedExamQuestions) {
+                      const globalAnswers = {};
+                      Object.entries(answers).forEach(([localIdx, ans]) => {
+                        const q = randomizedExamQuestions[localIdx];
+                        if (q && q._originalIndex !== undefined) {
+                          globalAnswers[q._originalIndex] = ans;
+                        }
+                      });
+                      updates.examAnswers = globalAnswers;
+                      newAttempts[newAttempts.length - 1].answers = globalAnswers;
+                    } else if (answers) {
+                      updates.examAnswers = answers;
+                    }
+
+                    updateProgress(updates);
+                  }
+
+                  setView('home');
+                }}
+                onBack={() => setView('home')}
+                playSound={playSound}
+              />
+            )
+          }
+
+          {
+            view === 'guardia' && (
+              <GuardiaGame
+                onExit={() => setView('home')}
+                onComplete={(xp) => updateProgress('guardiaXp', xp)}
+                playSound={playSound}
+              />
+            )
+          }
+
+          {
+            view === 'store' && (
+              <StoreComponent
+                currentXp={currentXp}
+                inventory={progress.inventory || {}}
+                onPurchase={handleStorePurchase}
+                onBack={() => setView('home')}
+                t={t}
+              />
+            )
+          }
+
+          {
+            view === 'admin' && (
+              <AdminPanel
+                onBack={() => setView('home')}
+                db={db}
+                firebaseConfigId={firebaseConfig.appId}
+                playSound={playSound}
                 t={t}
                 modules={MODULES}
-                hiddenBadges={HIDDEN_BADGES}
+                addToast={addToast}
               />
-            </div>
-          )
-        }
+            )
+          }
 
-        {
-          view === 'certificate' && profile && (
-            <div className="min-h-screen bg-slate-200 flex items-center justify-center p-4 overflow-x-hidden print:p-0 print:bg-white">
-              {/* Force Landscape Printing */}
-              <style>{`
+          {
+            view === 'shop' && (
+              <StoreComponent
+                currentXp={currentXp}
+                inventory={progress.inventory || {}}
+                onPurchase={handleStorePurchase}
+                onBack={() => setView('home')}
+                t={t}
+              />
+            )
+          }
+
+          {
+            view === 'leaderboard' && (
+              <Leaderboard
+                db={db}
+                firebaseConfigId={firebaseConfig.appId}
+                onBack={() => setView('home')}
+                currentUserId={user?.uid}
+                t={t}
+              />
+            )
+          }
+
+          {
+            view === 'timeTrial' && (
+              <TimeTrialExam
+                questions={EXAM_QUESTIONS}
+                t={t}
+                onComplete={(xp) => {
+                  updateProgress('timeTrial', xp);
+                  setView('home');
+                }}
+                onBack={() => setView('home')}
+                playSound={playSound}
+              />
+            )
+          }
+
+          {
+            view === 'glossary' && (
+              <div className="max-w-4xl mx-auto bg-white p-10 rounded-3xl shadow-xl animate-in fade-in slide-in-from-bottom-8">
+                <div className="flex items-center mb-10 pb-6 border-b border-slate-100">
+                  <button onClick={() => setView('home')} className="mr-6 hover:bg-slate-50 p-3 rounded-xl transition-colors"><BookOpen /></button>
+                  <h2 className="text-4xl font-black text-slate-800 tracking-tight">Glosario</h2>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {GLOSSARY.map((item, idx) => (
+                    <div key={idx} className="p-6 rounded-2xl border border-slate-100 hover:border-brand-200 hover:bg-brand-50/30 transition-all hover:shadow-md group bg-slate-50/50">
+                      <h3 className="font-bold text-xl text-brand-600 mb-2 group-hover:text-brand-700">{item.t}</h3>
+                      <p className="text-slate-600 font-medium leading-relaxed">{item.d}</p>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Glossary Completion Action */}
+                {!progress.glossaryCompleted && (
+                  <div className="mt-8 bg-brand-50 border-2 border-brand-100 rounded-2xl p-6 text-center animate-in slide-in-from-bottom-4">
+                    <h3 className="font-bold text-brand-800 text-lg mb-2">¿Has revisado todos los términos?</h3>
+                    <p className="text-brand-600 mb-6 text-sm">Completa este módulo para ganar tu recompensa de XP.</p>
+                    <button
+                      onClick={() => {
+                        updateProgress('glossaryCompleted', true);
+                        playSound('success');
+                        addToast('¡Módulo Glosario Completado!', 'success');
+                        confetti();
+                        setView('home');
+                      }}
+                      className="bg-brand-600 hover:bg-brand-700 text-white font-bold py-3 px-8 rounded-xl shadow-lg hover:scale-105 transition-all flex items-center justify-center gap-2 mx-auto"
+                    >
+                      <CheckCircle2 size={20} />
+                      Marcar como Leído (+{XP_REWARDS.MODULE_COMPLETE} XP)
+                    </button>
+                  </div>
+                )}
+              </div>
+            )
+          }
+
+          {
+            view === 'profile' && (
+              <div className="max-w-5xl mx-auto space-y-8 animate-in slide-in-from-bottom-4 fade-in duration-500 pb-20">
+                {/* Header with Back Button */}
+                <div className="flex items-center gap-4">
+                  <button onClick={() => setView('home')} className="bg-white p-3 rounded-xl shadow-sm hover:shadow-md transition-all text-slate-500 hover:text-brand-600">
+                    <ArrowLeft />
+                  </button>
+                  <h1 className="text-3xl font-black text-slate-900">Tu Perfil de Agente</h1>
+                </div>
+
+                <InsigniasPanel
+                  progress={progress}
+                  currentLevel={currentLevel}
+                  currentXp={currentXp}
+                  t={t}
+                  modules={MODULES}
+                  hiddenBadges={HIDDEN_BADGES}
+                />
+              </div>
+            )
+          }
+
+          {
+            view === 'certificate' && profile && (
+              <div className="min-h-screen bg-slate-200 flex items-center justify-center p-4 overflow-x-hidden print:p-0 print:bg-white">
+                {/* Force Landscape Printing */}
+                <style>{`
             @media print {
               @page { size: landscape; margin: 0; }
               body { -webkit-print-color-adjust: exact; }
             }
           `}</style>
 
-              <div className="bg-white p-6 md:p-12 rounded-lg shadow-2xl w-full max-w-6xl aspect-[1.41] md:aspect-[1.41] flex flex-col justify-center text-center border-[10px] md:border-[20px] border-double border-yellow-600 relative overflow-hidden print:absolute print:top-0 print:left-0 print:w-full print:h-screen print:border-0 print:shadow-none print:z-[100] transform scale-[0.65] md:scale-100 origin-center h-fit">
-                {/* Watermark */}
-                <div className="absolute inset-0 flex items-center justify-center opacity-5 pointer-events-none">
-                  <BadgeCheck size={500} />
-                </div>
-
-                <div className="relative z-10 flex flex-col items-center justify-center h-full">
-                  <div className="mb-4 md:mb-8">
-                    <Award size={80} className="text-yellow-500 fill-yellow-100 inline-block" />
+                <div className="bg-white p-6 md:p-12 rounded-lg shadow-2xl w-full max-w-6xl aspect-[1.41] md:aspect-[1.41] flex flex-col justify-center text-center border-[10px] md:border-[20px] border-double border-yellow-600 relative overflow-hidden print:absolute print:top-0 print:left-0 print:w-full print:h-screen print:border-0 print:shadow-none print:z-[100] transform scale-[0.65] md:scale-100 origin-center h-fit">
+                  {/* Watermark */}
+                  <div className="absolute inset-0 flex items-center justify-center opacity-5 pointer-events-none">
+                    <BadgeCheck size={500} />
                   </div>
-                  <h1 className="text-4xl md:text-6xl font-serif font-black text-slate-900 mb-2 md:mb-4 uppercase tracking-widest">Certificado de Honor</h1>
-                  <div className="w-32 h-1 bg-yellow-500 mx-auto mb-6 md:mb-10"></div>
 
-                  <p className="text-xl md:text-2xl text-slate-500 font-serif italic mb-4 md:mb-8">Se otorga el presente reconocimiento a</p>
-
-                  <h2 className="text-5xl md:text-7xl font-black text-brand-700 mb-6 md:mb-10 font-serif border-b-4 border-slate-200 inline-block px-12 pb-4">
-                    {profile.name}
-                  </h2>
-
-                  <p className="text-lg md:text-xl text-slate-600 font-serif leading-relaxed max-w-4xl mx-auto mb-10 md:mb-16">
-                    Por haber completado satisfactoriamente el programa de entrenamiento digital en<br />
-                    <strong className="text-slate-900 text-2xl md:text-3xl mt-2 block">Primeros Auxilios y Soporte Vital Básico</strong>
-                  </p>
-
-                  <div className="flex justify-between w-full max-w-4xl mx-auto px-10 md:mt-auto">
-                    <div className="text-center">
-                      <div className="w-48 border-b-2 border-slate-800 mb-2"></div>
-                      <p className="text-xs uppercase tracking-widest font-bold text-slate-400">Firma del Director</p>
+                  <div className="relative z-10 flex flex-col items-center justify-center h-full">
+                    <div className="mb-4 md:mb-8">
+                      <Award size={80} className="text-yellow-500 fill-yellow-100 inline-block" />
                     </div>
-                    <div className="text-center">
-                      <div className="w-48 border-b-2 border-slate-800 mb-2"></div>
-                      <p className="text-xs uppercase tracking-widest font-bold text-slate-400">Fecha de Expedición</p>
-                      <p className="text-sm font-serif">{new Date().toLocaleDateString()}</p>
+                    <h1 className="text-4xl md:text-6xl font-serif font-black text-slate-900 mb-2 md:mb-4 uppercase tracking-widest">Certificado de Honor</h1>
+                    <div className="w-32 h-1 bg-yellow-500 mx-auto mb-6 md:mb-10"></div>
+
+                    <p className="text-xl md:text-2xl text-slate-500 font-serif italic mb-4 md:mb-8">Se otorga el presente reconocimiento a</p>
+
+                    <h2 className="text-5xl md:text-7xl font-black text-brand-700 mb-6 md:mb-10 font-serif border-b-4 border-slate-200 inline-block px-12 pb-4">
+                      {profile.name}
+                    </h2>
+
+                    <p className="text-lg md:text-xl text-slate-600 font-serif leading-relaxed max-w-4xl mx-auto mb-10 md:mb-16">
+                      Por haber completado satisfactoriamente el programa de entrenamiento digital en<br />
+                      <strong className="text-slate-900 text-2xl md:text-3xl mt-2 block">Primeros Auxilios y Soporte Vital Básico</strong>
+                    </p>
+
+                    <div className="flex justify-between w-full max-w-4xl mx-auto px-10 md:mt-auto">
+                      <div className="text-center">
+                        <div className="w-48 border-b-2 border-slate-800 mb-2"></div>
+                        <p className="text-xs uppercase tracking-widest font-bold text-slate-400">Firma del Director</p>
+                      </div>
+                      <div className="text-center">
+                        <div className="w-48 border-b-2 border-slate-800 mb-2"></div>
+                        <p className="text-xs uppercase tracking-widest font-bold text-slate-400">Fecha de Expedición</p>
+                        <p className="text-sm font-serif">{new Date().toLocaleDateString()}</p>
+                      </div>
                     </div>
                   </div>
-                </div>
 
-                <div className="absolute top-8 right-8 print:hidden flex gap-2">
-                  <button onClick={() => window.print()} className="bg-slate-900 text-white p-3 rounded-full hover:bg-slate-800 shadow-lg hover:scale-110 transition-transform" title="Imprimir">
-                    <Printer />
-                  </button>
-                  <button onClick={() => setView('home')} className="bg-slate-200 text-slate-500 p-3 rounded-full hover:bg-slate-300 hover:scale-110 transition-transform" title="Cerrar">
-                    <XCircle />
-                  </button>
+                  <div className="absolute top-8 right-8 print:hidden flex gap-2">
+                    <button onClick={() => window.print()} className="bg-slate-900 text-white p-3 rounded-full hover:bg-slate-800 shadow-lg hover:scale-110 transition-transform" title="Imprimir">
+                      <Printer />
+                    </button>
+                    <button onClick={() => setView('home')} className="bg-slate-200 text-slate-500 p-3 rounded-full hover:bg-slate-300 hover:scale-110 transition-transform" title="Cerrar">
+                      <XCircle />
+                    </button>
+                  </div>
                 </div>
               </div>
-            </div>
-          )
-        }
+            )
+          }
 
-        {/* Global Component: Insignias Panel always visible on Home */}
+          {/* Global Component: Insignias Panel always visible on Home */}
 
 
-        {/* Admin Modal */}
-        <AdminPinModal isOpen={showAdminModal} onClose={() => setShowAdminModal(false)} onSuccess={() => { setShowAdminModal(false); setView('admin'); }} t={t} />
+          {/* Admin Modal */}
+          <AdminPinModal isOpen={showAdminModal} onClose={() => setShowAdminModal(false)} onSuccess={() => { setShowAdminModal(false); setView('admin'); }} t={t} />
 
-        {/* DESA Modal */}
-        {
-          showDesa && (
-            <div className="fixed inset-0 z-[60] bg-black/90 flex items-center justify-center p-4 animate-in fade-in duration-300">
-              <div className="bg-white rounded-2xl w-full max-w-6xl h-[85vh] relative overflow-hidden shadow-2xl">
-                <button onClick={() => setShowDesa(false)} className="absolute top-4 right-4 z-10 bg-black/50 hover:bg-black/70 p-2 rounded-full text-white backdrop-blur-sm transition-colors"><XCircle size={28} /></button>
-                <iframe src={DESA_SIMULATOR_URL} title="Simulador DESA" className="w-full h-full border-0 bg-slate-100" />
+          {/* DESA Modal */}
+          {
+            showDesa && (
+              <div className="fixed inset-0 z-[60] bg-black/90 flex items-center justify-center p-4 animate-in fade-in duration-300">
+                <div className="bg-white rounded-2xl w-full max-w-6xl h-[85vh] relative overflow-hidden shadow-2xl">
+                  <button onClick={() => setShowDesa(false)} className="absolute top-4 right-4 z-10 bg-black/50 hover:bg-black/70 p-2 rounded-full text-white backdrop-blur-sm transition-colors"><XCircle size={28} /></button>
+                  <iframe src={DESA_SIMULATOR_URL} title="Simulador DESA" className="w-full h-full border-0 bg-slate-100" />
+                </div>
               </div>
-            </div>
-          )
-        }
+            )
+          }
 
-        {/* Surprise Exam Modal */}
-        {surpriseExam && (
-          <SurpriseExamModal
-            questions={surpriseExam.questions || []}
-            onComplete={(rawScore, passed, answers) => {
-              // 1. Prepare Updates
-              const xpMultiplier = surpriseExam.xpMultiplier || 1;
-              const xpGain = passed ? XP_REWARDS.EXAM_PASS : 50;
 
-              const qCount = surpriseExam.questions?.length || 20;
-              const grade = (rawScore / qCount) * 10;
-              const oldAttempts = Array.isArray(progress.examAttempts) ? progress.examAttempts : [];
-              const newAttempts = [...oldAttempts, {
-                score: rawScore,
-                grade: grade,
-                passed,
-                answers,
-                type: 'surprise',
-                date: new Date().toISOString()
-              }];
 
-              // 2. Perform ATOMIC update
-              updateProgress({
-                surpriseExamXP: xpGain,
-                examAttempts: newAttempts
-              }, null, xpMultiplier);
+          {/* Profile / Inventory View */}
+          {view === 'profile' && (
+            <ProfileView
+              progress={progress}
+              t={t}
+              lang={lang}
+              currentXp={currentXp}
+              onBack={() => setView('home')}
+              onEquipAvatar={(id) => { updateProgress('activeAvatar', id); addToast(t?.toasts?.avatarEquipped || "Avatar equipado", 'success'); }}
+              onEquipTheme={(id) => { updateProgress('activeTheme', id); addToast(t?.toasts?.themeEquipped || "Tema aplicado", 'success'); }}
+            />
+          )}
 
-              // 3. Feedback
-              const displayXp = passed ? (XP_REWARDS.EXAM_PASS * xpMultiplier) : 50;
-              addToast(passed ? (t?.exam?.passed || '¡Examen Sorpresa Aprobado! +' + displayXp + ' XP') : (t?.exam?.completed || 'Examen Sorpresa Completado +' + 50 + ' XP'), passed ? 'success' : 'info');
+          {/* Streak Counter - Show during modules/exams */}
+          {(view === 'module' || view === 'exam') && currentStreak > 0 && (
+            <StreakCounter currentStreak={currentStreak} bestStreak={progress.bestStreak || 0} compact={true} />
+          )}
 
-              // Note: We don't setSurpriseExam(null) here so user can see the result screen in ExamComponent
-            }}
-            onClose={() => setSurpriseExam(null)}
-            t={t}
-            playSound={playSound}
-            currentXp={currentXp}
-            onUsePowerup={(cost) => {
-              const newXp = currentXp - cost;
-              updateProgress('xp', newXp);
-            }}
-          />
-        )}
+          {/* Streak Milestone Celebration */}
+          {showStreakCelebration && (
+            <StreakMilestoneCelebration
+              milestone={showStreakCelebration}
+              onClose={() => setShowStreakCelebration(null)}
+            />
+          )}
 
-        {/* Profile / Inventory View */}
-        {view === 'profile' && (
-          <ProfileView
-            progress={progress}
-            t={t}
-            lang={lang}
-            currentXp={currentXp}
-            onBack={() => setView('home')}
-            onEquipAvatar={(id) => { updateProgress('activeAvatar', id); addToast(t?.toasts?.avatarEquipped || "Avatar equipado", 'success'); }}
-            onEquipTheme={(id) => { updateProgress('activeTheme', id); addToast(t?.toasts?.themeEquipped || "Tema aplicado", 'success'); }}
-          />
-        )}
+        </Suspense>
+      </Layout >
 
-        {/* Streak Counter - Show during modules/exams */}
-        {(view === 'module' || view === 'exam') && currentStreak > 0 && (
-          <StreakCounter currentStreak={currentStreak} bestStreak={progress.bestStreak || 0} compact={true} />
-        )}
+      {/* Surprise Exam Modal - Moved outside Layout for better positioning */}
+      {
+        surpriseExam && (
+          <React.Suspense fallback={null}>
+            <SurpriseExamModal
+              questions={surpriseExam.questions || []}
+              onComplete={(rawScore, passed, answers) => {
+                // 1. Prepare Updates
+                const xpMultiplier = surpriseExam.xpMultiplier || 1;
+                const xpGain = passed ? XP_REWARDS.EXAM_PASS : 50;
 
-        {/* Streak Milestone Celebration */}
-        {showStreakCelebration && (
-          <StreakMilestoneCelebration
-            milestone={showStreakCelebration}
-            onClose={() => setShowStreakCelebration(null)}
-          />
-        )}
+                // Remap answers to global indices
+                let globalAnswers = answers;
+                if (answers && surpriseExam.questions) {
+                  globalAnswers = {};
+                  Object.entries(answers).forEach(([localIdx, ans]) => {
+                    const q = surpriseExam.questions[localIdx];
+                    if (q && q._originalIndex !== undefined) {
+                      globalAnswers[q._originalIndex] = ans;
+                    }
+                  });
+                }
 
-      </Suspense>
-    </Layout >
+                const qCount = surpriseExam.questions?.length || 20;
+                const grade = (rawScore / qCount) * 10;
+                const oldAttempts = Array.isArray(progress.examAttempts) ? progress.examAttempts : [];
+                const newAttempts = [...oldAttempts, {
+                  score: rawScore,
+                  grade: grade,
+                  passed,
+                  answers: globalAnswers,
+                  type: 'surprise',
+                  date: new Date().toISOString()
+                }];
+
+                // 2. Perform ATOMIC update
+                updateProgress({
+                  surpriseExamXP: xpGain,
+                  examAttempts: newAttempts
+                }, null, xpMultiplier);
+
+                // 3. Feedback
+                const displayXp = passed ? (XP_REWARDS.EXAM_PASS * xpMultiplier) : 50;
+                addToast(passed ? (t?.exam?.passed || '¡Examen Sorpresa Aprobado! +' + displayXp + ' XP') : (t?.exam?.completed || 'Examen Sorpresa Completado +' + 50 + ' XP'), passed ? 'success' : 'info');
+
+                // Note: We don't setSurpriseExam(null) here so user can see the result screen in ExamComponent
+              }}
+              onClose={() => setSurpriseExam(null)}
+              t={t}
+              playSound={playSound}
+              currentXp={currentXp}
+              onUsePowerup={(cost) => {
+                const newXp = currentXp - cost;
+                updateProgress('xp', newXp);
+              }}
+            />
+          </React.Suspense>
+        )
+      }
+    </>
   );
 };
 

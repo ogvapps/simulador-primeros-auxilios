@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { ArrowLeft, Lock, RefreshCw, Loader2, Award, Zap, BookOpen, ShieldCheck, UserCheck, HeartPulse, Flame, Wind, Frown, HardHat, Smile, Brain, Syringe, AirVent, Activity, Gauge, Waves, BriefcaseMedical, Siren, MessageSquare, GraduationCap, Trash2, RotateCcw, AlertTriangle, Users, TrendingUp, BarChart3, CheckCircle2, Zap as ZapIcon, BrainCircuit, Clock, Search, Download, Eye, EyeOff, Filter, FileSpreadsheet, X, FileJson, FileText, ChevronDown, Star, Trophy, Settings as SettingsIcon } from 'lucide-react';
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
 import { collection, getDocs, getFirestore, deleteDoc, doc, updateDoc, setDoc } from 'firebase/firestore';
 import AnalyticsDashboard from './AnalyticsDashboard';
@@ -36,7 +37,8 @@ const AdminPanel = ({ onBack, db, firebaseConfigId, playSound, t, modules, addTo
             const querySnapshot = await getDocs(q);
             const studentsData = [];
             querySnapshot.forEach((doc) => {
-                studentsData.push(doc.data());
+                const data = doc.data();
+                studentsData.push({ ...data, userId: data.userId || doc.id, name: data.name || 'Sin Nombre' }); // Ensure userId and Name
             });
             studentsData.sort((a, b) => new Date(b.lastUpdate) - new Date(a.lastUpdate));
             setStudents(studentsData);
@@ -619,62 +621,90 @@ const AdminPanel = ({ onBack, db, firebaseConfigId, playSound, t, modules, addTo
                                             <input type="checkbox" onChange={toggleSelectAll} checked={selectedIds.length === filteredStudents.length && filteredStudents.length > 0} className="w-4 h-4 rounded border-slate-300 text-brand-600 focus:ring-brand-500" />
                                         </th>
                                         <th className="p-5 font-bold text-slate-500">{t?.admin?.table?.student || "Student"}</th>
-                                        <th className="p-5 font-bold text-slate-500 hidden md:table-cell">{t?.admin?.table?.role || "Role"}</th>
-                                        <th className="p-5 font-bold text-slate-500 text-center">{t?.admin?.table?.level || "Level"}</th>
-                                        <th className="p-5 font-bold text-slate-500 text-center">{t?.admin?.table?.finalExam || "Exam"}</th>
+                                        <th className="p-5 font-bold text-slate-500 hidden xl:table-cell">{t?.admin?.table?.role || "Role"}</th>
+                                        <th className="p-5 font-bold text-slate-500 text-center hidden md:table-cell">{t?.admin?.table?.level || "Level"}</th>
+                                        <th className="p-5 font-bold text-slate-500 text-center hidden lg:table-cell">XP</th>
+                                        <th className="p-5 font-bold text-slate-500 text-center hidden xl:table-cell">Progreso</th>
+                                        <th className="p-5 font-bold text-slate-500 text-center hidden sm:table-cell">{t?.admin?.table?.finalExam || "Exam"}</th>
+                                        <th className="p-5 font-bold text-slate-500 text-center hidden 2xl:table-cell">Conexión</th>
                                         <th className="p-5 font-bold text-slate-500 text-center">{t?.admin?.table?.actions || "Actions"}</th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-slate-100">
-                                    {filteredStudents.length === 0 ? <tr><td colSpan="6" className="p-8 text-center text-slate-400 italic">No students found</td></tr> :
-                                        filteredStudents.map((s, idx) => (
-                                            <tr key={idx} onClick={() => setSelectedStudent(s)} className={`hover:bg-brand-50/30 transition-colors group cursor-pointer border-l-4 ${selectedIds.includes(s.userId) ? 'bg-brand-50 border-l-brand-500' : 'border-l-transparent'} ${s.blocked ? 'bg-red-50/50' : ''}`}>
-                                                <td className="p-5" onClick={(e) => e.stopPropagation()}>
-                                                    <input type="checkbox" checked={selectedIds.includes(s.userId)} onChange={() => toggleSelect(s.userId)} className="w-4 h-4 rounded border-slate-300 text-brand-600 focus:ring-brand-500" />
-                                                </td>
-                                                <td className="p-5 font-bold text-slate-800 flex items-center gap-3">
-                                                    <div className={`w-8 h-8 rounded-full flex items-center justify-center text-lg font-bold bg-slate-100 text-slate-500 shadow-sm border border-slate-200`}>
-                                                        {presentationMode ? '*' : (STORE_ITEMS.avatars.find(a => a.id === s.progress?.activeAvatar)?.icon || (s.name || '?').charAt(0))}
-                                                    </div>
-                                                    {presentationMode ? `Student ${idx + 1}` : s.name}
-                                                </td>
-                                                <td className="p-5 text-slate-500 text-sm hidden md:table-cell">{s.role}</td>
-                                                <td className="p-5 text-center font-black text-slate-700">{s.progress?.level || 1}</td>
-                                                <td className="p-5 text-center">{s.progress?.examenPassed ? <span className="text-green-600 font-bold">✔</span> : <span className="text-slate-300 font-bold">-</span>}</td>
-                                                <td className="p-5 text-center">
-                                                    <div className="flex items-center justify-center gap-2">
-                                                        {!presentationMode && (
-                                                            <>
-                                                                <button
-                                                                    onClick={(e) => {
-                                                                        e.stopPropagation();
-                                                                        generateStudentProgressPDF(s, modules);
-                                                                    }}
-                                                                    className="p-2 text-slate-400 hover:text-purple-600 transition-colors"
-                                                                    title="Download Progress PDF"
-                                                                >
-                                                                    <Download size={18} />
-                                                                </button>
-                                                                <button
-                                                                    onClick={(e) => { e.stopPropagation(); handleToggleBlock(s); }}
-                                                                    className={`p-2 transition-colors ${s.blocked ? 'text-red-500 hover:text-red-700' : 'text-slate-400 hover:text-red-500'}`}
-                                                                    title={s.blocked ? "Unblock User" : "Block User"}
-                                                                >
-                                                                    {s.blocked ? <UserCheck size={18} /> : <EyeOff size={18} />}
-                                                                </button>
-                                                                <button
-                                                                    onClick={(e) => { e.stopPropagation(); handleDelete(s); }}
-                                                                    className="p-2 text-slate-400 hover:text-red-600 transition-colors"
-                                                                    title="Delete Student"
-                                                                >
-                                                                    <Trash2 size={18} />
-                                                                </button>
-                                                            </>
-                                                        )}
-                                                    </div>
-                                                </td>
-                                            </tr>
-                                        ))}
+                                    {filteredStudents.length === 0 ? <tr><td colSpan="9" className="p-8 text-center text-slate-400 italic">No students found</td></tr> :
+                                        filteredStudents.map((s, idx) => {
+                                            // Calc Progress
+                                            const completedCount = modules.filter(m => s.progress?.[`${m.id}Completed`]).length; // Use passed modules prop which is MODULES
+                                            const progressPct = Math.round((completedCount / (modules.length || 1)) * 100);
+
+                                            return (
+                                                <tr key={idx} onClick={() => setSelectedStudent(s)} className={`hover:bg-brand-50/30 transition-colors group cursor-pointer border-l-4 ${selectedIds.includes(s.userId) ? 'bg-brand-50 border-l-brand-500' : 'border-l-transparent'} ${s.blocked ? 'bg-red-50/50' : ''}`}>
+                                                    <td className="p-5" onClick={(e) => e.stopPropagation()}>
+                                                        <input type="checkbox" checked={selectedIds.includes(s.userId)} onChange={() => toggleSelect(s.userId)} className="w-4 h-4 rounded border-slate-300 text-brand-600 focus:ring-brand-500" />
+                                                    </td>
+                                                    <td className="p-5 font-bold text-slate-800 flex items-center gap-3">
+                                                        <div className={`w-8 h-8 rounded-full flex items-center justify-center text-lg font-bold bg-slate-100 text-slate-500 shadow-sm border border-slate-200`}>
+                                                            {presentationMode ? '*' : (STORE_ITEMS.avatars.find(a => a.id === s.progress?.activeAvatar)?.icon || (s.name || '?').charAt(0))}
+                                                        </div>
+                                                        <div className="flex flex-col">
+                                                            <span>{presentationMode ? `Student ${idx + 1}` : s.name}</span>
+                                                            <span className="text-xs text-slate-400 font-normal xl:hidden">{s.role}</span>
+                                                        </div>
+                                                    </td>
+                                                    <td className="p-5 text-slate-500 text-sm hidden xl:table-cell">{s.role}</td>
+                                                    <td className="p-5 text-center font-black text-slate-700 hidden md:table-cell">{s.progress?.level || 1}</td>
+                                                    <td className="p-5 text-center font-bold text-amber-600 hidden lg:table-cell">{s.progress?.xp || 0}</td>
+                                                    <td className="p-5 w-32 hidden xl:table-cell">
+                                                        <div className="w-full bg-slate-100 rounded-full h-2 mb-1">
+                                                            <div className="bg-brand-500 h-2 rounded-full" style={{ width: `${progressPct}%` }}></div>
+                                                        </div>
+                                                        <p className="text-xs text-center text-slate-400">{progressPct}%</p>
+                                                    </td>
+                                                    <td className="p-5 text-center hidden sm:table-cell">
+                                                        {s.progress?.examenPassed
+                                                            ? <div className="text-green-600 font-bold bg-green-50 px-2 py-1 rounded-md text-xs border border-green-200 inline-block">APROBADO<br /><span className="text-lg">{s.progress?.examenScore || '10'}</span></div>
+                                                            : <span className="text-slate-300 font-bold text-xs">-</span>
+                                                        }
+                                                    </td>
+                                                    <td className="p-5 text-center text-xs text-slate-400 hidden 2xl:table-cell">
+                                                        {s.lastUpdate ? new Date(s.lastUpdate).toLocaleDateString() : '-'}
+                                                    </td>
+                                                    <td className="p-5 text-center">
+                                                        <div className="flex items-center justify-center gap-2">
+                                                            {!presentationMode && (
+                                                                <>
+                                                                    <button
+                                                                        onClick={(e) => {
+                                                                            e.stopPropagation();
+                                                                            generateStudentProgressPDF(s, modules);
+                                                                        }}
+                                                                        className="p-2 text-slate-400 hover:text-purple-600 transition-colors"
+                                                                        title="Download Progress PDF"
+                                                                    >
+                                                                        <Download size={18} />
+                                                                    </button>
+                                                                    <button
+                                                                        onClick={(e) => { e.stopPropagation(); handleToggleBlock(s); }}
+                                                                        className={`p-2 transition-colors ${s.blocked ? 'text-red-500 hover:text-red-700' : 'text-slate-400 hover:text-red-500'}`}
+                                                                        title={s.blocked ? "Unblock User" : "Block User"}
+                                                                    >
+                                                                        {s.blocked ? <UserCheck size={18} /> : <EyeOff size={18} />}
+                                                                    </button>
+                                                                    <button
+                                                                        onClick={(e) => { e.stopPropagation(); handleDelete(s); }}
+                                                                        className="p-2 text-slate-400 hover:text-red-600 transition-colors"
+                                                                        title="Delete Student"
+                                                                    >
+                                                                        <Trash2 size={18} />
+                                                                    </button>
+                                                                </>
+                                                            )}
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            );
+                                        })
+                                    }
                                 </tbody>
                             </table>
                         </div>
@@ -693,6 +723,44 @@ const AdminPanel = ({ onBack, db, firebaseConfigId, playSound, t, modules, addTo
                             <div className="grid grid-cols-2 gap-4 mb-8">
                                 <div className="bg-brand-50 p-4 rounded-xl border border-brand-100 text-center"><p className="text-brand-600 text-xs font-bold uppercase">{t?.admin?.detail?.level || "Level"}</p><p className="text-3xl font-black text-brand-800">{selectedStudent.progress?.level || 1}</p></div>
                                 <div className="bg-yellow-50 p-4 rounded-xl border border-yellow-100 text-center"><p className="text-yellow-600 text-xs font-bold uppercase">{t?.admin?.detail?.xp || "XP"}</p><p className="text-3xl font-black text-yellow-800">{selectedStudent.progress?.xp || 0}</p></div>
+                            </div>
+
+                            {/* Exam Evolution Chart */}
+                            <div className="bg-white p-4 rounded-xl border border-slate-200 mb-6 shadow-sm">
+                                <h4 className="font-bold text-slate-700 mb-4 flex items-center gap-2">
+                                    <TrendingUp size={20} className="text-brand-500" /> {t?.admin?.detail?.examEvol || "Evolución de Exámenes"}
+                                </h4>
+                                {selectedStudent.examAttempts && selectedStudent.examAttempts.length > 0 ? (
+                                    <div className="h-48 w-full">
+                                        <ResponsiveContainer width="100%" height="100%">
+                                            <AreaChart data={selectedStudent.examAttempts.map((a, i) => ({
+                                                name: `${i + 1}`,
+                                                score: a.score || 0,
+                                                date: new Date(a.date).toLocaleDateString()
+                                            }))}>
+                                                <defs>
+                                                    <linearGradient id="colorScore" x1="0" y1="0" x2="0" y2="1">
+                                                        <stop offset="5%" stopColor="#3B82F6" stopOpacity={0.3} />
+                                                        <stop offset="95%" stopColor="#3B82F6" stopOpacity={0} />
+                                                    </linearGradient>
+                                                </defs>
+                                                <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                                                <XAxis dataKey="name" tick={{ fontSize: 10 }} />
+                                                <YAxis domain={[0, 10]} hide />
+                                                <Tooltip
+                                                    contentStyle={{ borderRadius: '8px' }}
+                                                    formatter={(val) => [`${val} / 10`, 'Nota']}
+                                                    labelFormatter={(label, payload) => payload[0]?.payload?.date || ''}
+                                                />
+                                                <Area type="monotone" dataKey="score" stroke="#2563EB" fillOpacity={1} fill="url(#colorScore)" strokeWidth={3} />
+                                            </AreaChart>
+                                        </ResponsiveContainer>
+                                    </div>
+                                ) : (
+                                    <div className="p-8 text-center text-slate-400 italic bg-slate-50 rounded-xl border-2 border-dashed border-slate-200">
+                                        {t?.admin?.detail?.noExams || "El estudiante aún no ha realizado ningún examen."}
+                                    </div>
+                                )}
                             </div>
 
                             {/* AI Mentor Insight */}

@@ -71,11 +71,15 @@ const TimeTrialExam = ({ questions, t, onComplete, onBack, playSound }) => {
         setIsActive(false);
         setIsFinished(true);
         if (playSound) playSound('fanfare');
-        // Calculate XP: Score * 20 + TimeBonus
-        const bonus = Math.floor(timeLeft / 2);
-        const totalXp = (score * 20) + bonus;
-        onComplete(totalXp); // Callback to App to award XP
+        // Do NOT call onComplete here. Wait for user to review score.
     };
+
+    const handleExit = () => {
+        // Calculate XP: Score * 20 + TimeBonus
+        const bonus = Math.max(0, Math.floor(timeLeft / 2));
+        const totalXp = (score * 20) + bonus;
+        onComplete(totalXp);
+    }
 
     if (!isActive && !isFinished) {
         return (
@@ -88,12 +92,20 @@ const TimeTrialExam = ({ questions, t, onComplete, onBack, playSound }) => {
                         {t?.game?.timetrial?.subtitle || "10 Preguntas. 60 Segundos."}<br />
                         <span className="text-red-400 font-bold">{t?.game?.timetrial?.penalty || "Fallar resta 5 segundos."}</span>
                     </p>
-                    <button
-                        onClick={handleStart}
-                        className="w-full bg-yellow-500 hover:bg-yellow-400 text-slate-900 font-black text-xl py-4 rounded-xl shadow-[0_0_20px_rgba(234,179,8,0.5)] hover:scale-105 transition-all"
-                    >
-                        {t?.game?.timetrial?.start || "¡EMPEZAR YA!"}
-                    </button>
+
+                    {localQuestions.length > 0 ? (
+                        <button
+                            onClick={handleStart}
+                            className="w-full bg-yellow-500 hover:bg-yellow-400 text-slate-900 font-black text-xl py-4 rounded-xl shadow-[0_0_20px_rgba(234,179,8,0.5)] hover:scale-105 transition-all"
+                        >
+                            {t?.game?.timetrial?.start || "¡EMPEZAR YA!"}
+                        </button>
+                    ) : (
+                        <div className="p-4 bg-slate-700 rounded-xl text-slate-300">
+                            <p className="animate-pulse">Cargando preguntas...</p>
+                        </div>
+                    )}
+
                     <button onClick={onBack} className="mt-4 text-slate-500 hover:text-white underline">{t?.game?.timetrial?.back || "Volver"}</button>
                 </div>
             </div>
@@ -115,7 +127,7 @@ const TimeTrialExam = ({ questions, t, onComplete, onBack, playSound }) => {
                     </div>
 
                     <button
-                        onClick={onBack}
+                        onClick={handleExit}
                         className="w-full bg-white text-slate-900 font-bold py-3 rounded-xl hover:bg-slate-200 transition-colors"
                     >
                         {t?.game?.timetrial?.returnMenu || "Volver al Menú"}
@@ -126,6 +138,8 @@ const TimeTrialExam = ({ questions, t, onComplete, onBack, playSound }) => {
     }
 
     const currentQ = localQuestions[currentIndex];
+    if (!currentQ) return null; // Safety check
+
     const options = currentQ.opts || currentQ.options;
 
     return (

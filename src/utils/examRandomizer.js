@@ -25,11 +25,14 @@ export const selectRandomQuestions = (questionBank, count) => {
     }
 
     if (count >= questionBank.length) {
-        // If requesting more than available, return all shuffled
-        return shuffleArray(questionBank);
+        // Return all shuffled but with original indices attached
+        const bankWithIndices = questionBank.map((q, i) => ({ ...q, _originalIndex: i }));
+        return shuffleArray(bankWithIndices);
     }
 
-    const shuffled = shuffleArray(questionBank);
+    // Attach original index before shuffling
+    const bankWithIndices = questionBank.map((q, i) => ({ ...q, _originalIndex: i }));
+    const shuffled = shuffleArray(bankWithIndices);
     return shuffled.slice(0, count);
 };
 
