@@ -104,8 +104,8 @@ export const Chat112Game = memo(({ onComplete, playSound }) => {
         {messages.map((m, i) => (
           <div key={i} className={`flex w-full ${m.sender === 'bot' ? 'justify-start' : 'justify-end'}`}>
             <div className={`px-4 py-3 max-w-[85%] text-sm shadow-sm animate-in zoom-in duration-300 origin-bottom leading-relaxed ${m.sender === 'bot'
-                ? 'bg-white text-slate-700 rounded-2xl rounded-tl-none border border-slate-200/50'
-                : 'bg-blue-600 text-white rounded-2xl rounded-tr-none shadow-blue-200'
+              ? 'bg-white text-slate-700 rounded-2xl rounded-tl-none border border-slate-200/50'
+              : 'bg-blue-600 text-white rounded-2xl rounded-tr-none shadow-blue-200'
               }`}>
               {m.text}
             </div>
@@ -591,8 +591,8 @@ export const SequenceGame = memo(({ onComplete, playSound }) => {
       <div className="flex justify-center gap-3 mb-8">
         {[0, 1, 2].map(i => (
           <div key={i} className={`w-20 h-24 rounded-2xl flex items-center justify-center text-3xl font-black border-4 border-dashed transition-all duration-300 ${sequence[i]
-              ? 'bg-blue-600 text-white border-blue-600 shadow-xl scale-105 rotate-1'
-              : 'bg-slate-50 border-slate-200 text-slate-300'
+            ? 'bg-blue-600 text-white border-blue-600 shadow-xl scale-105 rotate-1'
+            : 'bg-slate-50 border-slate-200 text-slate-300'
             }`}>
             {sequence[i] || (i + 1)}
           </div>
@@ -682,7 +682,7 @@ export const TriageGame = memo(({ onComplete, playSound }) => {
               `}
             >
               <div className={`p-3 rounded-xl transition-colors ${v.type === 'rojo' ? 'bg-red-500 group-hover:bg-red-600' :
-                  v.type === 'amarillo' ? 'bg-orange-400 group-hover:bg-orange-500' : 'bg-green-500 group-hover:bg-green-600'
+                v.type === 'amarillo' ? 'bg-orange-400 group-hover:bg-orange-500' : 'bg-green-500 group-hover:bg-green-600'
                 }`}>
                 {v.icon}
               </div>
