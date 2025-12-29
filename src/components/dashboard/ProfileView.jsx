@@ -1,4 +1,3 @@
-import Link from 'next/link'; // Not needed, removed
 import InsigniasPanel from './InsigniasPanel';
 import {
     MODULES_ES, MODULES_EN,

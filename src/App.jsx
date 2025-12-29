@@ -1491,6 +1491,7 @@ const UserEntryForm = ({ onSubmit, playSound }) => {
           </button>
 
           {/* Header Controls */}
+          {/* Header Controls */}
           <div className="flex items-center gap-2 mt-4 justify-center">
             <span className="text-[10px] bg-red-500 text-white px-1 rounded font-bold">v1.7</span>
             {!isRegister && (
