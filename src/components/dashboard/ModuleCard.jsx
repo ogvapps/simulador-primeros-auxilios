@@ -3,7 +3,7 @@ import { CheckCircle2, Lock, BookOpen } from 'lucide-react';
 import { ICON_MAP } from './InsigniasPanel';
 
 const ModuleCard = memo(({ module, progress, onClick, isLocked, t, isRecommended }) => {
-    const isCompleted = (module.type === 'module' || module.type === 'roleplay' || module.type === 'timeTrial' || module.type === 'glossary') && progress[`${module.id}Completed`];
+    const isCompleted = (module.type === 'module' || module.type === 'roleplay' || module.type === 'timeTrial' || module.type === 'glossary' || module.type === 'desa' || module.type === 'certificate') && progress[`${module.id}Completed`];
 
     // Dynamic Styles
     let statusColor = "bg-brand-50 text-brand-700";

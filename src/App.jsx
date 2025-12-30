@@ -5,7 +5,7 @@ import { getFirestore, doc, onSnapshot, setDoc, getDoc, updateDoc, increment, co
 import { Activity, HeartPulse, Sparkles, BookOpen, AlertTriangle, Play, Star, Printer, BadgeCheck, XCircle, Award, ShoppingBag, Trophy, Flame, FileText, Download, Moon, Sun, CheckCircle2, ArrowLeft, User, UserCheck, GraduationCap, Zap } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { jsPDF } from 'jspdf';
-import { generateCheatSheet } from './utils/pdfGenerator';
+import { generateCheatSheet, generateDiplomaPDF } from './utils/pdfGenerator';
 import { selectRandomQuestions } from './utils/examRandomizer';
 import { getExamSizeForRole } from './utils/roleExamConfig';
 import { updateStreak } from './utils/streakSystem';
@@ -39,6 +39,7 @@ const ProfileView = React.lazy(() => import('./components/dashboard/ProfileView'
 const GlossaryView = React.lazy(() => import('./components/dashboard/GlossaryView'));
 const PracticeMode = React.lazy(() => import('./components/dashboard/PracticeMode'));
 const DesaSimulator = React.lazy(() => import('./components/games/DesaSimulator'));
+const SignatureModal = React.lazy(() => import('./components/common/SignatureModal'));
 
 
 const DashboardSkeleton = React.lazy(() => import('./components/common/Skeleton').then(module => ({ default: module.DashboardSkeleton })));
@@ -190,7 +191,10 @@ const App = () => {
   const [showLevelUp, setShowLevelUp] = useState(false);
   const [darkMode, setDarkMode] = useState(() => localStorage.getItem('app_dark') === 'true');
   const [showDailyChallenge, setShowDailyChallenge] = useState(false);
+  const [showSignatureModal, setShowSignatureModal] = useState(false);
+  const [signature, setSignature] = useState(() => localStorage.getItem('teacher_signature'));
   const [lang, setLang] = useState('es'); // 'es' or 'en'
+  const [verificationData, setVerificationData] = useState(null);
   const t = TRANSLATIONS[lang];
   // Data Selection based on Language
   const MODULES = lang === 'es' ? MODULES_ES : MODULES_EN;
@@ -201,6 +205,21 @@ const App = () => {
   const EXAM_QUESTIONS = lang === 'es' ? EXAM_QUESTIONS_ES : EXAM_QUESTIONS_EN;
   const AVATARS = lang === 'es' ? AVATARS_ES : AVATARS_EN;
   const HIDDEN_BADGES = lang === 'es' ? HIDDEN_BADGES_ES : HIDDEN_BADGES_EN;
+  useEffect(() => {
+    // Check for verification URL
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('verify') === 'true') {
+      try {
+        const name = decodeURIComponent(escape(atob(params.get('n'))));
+        const date = atob(params.get('d'));
+        setVerificationData({ name, date });
+        setView('verify');
+      } catch (e) {
+        console.error('Verification decoding error:', e);
+      }
+    }
+  }, []);
+
   const [toasts, setToasts] = useState([]);
   const [isSaving, setIsSaving] = useState(false);
   const [examConfig, setExamConfig] = useState({ examSize: 40 }); // Default 40 questions
@@ -720,6 +739,33 @@ const App = () => {
     });
     addToast(t?.toasts?.desaSuccess || "¡Simulación DESA completada! +100 XP", 'success');
     setShowDesa(false);
+  };
+
+  const handleDownloadDiploma = () => {
+    if (!signature) {
+      setShowSignatureModal(true);
+      return;
+    }
+
+    generateDiplomaPDF(profile.name, new Date().toLocaleDateString(), t, signature);
+    updateProgress({
+      certificadoCompleted: true,
+      xpGain: 50
+    });
+    addToast("¡Diploma generado con éxito!", "success");
+  };
+
+  const handleSaveSignature = (sigData) => {
+    setSignature(sigData);
+    localStorage.setItem('teacher_signature', sigData);
+    setShowSignatureModal(false);
+    // After saving, trigger download automatically
+    generateDiplomaPDF(profile.name, new Date().toLocaleDateString(), t, sigData);
+    updateProgress({
+      certificadoCompleted: true,
+      xpGain: 50
+    });
+    addToast("¡Firma guardada y diploma generado!", "success");
   };
 
 
@@ -1548,26 +1594,27 @@ const App = () => {
                     </h2>
 
                     <p className="text-lg md:text-xl text-slate-600 font-serif leading-relaxed max-w-4xl mx-auto mb-10 md:mb-16">
-                      Por haber completado satisfactoriamente el programa de entrenamiento digital en<br />
-                      <strong className="text-slate-900 text-2xl md:text-3xl mt-2 block">Primeros Auxilios y Soporte Vital Básico</strong>
+                      ha demostrado excelencia y dominio teórico-práctico en el programa de<br />
+                      <strong className="text-slate-900 text-2xl md:text-3xl mt-2 block uppercase tracking-tight">PRIMEROS AUXILIOS - SOPORTE VITAL BÁSICO (P.A.S.) - DESA</strong>
                     </p>
 
-                    <div className="flex justify-between w-full max-w-4xl mx-auto px-10 md:mt-auto">
-                      <div className="text-center">
-                        <div className="w-48 border-b-2 border-slate-800 mb-2"></div>
-                        <p className="text-xs uppercase tracking-widest font-bold text-slate-400">Firma del Director</p>
+                    <div className="flex justify-between w-full max-w-5xl mx-auto px-12 mt-auto pb-10">
+                      <div className="text-center w-80">
+                        <div className="w-full border-b-2 border-slate-800 mb-3 mx-auto"></div>
+                        <p className="text-sm uppercase tracking-[0.2em] font-black text-slate-900">Orestes González Villanueva</p>
+                        <p className="text-xs uppercase tracking-widest font-bold text-slate-400 mt-1">Profesor de Educación Física</p>
                       </div>
-                      <div className="text-center">
-                        <div className="w-48 border-b-2 border-slate-800 mb-2"></div>
-                        <p className="text-xs uppercase tracking-widest font-bold text-slate-400">Fecha de Expedición</p>
-                        <p className="text-sm font-serif">{new Date().toLocaleDateString()}</p>
+                      <div className="text-center w-80">
+                        <div className="w-full border-b-2 border-slate-800 mb-3 mx-auto"></div>
+                        <p className="text-sm uppercase tracking-[0.2em] font-black text-slate-900">Fecha de Expedición</p>
+                        <p className="text-base font-serif text-slate-700 mt-1">{new Date().toLocaleDateString()}</p>
                       </div>
                     </div>
                   </div>
 
                   <div className="absolute top-8 right-8 print:hidden flex gap-2">
-                    <button onClick={() => window.print()} className="bg-slate-900 text-white p-3 rounded-full hover:bg-slate-800 shadow-lg hover:scale-110 transition-transform" title="Imprimir">
-                      <Printer />
+                    <button onClick={handleDownloadDiploma} className="bg-brand-600 text-white p-3 rounded-full hover:bg-brand-700 shadow-lg hover:scale-110 transition-transform" title="Descargar como PDF">
+                      <Download />
                     </button>
                     <button onClick={() => setView('home')} className="bg-slate-200 text-slate-500 p-3 rounded-full hover:bg-slate-300 hover:scale-110 transition-transform" title="Cerrar">
                       <XCircle />
@@ -1578,8 +1625,60 @@ const App = () => {
             )
           }
 
+          {/* Verification View */}
+          {
+            view === 'verify' && verificationData && (
+              <div className="fixed inset-0 z-[100] bg-slate-900 flex flex-col items-center justify-center p-6 text-center">
+                <div className="bg-white rounded-[40px] p-12 max-w-md w-full shadow-2xl animate-in zoom-in duration-500">
+                  <div className="w-24 h-24 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-8 border-4 border-emerald-500">
+                    <CheckCircle2 size={48} className="text-emerald-500 animate-bounce" />
+                  </div>
+
+                  <h2 className="text-3xl font-black text-slate-900 mb-4 leading-none">DIPLOMA VÁLIDO</h2>
+                  <p className="text-slate-500 mb-8 font-medium italic">Sistema de Verificación del Departamento de Educación Física</p>
+
+                  <div className="bg-slate-50 rounded-3xl p-6 mb-8 border border-slate-100 space-y-4">
+                    <div>
+                      <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Nombre del Alumno</p>
+                      <p className="text-xl font-bold text-slate-800">{verificationData.name}</p>
+                    </div>
+                    <div>
+                      <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Fecha de Certificación</p>
+                      <p className="text-xl font-bold text-slate-800">{verificationData.date}</p>
+                    </div>
+                  </div>
+
+                  <p className="text-xs text-emerald-600 font-bold bg-emerald-50 py-3 px-6 rounded-full inline-block mb-10 ring-1 ring-emerald-200">
+                    Este documento ha sido verificado criptográficamente por la plataforma.
+                  </p>
+
+                  <button
+                    onClick={() => {
+                      window.history.replaceState({}, '', window.location.pathname);
+                      setView('home');
+                      setVerificationData(null);
+                    }}
+                    className="w-full bg-slate-900 text-white font-black py-4 rounded-2xl hover:bg-slate-800 transition-all active:scale-95"
+                  >
+                    CERRAR VERIFICACIÓN
+                  </button>
+                </div>
+              </div>
+            )
+          }
+
           {/* Global Component: Insignias Panel always visible on Home */}
 
+
+          {/* Signature Modal */}
+          <Suspense fallback={null}>
+            <SignatureModal
+              isOpen={showSignatureModal}
+              onClose={() => setShowSignatureModal(false)}
+              onSave={handleSaveSignature}
+              t={t}
+            />
+          </Suspense>
 
           {/* Admin Modal */}
           <AdminPinModal isOpen={showAdminModal} onClose={() => setShowAdminModal(false)} onSuccess={() => { setShowAdminModal(false); setView('admin'); }} t={t} />

@@ -143,3 +143,201 @@ export const generateCheatSheet = () => {
 
     doc.save("Guía_Oficial_Primeros_Auxilios_OGV.pdf");
 };
+
+export const generateDiplomaPDF = async (userName = "ALUMNO", dateLabel = "", t, signatureDataUrl = null) => {
+    try {
+        const doc = new jsPDF({
+            orientation: 'landscape',
+            unit: 'mm',
+            format: 'a4'
+        });
+
+        const pageWidth = doc.internal.pageSize.width;
+        const pageHeight = doc.internal.pageSize.height;
+
+        // --- 1. FONTS & COLORS ---
+        const colorNavy = [15, 23, 42];
+        const colorGold = [202, 138, 4];
+        const colorGoldLight = [234, 179, 8];
+        const colorMedicalRed = [159, 18, 57];
+        const colorSlate = [71, 85, 105];
+
+        // --- 2. BACKGROUND & BORDERS ---
+        // Outer deep navy border
+        doc.setFillColor(...colorNavy);
+        doc.rect(0, 0, pageWidth, pageHeight, 'F');
+
+        // Inner page (slightly off-white/cream for prestige)
+        doc.setFillColor(252, 252, 250);
+        doc.rect(8, 8, pageWidth - 16, pageHeight - 16, 'F');
+
+        // Main Gold Frame
+        doc.setDrawColor(...colorGold);
+        doc.setLineWidth(1);
+        doc.rect(12, 12, pageWidth - 24, pageHeight - 24, 'D');
+
+        // Thicker Gold Accent
+        doc.setLineWidth(1.8);
+        doc.rect(14, 14, pageWidth - 28, pageHeight - 28, 'D');
+
+        // Corner Decorations (Medical Cross Style)
+        const drawMedCorner = (x, y) => {
+            doc.setDrawColor(...colorGold);
+            doc.setLineWidth(0.5);
+            // Small cross in corner
+            doc.line(x - 4, y, x + 4, y);
+            doc.line(x, y - 4, x, y + 4);
+            // L-shape
+            doc.setLineWidth(2);
+            if (x < pageWidth / 2 && y < pageHeight / 2) { // Top Left
+                doc.line(12, 40, 12, 12); doc.line(12, 12, 40, 12);
+            } else if (x > pageWidth / 2 && y < pageHeight / 2) { // Top Right
+                doc.line(pageWidth - 40, 12, pageWidth - 12, 12); doc.line(pageWidth - 12, 12, pageWidth - 12, 40);
+            } else if (x > pageWidth / 2 && y > pageHeight / 2) { // Bottom Right
+                doc.line(pageWidth - 12, pageHeight - 40, pageWidth - 12, pageHeight - 12); doc.line(pageWidth - 12, pageHeight - 12, pageWidth - 40, pageHeight - 12);
+            } else { // Bottom Left
+                doc.line(40, pageHeight - 12, 12, pageHeight - 12); doc.line(12, pageHeight - 12, 12, pageHeight - 40);
+            }
+        };
+        drawMedCorner(12, 12);
+        drawMedCorner(pageWidth - 12, 12);
+        drawMedCorner(pageWidth - 12, pageHeight - 12);
+        drawMedCorner(12, pageHeight - 12);
+
+        // --- 3. WATERMARK ---
+        doc.setTextColor(242, 242, 240);
+        doc.setFontSize(140);
+        doc.setFont("times", "bold");
+        doc.saveGraphicsState();
+        // Background large "PAS"
+        doc.text("PAS", pageWidth / 2, pageHeight / 2 + 25, { align: 'center' });
+        doc.restoreGraphicsState();
+
+        // --- 4. HEADER ---
+        doc.setTextColor(...colorGold);
+        doc.setFont("times", "bold");
+        doc.setFontSize(16);
+        doc.text("DEPARTAMENTO DE EDUCACIÓN FÍSICA", pageWidth / 2, 32, { align: 'center' });
+
+        // Decorative line under header
+        doc.setDrawColor(...colorGold);
+        doc.setLineWidth(0.5);
+        doc.line(pageWidth / 2 - 50, 36, pageWidth / 2 + 50, 36);
+
+        // Main Title
+        doc.setTextColor(...colorNavy);
+        doc.setFont("times", "bold");
+        doc.setFontSize(50);
+        doc.text("CERTIFICADO DE HONOR", pageWidth / 2, 60, { align: 'center' });
+
+        // --- 5. BODY ---
+        doc.setTextColor(...colorSlate);
+        doc.setFont("times", "italic");
+        doc.setFontSize(22);
+        doc.text("Por la presente se reconoce y certifica que", pageWidth / 2, 85, { align: 'center' });
+
+        // NAME (Dynamic Size)
+        const safeName = String(userName || "ALUMNO").toUpperCase();
+        doc.setTextColor(...colorMedicalRed);
+        doc.setFont("times", "bold");
+
+        let fontSize = 65;
+        doc.setFontSize(fontSize);
+        let nameWidth = doc.getTextWidth(safeName);
+        const maxNameWidth = pageWidth - 100;
+
+        if (nameWidth > pageWidth - 100) {
+            fontSize = Math.floor(65 * ((pageWidth - 100) / nameWidth));
+            if (fontSize < 18) fontSize = 18;
+            doc.setFontSize(fontSize);
+        }
+        doc.text(safeName, pageWidth / 2, 115, { align: 'center' });
+
+        // Accent line under name
+        doc.setDrawColor(...colorGoldLight);
+        doc.setLineWidth(1.2);
+        doc.line(pageWidth / 2 - 70, 120, pageWidth / 2 + 70, 120);
+
+        // Achievement Text
+        doc.setTextColor(...colorSlate);
+        doc.setFont("times", "normal");
+        doc.setFontSize(18);
+        doc.text("ha demostrado excelencia y dominio teórico-práctico en el programa de", pageWidth / 2, 140, { align: 'center' });
+        doc.setFont("times", "bold");
+        doc.setTextColor(...colorNavy);
+        doc.setFontSize(20);
+        doc.text("PRIMEROS AUXILIOS - SOPORTE VITAL BÁSICO (P.A.S.) - DESA", pageWidth / 2, 152, { align: 'center' });
+
+        // --- 6. FOOTER / SIGNATURES ---
+        const sigLineY = 178;
+        const sigTextY = 185;
+        doc.setDrawColor(...colorNavy);
+        doc.setLineWidth(0.4);
+
+        // Left: Teacher
+        doc.line(40, sigLineY, 110, sigLineY);
+
+        // --- HANDWRITTEN SIGNATURE ---
+        if (signatureDataUrl) {
+            try {
+                // Draw signature above the line
+                doc.addImage(signatureDataUrl, 'PNG', 45, sigLineY - 25, 60, 25);
+            } catch (e) {
+                console.error("Signature image error:", e);
+            }
+        }
+
+        doc.setTextColor(...colorNavy);
+        doc.setFontSize(10);
+        doc.setFont("times", "bold");
+        doc.text("Orestes González Villanueva", 75, sigTextY, { align: 'center' });
+        doc.setFont("times", "normal");
+        doc.text("Profesor de Educación Física", 75, sigTextY + 5, { align: 'center' });
+
+        // Center QR Code (Real dynamic QR)
+        const verifyUrl = `${window.location.origin}${window.location.pathname}?verify=true&n=${encodeURIComponent(btoa(unescape(encodeURIComponent(safeName))))}&d=${encodeURIComponent(btoa(dateLabel || new Date().toLocaleDateString()))}`;
+        const qrSize = 25;
+        const qrX = (pageWidth - qrSize) / 2;
+        const qrY = 162;
+
+        // Using a reliable public QR API
+        const qrApiUrl = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(verifyUrl)}`;
+
+        // HELPER TO LOAD IMAGE from URL
+        const loadImage = (url) => new Promise((resolve, reject) => {
+            const img = new Image();
+            img.crossOrigin = "anonymous";
+            img.onload = () => resolve(img);
+            img.onerror = reject;
+            img.src = url;
+        });
+
+        try {
+            const qrImg = await loadImage(qrApiUrl);
+            doc.addImage(qrImg, 'PNG', qrX, qrY, qrSize, qrSize);
+        } catch (e) {
+            doc.setDrawColor(...colorNavy);
+            doc.rect(qrX, qrY, qrSize, qrSize, 'D');
+        }
+
+        doc.setFontSize(7);
+        doc.setTextColor(...colorSlate);
+        doc.text("VERIFICACIÓN DE AUTENTICIDAD", pageWidth / 2, qrY + qrSize + 5, { align: 'center' });
+
+        // Right: Date
+        doc.line(pageWidth - 110, sigLineY, pageWidth - 40, sigLineY);
+        doc.setTextColor(...colorNavy);
+        doc.setFontSize(10);
+        doc.setFont("times", "bold");
+        doc.text("FECHA DE CERTIFICACIÓN", pageWidth - 75, sigTextY, { align: 'center' });
+        doc.setFontSize(11);
+        doc.setFont("times", "normal");
+        doc.text(dateLabel || new Date().toLocaleDateString(), pageWidth - 75, sigTextY + 5, { align: 'center' });
+
+        // --- 7. SAVE ---
+        const fileName = `Diploma_PAS_${safeName.replace(/\s+/g, '_')}.pdf`;
+        doc.save(fileName);
+    } catch (error) {
+        console.error("PDF Error:", error);
+    }
+};
