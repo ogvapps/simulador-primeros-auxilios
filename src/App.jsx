@@ -634,7 +634,7 @@ const App = () => {
   }
 
   // Logic for locking modules
-  const allModulesDone = MODULES.map(m => m.id).filter(id => id !== 'exam' && id !== 'desa' && id !== 'glossary' && id !== 'certificado' && !id.startsWith('sim_')).every(id => progress[`${id}Completed`]);
+  const allModulesDone = MODULES.map(m => m.id).filter(id => id !== 'examen' && id !== 'desa' && id !== 'glosario' && id !== 'certificado' && id !== 'timeTrial' && !id.startsWith('sim_')).every(id => progress[`${id}Completed`]);
   const examPassed = progress.examenPassed;
 
   // Compute Avatar Icon
@@ -1161,13 +1161,13 @@ const App = () => {
                 {/* Glossary Completion Action */}
                 {/* Glossary Completion Action */}
                 <div className="mt-8 bg-brand-50 border-2 border-brand-100 rounded-2xl p-6 text-center animate-in slide-in-from-bottom-4">
-                  {!progress.glossaryCompleted ? (
+                  {!progress.glosarioCompleted ? (
                     <>
                       <h3 className="font-bold text-brand-800 text-lg mb-2">¿Has revisado todos los términos?</h3>
                       <p className="text-brand-600 mb-6 text-sm">Completa este módulo para ganar tu recompensa de XP.</p>
                       <button
                         onClick={() => {
-                          updateProgress('glossaryCompleted', true);
+                          updateProgress('glosarioCompleted', true);
                           try { playSound('success'); } catch (e) { }
                           addToast('¡Módulo Glosario Completado!', 'success');
                           confetti();

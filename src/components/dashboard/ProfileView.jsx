@@ -1,8 +1,22 @@
+import React, { useState } from 'react';
+import { User, Check, Palette, Zap, ArrowLeft, Star, ShoppingBag } from 'lucide-react';
 import InsigniasPanel from './InsigniasPanel';
 import {
     MODULES_ES, MODULES_EN,
     HIDDEN_BADGES_ES, HIDDEN_BADGES_EN
 } from '../../data/constants';
+import { STORE_ITEMS } from '../../data/storeCatalog';
+
+// Helper functions for localization
+const getLocalizedName = (item, lang) => {
+    if (!item || !item.name) return '';
+    return item.name[lang] || item.name.es || item.name;
+};
+
+const getLocalizedDescription = (item, lang) => {
+    if (!item || !item.description) return '';
+    return item.description[lang] || item.description.es || item.description;
+};
 
 const ProfileView = ({ progress, profile, onEquipAvatar, onEquipTheme, onBack, t, lang = 'es', currentXp }) => {
     const [activeTab, setActiveTab] = useState('inventory'); // 'inventory', 'stats'
