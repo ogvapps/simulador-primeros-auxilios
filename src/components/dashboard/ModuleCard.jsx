@@ -2,7 +2,7 @@ import React, { memo } from 'react';
 import { CheckCircle2, Lock, BookOpen } from 'lucide-react';
 import { ICON_MAP } from './InsigniasPanel';
 
-const ModuleCard = memo(({ module, progress, onClick, isLocked, t }) => {
+const ModuleCard = memo(({ module, progress, onClick, isLocked, t, isRecommended }) => {
     const isCompleted = (module.type === 'module' || module.type === 'roleplay' || module.type === 'timeTrial' || module.type === 'glossary') && progress[`${module.id}Completed`];
 
     // Dynamic Styles
@@ -36,7 +36,9 @@ const ModuleCard = memo(({ module, progress, onClick, isLocked, t }) => {
 
     const containerClasses = isLocked
         ? "opacity-60 grayscale bg-slate-50 dark:bg-slate-800/50 cursor-not-allowed border-slate-200 dark:border-slate-700"
-        : "bg-white dark:bg-slate-800 hover:shadow-xl hover:-translate-y-1 cursor-pointer border-slate-100 dark:border-slate-700 hover:border-brand-300";
+        : isRecommended
+            ? "bg-white dark:bg-slate-800 hover:shadow-xl hover:-translate-y-1 cursor-pointer border-indigo-500 ring-4 ring-indigo-50 dark:ring-indigo-900/20 shadow-lg scale-[1.02]"
+            : "bg-white dark:bg-slate-800 hover:shadow-xl hover:-translate-y-1 cursor-pointer border-slate-100 dark:border-slate-700 hover:border-brand-300";
 
     return (
         <button
@@ -44,6 +46,12 @@ const ModuleCard = memo(({ module, progress, onClick, isLocked, t }) => {
             disabled={isLocked}
             className={`group relative flex flex-col h-full w-full rounded-2xl shadow-sm overflow-hidden border text-left transition-all duration-300 ${containerClasses}`}
         >
+            {isRecommended && !isCompleted && !isLocked && (
+                <div className="absolute top-0 right-0 bg-indigo-500 text-white text-[10px] font-black uppercase px-3 py-1 rounded-bl-xl shadow-sm z-10 flex items-center gap-1 animate-pulse">
+                    ⭐ Tarea
+                </div>
+            )}
+
             {/* Decorative Top Line */}
             <div className={`h-1.5 w-full ${isLocked ? 'bg-slate-300' : borderColor.replace('border-', 'bg-')}`} />
 

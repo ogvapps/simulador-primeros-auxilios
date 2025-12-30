@@ -107,6 +107,15 @@ export const STORE_ITEMS = {
             value: 1
         },
         {
+            id: 'streak_freeze',
+            name: { es: 'Congelar Racha', en: 'Streak Freeze' },
+            icon: '🧊',
+            price: 300,
+            description: { es: 'Mantén tu racha si olvidas un día', en: 'Keep your streak if you miss a day' },
+            effect: 'freeze_streak',
+            value: 1
+        },
+        {
             id: 'double_xp',
             name: { es: 'XP Doble', en: 'Double XP' },
             icon: '✨',
@@ -227,6 +236,104 @@ export const STORE_ITEMS = {
             price: 500,
             description: { es: 'Tema dorado exclusivo', en: 'Exclusive gold theme' },
             colors: { primary: '#fbbf24', secondary: '#f59e0b' }
+        }
+    ],
+    titles: [
+        {
+            id: 'novice',
+            name: { es: 'Novato', en: 'Novice' },
+            icon: '🌱',
+            price: 0,
+            description: { es: 'Título inicial', en: 'Starting title' },
+            color: 'text-slate-600'
+        },
+        {
+            id: 'quick_learner',
+            name: { es: 'Aprendiz Rápido', en: 'Quick Learner' },
+            icon: '⚡',
+            price: 100,
+            description: { es: 'Para los que aprenden velozmente', en: 'For those who learn fast' },
+            color: 'text-yellow-600'
+        },
+        {
+            id: 'lifesaver',
+            name: { es: 'Salvavidas', en: 'Lifesaver' },
+            icon: '🆘',
+            price: 200,
+            description: { es: 'Héroe de emergencias', en: 'Emergency hero' },
+            color: 'text-red-600'
+        },
+        {
+            id: 'medic',
+            name: { es: 'Sanitario', en: 'Medic' },
+            icon: '⚕️',
+            price: 250,
+            description: { es: 'Profesional de la salud', en: 'Health professional' },
+            color: 'text-blue-600'
+        },
+        {
+            id: 'guardian',
+            name: { es: 'Guardián', en: 'Guardian' },
+            icon: '🛡️',
+            price: 300,
+            description: { es: 'Protector de vidas', en: 'Protector of lives' },
+            color: 'text-indigo-600'
+        },
+        {
+            id: 'expert',
+            name: { es: 'Experto', en: 'Expert' },
+            icon: '🎓',
+            price: 400,
+            description: { es: 'Maestro del conocimiento', en: 'Master of knowledge' },
+            color: 'text-purple-600'
+        },
+        {
+            id: 'legend',
+            name: { es: 'Leyenda', en: 'Legend' },
+            icon: '🏆',
+            price: 500,
+            description: { es: 'Los mejores de los mejores', en: 'The best of the best' },
+            color: 'text-amber-600'
+        },
+        {
+            id: 'speedster',
+            name: { es: 'El Veloz', en: 'The Swift' },
+            icon: '💨',
+            price: 350,
+            description: { es: 'Respuestas a la velocidad de la luz', en: 'Lightning-fast responses' },
+            color: 'text-cyan-600'
+        },
+        {
+            id: 'perfectionist',
+            name: { es: 'Perfeccionista', en: 'Perfectionist' },
+            icon: '💯',
+            price: 600,
+            description: { es: 'Solo acepta la excelencia', en: 'Only accepts excellence' },
+            color: 'text-green-600'
+        },
+        {
+            id: 'unstoppable',
+            name: { es: 'Imparable', en: 'Unstoppable' },
+            icon: '🔥',
+            price: 450,
+            description: { es: 'Nada te detiene', en: 'Nothing stops you' },
+            color: 'text-orange-600'
+        },
+        {
+            id: 'master',
+            name: { es: 'Maestro PAS', en: 'PAS Master' },
+            icon: '👑',
+            price: 800,
+            description: { es: 'El título más prestigioso', en: 'The most prestigious title' },
+            color: 'text-yellow-500'
+        },
+        {
+            id: 'champion',
+            name: { es: 'Campeón', en: 'Champion' },
+            icon: '🥇',
+            price: 700,
+            description: { es: 'Ganador absoluto', en: 'Absolute winner' },
+            color: 'text-yellow-600'
         }
     ]
 };

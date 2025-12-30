@@ -1,8 +1,8 @@
 import React, { useState, useEffect, Suspense, useRef } from 'react';
 import { initializeApp } from 'firebase/app';
 import { getAuth, onAuthStateChanged, signInWithCustomToken, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut } from 'firebase/auth';
-import { getFirestore, doc, onSnapshot, setDoc, getDoc, updateDoc } from 'firebase/firestore';
-import { Activity, HeartPulse, Sparkles, BookOpen, AlertTriangle, Play, Star, Printer, BadgeCheck, XCircle, Award, ShoppingBag, Trophy, Flame, FileText, Download, Moon, Sun, CheckCircle2, ArrowLeft, User, UserCheck, GraduationCap } from 'lucide-react';
+import { getFirestore, doc, onSnapshot, setDoc, getDoc, updateDoc, increment, collection, query, where, getDocs } from 'firebase/firestore';
+import { Activity, HeartPulse, Sparkles, BookOpen, AlertTriangle, Play, Star, Printer, BadgeCheck, XCircle, Award, ShoppingBag, Trophy, Flame, FileText, Download, Moon, Sun, CheckCircle2, ArrowLeft, User, UserCheck, GraduationCap, Zap } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { jsPDF } from 'jspdf';
 import { generateCheatSheet } from './utils/pdfGenerator';
@@ -10,6 +10,7 @@ import { selectRandomQuestions } from './utils/examRandomizer';
 import { getExamSizeForRole } from './utils/roleExamConfig';
 import { updateStreak } from './utils/streakSystem';
 import { STORE_ITEMS } from './data/storeCatalog';
+import { generateDailyQuests, checkQuestProgress } from './data/dailyQuests';
 
 // Components
 import Layout from './components/layout/Layout';
@@ -18,6 +19,7 @@ import ModuleCard from './components/dashboard/ModuleCard';
 import InsigniasPanel from './components/dashboard/InsigniasPanel';
 import AvatarShop from './components/dashboard/AvatarShop';
 import DailyChallenge from './components/dashboard/DailyChallenge';
+import DailyQuestsPanel from './components/dashboard/DailyQuestsPanel';
 import ToastContainer from './components/common/Toast';
 
 // Lazy Components
@@ -34,6 +36,8 @@ const StreakCounter = React.lazy(() => import('./components/common/StreakCounter
 const StreakMilestoneCelebration = React.lazy(() => import('./components/common/StreakMilestoneCelebration'));
 const StoreComponent = React.lazy(() => import('./components/dashboard/StoreComponent'));
 const ProfileView = React.lazy(() => import('./components/dashboard/ProfileView'));
+const GlossaryView = React.lazy(() => import('./components/dashboard/GlossaryView'));
+const PracticeMode = React.lazy(() => import('./components/dashboard/PracticeMode'));
 
 
 const DashboardSkeleton = React.lazy(() => import('./components/common/Skeleton').then(module => ({ default: module.DashboardSkeleton })));
@@ -49,6 +53,7 @@ import {
   EXAM_QUESTIONS_ES, EXAM_QUESTIONS_EN,
   AVATARS_ES, AVATARS_EN,
   HIDDEN_BADGES_ES, HIDDEN_BADGES_EN,
+  QUESTION_CATEGORIES_ES,
   XP_REWARDS, DESA_SIMULATOR_URL, ADMIN_PIN
 } from './data/constants';
 import { TRANSLATIONS } from './data/translations';
@@ -151,9 +156,21 @@ const App = () => {
     xp: 0,
     level: 1,
     examAttempts: [],
-    inventory: { avatars: ['default'], themes: [], powerups: {} },
+    inventory: { avatars: ['default'], themes: [], powerups: {}, titles: ['novice'] },
     activeAvatar: 'default',
-    activeTheme: 'default'
+    activeTheme: 'default',
+    activeTitle: 'novice',
+    dailyStats: {
+      date: new Date().toDateString(),
+      modulesCompleted: 0,
+      xpEarned: 0,
+      guardiaPlayed: 0,
+      correctAnswers: 0,
+      glossaryViews: 0
+    },
+    dailyQuests: null,
+    failedQuestions: [],
+    masteredQuestions: []
   });
   const progressRef = React.useRef(progress);
 
@@ -174,6 +191,15 @@ const App = () => {
   const [showDailyChallenge, setShowDailyChallenge] = useState(false);
   const [lang, setLang] = useState('es'); // 'es' or 'en'
   const t = TRANSLATIONS[lang];
+  // Data Selection based on Language
+  const MODULES = lang === 'es' ? MODULES_ES : MODULES_EN;
+  const LEVELS = lang === 'es' ? LEVELS_ES : LEVELS_EN;
+  const GLOSSARY = lang === 'es' ? GLOSSARY_ES : GLOSSARY_EN;
+  const ROLEPLAY_SCENARIOS = lang === 'es' ? ROLEPLAY_SCENARIOS_ES : ROLEPLAY_SCENARIOS_EN;
+  const DAILY_SCENARIOS = lang === 'es' ? DAILY_SCENARIOS_ES : DAILY_SCENARIOS_EN;
+  const EXAM_QUESTIONS = lang === 'es' ? EXAM_QUESTIONS_ES : EXAM_QUESTIONS_EN;
+  const AVATARS = lang === 'es' ? AVATARS_ES : AVATARS_EN;
+  const HIDDEN_BADGES = lang === 'es' ? HIDDEN_BADGES_ES : HIDDEN_BADGES_EN;
   const [toasts, setToasts] = useState([]);
   const [isSaving, setIsSaving] = useState(false);
   const [examConfig, setExamConfig] = useState({ examSize: 40 }); // Default 40 questions
@@ -181,7 +207,9 @@ const App = () => {
   const [surpriseExam, setSurpriseExam] = useState(null);
   const [currentStreak, setCurrentStreak] = useState(0);
   const [showStreakCelebration, setShowStreakCelebration] = useState(null);
-  const [practiceMode, setPracticeMode] = useState(false);
+  const [practiceMode, setPracticeMode] = useState('normal'); // 'normal', 'survival', 'errorLab', 'category'
+  const [activeCategory, setActiveCategory] = useState(null);
+  const [classAssignments, setClassAssignments] = useState(null);
 
 
 
@@ -198,15 +226,14 @@ const App = () => {
     setToasts(prev => prev.filter(t => t.id !== id));
   };
 
-  // Data Selection
-  const MODULES = lang === 'en' ? MODULES_EN : MODULES_ES;
-  const LEVELS = lang === 'en' ? LEVELS_EN : LEVELS_ES;
-  const GLOSSARY = lang === 'en' ? GLOSSARY_EN : GLOSSARY_ES;
-  const ROLEPLAY_SCENARIOS = lang === 'en' ? ROLEPLAY_SCENARIOS_EN : ROLEPLAY_SCENARIOS_ES;
-  const DAILY_SCENARIOS = lang === 'en' ? DAILY_SCENARIOS_EN : DAILY_SCENARIOS_ES;
-  const EXAM_QUESTIONS = lang === 'en' ? EXAM_QUESTIONS_EN : EXAM_QUESTIONS_ES;
-  const AVATARS = lang === 'en' ? AVATARS_EN : AVATARS_ES;
-  const HIDDEN_BADGES = lang === 'en' ? HIDDEN_BADGES_EN : HIDDEN_BADGES_ES;
+  // Track glossary views
+  useEffect(() => {
+    if (view === 'glossary') {
+      updateDailyStats('glossaryViews', 1);
+    }
+  }, [view]);
+
+
 
   // Combine Daily Scenarios with Exam Questions for variety
   const dailyPool = React.useMemo(() => {
@@ -247,6 +274,30 @@ const App = () => {
       document.documentElement.style.setProperty('--brand-700', '#6d28d9');
     }
   }, [progress.activeTheme]);
+
+  // Listen for Class Assignments
+  // Listen for Class Assignments
+  useEffect(() => {
+    const clsId = profile?.classId || progress?.classId;
+    if (!clsId) return;
+
+    try {
+      const unsubClass = onSnapshot(doc(db, 'artifacts', firebaseConfig.appId, 'public', 'data', 'classes', clsId), (snap) => {
+        if (snap.exists()) {
+          const clsData = snap.data();
+          setClassAssignments(clsData.activeAssignment || null);
+          if (clsData.activeAssignment && !classAssignments) {
+            addToast("¡Tienes una nueva tarea asignada!", "info");
+            try { playSound('notification'); } catch (e) { }
+          }
+        }
+      }, (err) => console.log("Class sync error", err));
+
+      return () => unsubClass();
+    } catch (e) {
+      console.log("Setup class sync error", e);
+    }
+  }, [profile?.classId, progress?.classId]);
 
   // Auth & Data
   // Auth & Data
@@ -300,7 +351,37 @@ const App = () => {
               yesterday.setDate(yesterday.getDate() - 1);
               const yesterdayStr = yesterday.toISOString().slice(0, 10);
 
-              let newStreak = (data.lastLoginDate === yesterdayStr) ? (data.streak || 0) + 1 : 1;
+              let newStreak = 1;
+              let streakSaved = false;
+              let updates = { lastLoginDate: today };
+
+              if (data.lastLoginDate === yesterdayStr) {
+                newStreak = (data.streak || 0) + 1;
+              } else {
+                // Streak Broken? Check for Freeze
+                const freezeCount = data.inventory?.powerups?.streak_freeze || 0;
+                if ((data.streak || 0) > 0 && freezeCount > 0) {
+                  newStreak = (data.streak || 0);
+                  streakSaved = true;
+                  updates['inventory.powerups.streak_freeze'] = freezeCount - 1;
+                }
+              }
+
+              // Weekly XP Reset Logic (If Monday)
+              const todayDate = new Date();
+              const lastDate = data.lastLoginDate ? new Date(data.lastLoginDate) : new Date(0);
+              // Simply check if it's Monday AND we haven't logged in today yet (which we haven't, inside this if)
+              // Or better: check if the Week Number has changed. 
+              // Simple approach: If today is Monday.
+              if (todayDate.getDay() === 1) {
+                // Reset Weekly XP
+                updates.weeklyXP = 0;
+                if (data.weeklyXP > 0) updates.lastWeekXP = data.weeklyXP;
+                updates.weeklyStats = null;
+                updates.weeklyQuests = null;
+              }
+
+              updates.streak = newStreak;
 
               // Check Badges
               const currentBadges = data.badges || [];
@@ -315,12 +396,13 @@ const App = () => {
                 addToast(t?.badges?.unlocked || "¡Insignia Desbloqueada!", 'success');
                 confetti();
               }
+              updates.badges = newBadges;
 
-              setDoc(doc(db, 'artifacts', firebaseConfig.appId, 'users', u.uid, 'progress', 'main'), {
-                streak: newStreak,
-                lastLoginDate: today,
-                badges: newBadges
-              }, { merge: true });
+              setDoc(doc(db, 'artifacts', firebaseConfig.appId, 'users', u.uid, 'progress', 'main'), updates, { merge: true });
+
+              if (streakSaved) {
+                addToast(t?.store?.streakFrozen || "¡Racha salvada por el Hielo!", 'info');
+              }
             }
 
           } else {
@@ -448,13 +530,16 @@ const App = () => {
 
         const currentXp = updated.xp || 0;
         const currentLifetimeXp = updated.lifetimeXp !== undefined ? updated.lifetimeXp : currentXp; // Backfill if missing
+        const currentWeeklyXP = updated.weeklyXP || 0;
 
         let newXp = currentXp + (xpGain * multiplier);
         let newLifetimeXp = currentLifetimeXp;
+        let newWeeklyXP = currentWeeklyXP;
 
         // Only positive gains contribute to Lifetime XP (Rank)
         if (xpGain > 0) {
           newLifetimeXp += (xpGain * multiplier);
+          newWeeklyXP += (xpGain * multiplier);
         }
 
         let newLevel = updated.level || 1;
@@ -470,7 +555,50 @@ const App = () => {
           setTimeout(() => setShowLevelUp(false), 4000);
         }
 
-        updated = { ...updated, xp: newXp, lifetimeXp: newLifetimeXp, level: newLevel };
+        updated = { ...updated, xp: newXp, lifetimeXp: newLifetimeXp, weeklyXP: newWeeklyXP, level: newLevel };
+
+        // Track XP gain in daily and weekly stats
+        if (xpGain > 0 || changes.dailyStats) { // Also trigger if other stats changed
+          const today = new Date().toDateString();
+          const currentStats = updated.dailyStats || {};
+          const currentWeeklyStats = updated.weeklyStats || {};
+
+          // Daily Logic
+          let newDailyStats = { ...currentStats };
+          if (currentStats.date !== today) {
+            newDailyStats = {
+              date: today,
+              modulesCompleted: 0,
+              xpEarned: 0,
+              guardiaPlayed: 0,
+              correctAnswers: 0,
+              glossaryViews: 0
+            };
+          }
+          newDailyStats.xpEarned = (newDailyStats.xpEarned || 0) + (xpGain > 0 ? xpGain : 0);
+
+          // Weekly Logic (Accumulate)
+          let newWeeklyStats = { ...currentWeeklyStats };
+          newWeeklyStats.xpEarned = (newWeeklyStats.xpEarned || 0) + (xpGain > 0 ? xpGain : 0);
+
+          // Update other counters if passed in changes (hacky but effective)
+          // We need to know WHAT action caused this to increment counters.
+          // The `updateProgress` is generic.
+          // Let's rely on specific keys being passed.
+          // IF `key` matches a stat type.
+        }
+
+        // BETTER APPROACH:
+        // The callers of updateProgress call it like updateProgress('xp', val).
+        // They also call updateDailyStats separately?
+        // Let's check updateDailyStats. I don't see it in App.jsx.
+        // Wait, I see `updateDailyStats` in `DailyChallenge.jsx` context usage?
+        // Ah, `updateDailyStats` IS defined in App.jsx? I need to search for it.
+        // I see `updateDailyStats` being called in lines 1112 and 1231 in previous view.
+
+        // I need to find the `updateDailyStats` function definition.
+        // It's likely inside `App.jsx`. I didn't see it in the previous `view_file` range (300-400 and 459-600).
+        // Let's search for it.
 
         // Handle nested keys
         if (typeof key === 'string' && key.includes('.')) {
@@ -537,6 +665,14 @@ const App = () => {
           addToast(lang === 'en' ? 'Already owned!' : '¡Ya tienes este objeto!', 'info');
           return;
         }
+      } else if (category === 'titles') {
+        const currentTitles = progress.inventory?.titles || ['novice'];
+        if (!currentTitles.includes(item.id)) {
+          updates['inventory.titles'] = [...currentTitles, item.id];
+        } else {
+          addToast(lang === 'en' ? 'Already owned!' : '¡Ya tienes este título!', 'info');
+          return;
+        }
       } else if (category === 'powerups') {
         const currentCount = progress.inventory?.powerups?.[item.id] || 0;
         updates[`inventory.powerups.${item.id}`] = currentCount + 1;
@@ -551,6 +687,78 @@ const App = () => {
     }
   };
 
+  // Daily & Weekly Quests Handler
+  const handleClaimQuestReward = async (totalReward, type = 'daily') => {
+    try {
+      const bonusReward = type === 'weekly' ? 100 : 50; // Higher bonus for weekly
+      const finalReward = totalReward + bonusReward;
+
+      const updates = {
+        xp: (progress.xp || 0) + finalReward
+      };
+
+      if (type === 'weekly') {
+        updates['weeklyQuests.claimed'] = true;
+        addToast(`¡Misiones Semanales completadas! +${finalReward} XP`, 'success');
+      } else {
+        updates['dailyQuests.claimed'] = true;
+        addToast(`¡Misiones Diarias completadas! +${finalReward} XP`, 'success');
+      }
+
+      await updateProgress(updates);
+      confetti();
+      playSound('success');
+    } catch (e) {
+      console.error('Quest reward error:', e);
+      addToast('Error al reclamar recompensa', 'error');
+    }
+  };
+
+  // Update Daily & Weekly Stats for Quest Tracking
+  const updateDailyStats = async (statKey, increment = 1) => {
+    try {
+      const today = new Date().toDateString();
+      const currentStats = progress.dailyStats || {};
+      const currentWeeklyStats = progress.weeklyStats || {};
+
+      let newDailyStats = { ...currentStats };
+      let newWeeklyStats = { ...currentWeeklyStats };
+
+      // Update Weekly (Accumulate)
+      newWeeklyStats[statKey] = (newWeeklyStats[statKey] || 0) + increment;
+
+      // Update Daily
+      if (currentStats.date !== today) {
+        // Reset daily
+        newDailyStats = {
+          date: today,
+          modulesCompleted: 0,
+          xpEarned: 0,
+          guardiaPlayed: 0,
+          correctAnswers: 0,
+          glossaryViews: 0
+        };
+        newDailyStats[statKey] = increment;
+
+        await updateProgress({
+          dailyStats: newDailyStats,
+          weeklyStats: newWeeklyStats,
+          dailyQuests: null // Reset quests for new day
+        });
+      } else {
+        // Increment daily
+        newDailyStats[statKey] = (newDailyStats[statKey] || 0) + increment;
+
+        await updateProgress({
+          dailyStats: newDailyStats,
+          weeklyStats: newWeeklyStats
+        });
+      }
+    } catch (e) {
+      console.error('Error updating stats:', e);
+    }
+  };
+
   // Backward compatibility wrapper for old avatar component
   const handleBuyAvatar = (avatar) => {
     handleStorePurchase('avatars', avatar);
@@ -562,6 +770,59 @@ const App = () => {
       setProfile(prev => ({ ...prev, avatarId }));
       await updateDoc(doc(db, 'artifacts', firebaseConfig.appId, 'users', user.uid, 'profile', 'main'), { avatarId });
       await updateDoc(doc(db, 'artifacts', firebaseConfig.appId, 'public', 'data', 'user_summaries', user.uid), { avatarId });
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleJoinClass = async (code) => {
+    try {
+      setIsSaving(true);
+      // Find class by code
+      const classQuery = query(collection(db, 'artifacts', firebaseConfig.appId, 'public', 'data', 'classes'), where('code', '==', code));
+      const snap = await getDocs(classQuery);
+
+      if (snap.empty) {
+        addToast("Código de clase inválido", "error");
+        return false;
+      }
+
+      const classDoc = snap.docs[0];
+      const classData = classDoc.data();
+
+      // Update User Progress
+      const newRole = classData.name; // Use class name as role for filtering
+
+      // Update local progress/profile immediately for UI
+      setProfile(prev => ({ ...prev, role: newRole, classId: classDoc.id }));
+      setProgress(prev => ({ ...prev, role: newRole, classId: classDoc.id, className: classData.name }));
+
+      // Persist updates
+      // 1. User Profile
+      await updateDoc(doc(db, 'artifacts', firebaseConfig.appId, 'users', user.uid, 'profile', 'main'), {
+        role: newRole,
+        classId: classDoc.id
+      });
+
+      // 2. User Summary (for Leaderboard)
+      await updateDoc(doc(db, 'artifacts', firebaseConfig.appId, 'public', 'data', 'user_summaries', user.uid), {
+        role: newRole,
+        classId: classDoc.id
+      });
+
+      // 3. Increment Class Count
+      await updateDoc(doc(db, 'artifacts', firebaseConfig.appId, 'public', 'data', 'classes', classDoc.id), {
+        studentCount: increment(1)
+      });
+
+      addToast(`¡Te has unido a: ${classData.name}!`, "success");
+      playSound('success');
+      confetti();
+      return true;
+    } catch (e) {
+      console.error(e);
+      addToast("Error al unirse a la clase", "error");
+      return false;
     } finally {
       setIsSaving(false);
     }
@@ -662,6 +923,7 @@ const App = () => {
         t={t}
         onProfileClick={() => setView('profile')}
         isSaving={isSaving}
+        classAssignments={classAssignments}
       >
         <ToastContainer toasts={toasts} removeToast={removeToast} />
         <Suspense fallback={<DashboardSkeleton />}>
@@ -802,6 +1064,37 @@ const App = () => {
                 );
               })()}
 
+              {/* Daily Quests Panel */}
+              <DailyQuestsPanel
+                progress={progress}
+                dailyStats={progress.dailyStats}
+                onClaimReward={handleClaimQuestReward}
+                t={t}
+                lang={lang}
+              />
+
+              {/* Practice Mode Card */}
+              <div
+                onClick={() => setView('practice')}
+                className="group relative bg-white dark:bg-slate-800 border-2 border-brand-100 dark:border-slate-700 rounded-3xl p-6 md:p-8 shadow-md hover:shadow-xl hover:border-brand-500 transition-all cursor-pointer overflow-hidden mt-6 mb-8"
+              >
+                <div className="absolute top-0 right-0 p-12 bg-brand-50 rounded-full -mr-6 -mt-6 group-hover:bg-brand-100 transition-colors"></div>
+                <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-6">
+                  <div className="flex-1 text-center md:text-left">
+                    <div className="inline-flex items-center gap-2 px-3 py-1 bg-brand-100 text-brand-700 rounded-full text-xs font-black uppercase tracking-widest mb-4">
+                      <Zap size={14} /> Entrena tu mente
+                    </div>
+                    <h2 className="text-3xl font-black text-slate-800 dark:text-white mb-2">Modo Práctica</h2>
+                    <p className="text-slate-600 dark:text-slate-400 font-medium max-w-lg">
+                      Practica con cientos de preguntas reales de primeros auxilios. Gana XP por cada respuesta correcta y completa tus misiones diarias.
+                    </p>
+                  </div>
+                  <div className="bg-brand-600 text-white p-6 rounded-2xl shadow-lg group-hover:scale-110 transition-transform">
+                    <FileText size={40} />
+                  </div>
+                </div>
+              </div>
+
               {/* Daily Challenge Modal */}
               {showDailyChallenge && (
                 <DailyChallenge
@@ -878,6 +1171,7 @@ const App = () => {
                       onClick={() => handleModuleClick(m)}
                       isLocked={isLocked}
                       t={t}
+                      isRecommended={classAssignments?.moduleId === m.id}
                     />
                   );
                 })}
@@ -914,7 +1208,11 @@ const App = () => {
               <LearningModule
                 module={activeModule}
                 t={t}
-                onComplete={() => { updateProgress(`${activeModule.id}Completed`, true); setView('home'); }}
+                onComplete={() => {
+                  updateProgress(`${activeModule.id}Completed`, true);
+                  updateDailyStats('modulesCompleted', 1);
+                  setView('home');
+                }}
                 onBack={() => setView('home')}
                 playSound={playSound}
               />
@@ -927,7 +1225,11 @@ const App = () => {
                 scenarioId={activeModule.id}
                 scenario={ROLEPLAY_SCENARIOS[activeModule.id]}
                 t={t}
-                onComplete={() => { updateProgress(`${activeModule.id}Completed`, true); setView('home'); }}
+                onComplete={() => {
+                  updateProgress(`${activeModule.id}Completed`, true);
+                  updateDailyStats('modulesCompleted', 1);
+                  setView('home');
+                }}
                 onBack={() => setView('home')}
                 playSound={playSound}
               />
@@ -955,6 +1257,11 @@ const App = () => {
                   }
                 }}
                 onAnswer={(isCorrect) => {
+                  // Track correct answers for daily quests
+                  if (isCorrect) {
+                    updateDailyStats('correctAnswers', 1);
+                  }
+
                   const { newStreak, milestone } = updateStreak(currentStreak, isCorrect);
                   setCurrentStreak(newStreak);
 
@@ -1066,20 +1373,15 @@ const App = () => {
             view === 'guardia' && (
               <GuardiaGame
                 onExit={() => setView('home')}
-                onComplete={(xp) => updateProgress('guardiaXp', xp)}
+                onComplete={(score) => {
+                  const xpEarned = score * 20; // 20 XP per person saved
+                  updateProgress({
+                    guardiaXp: xpEarned // Passing the gain will update total XP, lifetime XP, and level automatically
+                  });
+                  updateDailyStats('guardiaPlayed', 1);
+                  addToast(`¡Turno completado! +${xpEarned} XP`, 'success');
+                }}
                 playSound={playSound}
-              />
-            )
-          }
-
-          {
-            view === 'store' && (
-              <StoreComponent
-                currentXp={currentXp}
-                inventory={progress.inventory || {}}
-                onPurchase={handleStorePurchase}
-                onBack={() => setView('home')}
-                t={t}
               />
             )
           }
@@ -1117,6 +1419,7 @@ const App = () => {
                 firebaseConfigId={firebaseConfig.appId}
                 onBack={() => setView('home')}
                 currentUserId={user?.uid}
+                currentUserRole={profile?.role}
                 t={t}
               />
             )
@@ -1129,9 +1432,8 @@ const App = () => {
                 t={t}
                 onComplete={(xp) => {
                   updateProgress({
-                    timeTrial: xp,
-                    timeTrialCompleted: true, // Mark as completed
-                    xp: currentXp + xp // Add XP immediately
+                    timeTrialScore: xp,
+                    timeTrialCompleted: true
                   });
                   addToast(t?.game?.timetrial?.completed || "¡Contrarreloj Completado!", 'success');
                   setView('home');
@@ -1144,53 +1446,74 @@ const App = () => {
 
           {
             view === 'glossary' && (
-              <div className="max-w-4xl mx-auto bg-white p-10 rounded-3xl shadow-xl animate-in fade-in slide-in-from-bottom-8 pb-32">
-                <div className="flex items-center mb-10 pb-6 border-b border-slate-100">
-                  <button onClick={() => setView('home')} className="mr-6 hover:bg-slate-50 p-3 rounded-xl transition-colors"><BookOpen /></button>
-                  <h2 className="text-4xl font-black text-slate-800 tracking-tight">Glosario</h2>
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {GLOSSARY.map((item, idx) => (
-                    <div key={idx} className="p-6 rounded-2xl border border-slate-100 hover:border-brand-200 hover:bg-brand-50/30 transition-all hover:shadow-md group bg-slate-50/50">
-                      <h3 className="font-bold text-xl text-brand-600 mb-2 group-hover:text-brand-700">{item.t}</h3>
-                      <p className="text-slate-600 font-medium leading-relaxed">{item.d}</p>
-                    </div>
-                  ))}
-                </div>
+              <GlossaryView
+                glossary={GLOSSARY}
+                progress={progress}
+                onComplete={() => {
+                  updateProgress('glosarioCompleted', true);
+                  setView('home');
+                }}
+                onBack={() => setView('home')}
+                playSound={playSound}
+                addToast={addToast}
+                updateDailyStats={updateDailyStats}
+              />
+            )
+          }
 
-                {/* Glossary Completion Action */}
-                {/* Glossary Completion Action */}
-                <div className="mt-8 bg-brand-50 border-2 border-brand-100 rounded-2xl p-6 text-center animate-in slide-in-from-bottom-4">
-                  {!progress.glosarioCompleted ? (
-                    <>
-                      <h3 className="font-bold text-brand-800 text-lg mb-2">¿Has revisado todos los términos?</h3>
-                      <p className="text-brand-600 mb-6 text-sm">Completa este módulo para ganar tu recompensa de XP.</p>
-                      <button
-                        onClick={() => {
-                          updateProgress('glosarioCompleted', true);
-                          try { playSound('success'); } catch (e) { }
-                          addToast('¡Módulo Glosario Completado!', 'success');
-                          confetti();
-                          setView('home');
-                        }}
-                        className="bg-brand-600 hover:bg-brand-700 text-white font-bold py-3 px-8 rounded-xl shadow-lg hover:scale-105 transition-all flex items-center justify-center gap-2 mx-auto"
-                      >
-                        <CheckCircle2 size={20} />
-                        Marcar como Leído (+{XP_REWARDS.MODULE_COMPLETE} XP)
-                      </button>
-                    </>
-                  ) : (
-                    <div className="flex flex-col items-center justify-center gap-2 text-emerald-600 animate-in zoom-in">
-                      <div className="bg-emerald-100 p-3 rounded-full">
-                        <CheckCircle2 size={32} />
-                      </div>
-                      <h3 className="font-bold text-lg">¡Módulo Completado!</h3>
-                      <p className="text-sm opacity-80">Ya has recibido tu recompensa por este módulo.</p>
-                      <button onClick={() => setView('home')} className="mt-4 text-emerald-700 font-bold hover:underline">Volver al Inicio</button>
-                    </div>
-                  )}
-                </div>
-              </div>
+          {
+            view === 'practice' && (
+              <PracticeMode
+                questions={EXAM_QUESTIONS}
+                onBack={() => setView('home')}
+                failedQuestions={progress.failedQuestions || []}
+                masteredQuestions={progress.masteredQuestions || []}
+                categories={QUESTION_CATEGORIES_ES}
+                glossary={GLOSSARY}
+                onAnswer={(isCorrect, sessionCount, questionData, streakCount) => {
+                  const today = new Date().toDateString();
+                  if (isCorrect) {
+                    updateDailyStats('correctAnswers', 1);
+
+                    // Streak multiplier: 1.4x for racha >= 10 (approx +7 XP)
+                    const streakMultiplier = streakCount >= 10 ? 1.4 : 1;
+                    // Survival multiplier: 2x
+                    const modeMultiplier = practiceMode === 'survival' ? 2 : 1;
+                    const totalMultiplier = streakMultiplier * modeMultiplier;
+
+                    if (sessionCount === 20 && practiceMode !== 'survival') {
+                      updateProgress({ practiceXpGain: Math.round(100 * totalMultiplier) });
+                      addToast("¡Meta alcanzada! +100 XP extra desbloqueados", 'success');
+                      confetti();
+                    } else if (sessionCount > 20 || practiceMode === 'survival') {
+                      updateProgress({ practiceXpGain: Math.round(5 * totalMultiplier) });
+                    }
+
+                    // Mastery tracking
+                    if (questionData && questionData.q) {
+                      const currentMastered = progress.masteredQuestions || [];
+                      if (!currentMastered.includes(questionData.q)) {
+                        updateProgress('masteredQuestions', [...currentMastered, questionData.q]);
+                      }
+                      // Remove from failed if corrected
+                      const currentFailed = progress.failedQuestions || [];
+                      if (currentFailed.includes(questionData.q)) {
+                        updateProgress('failedQuestions', currentFailed.filter(q => q !== questionData.q));
+                      }
+                    }
+                  } else {
+                    // Update failed questions
+                    if (questionData && questionData.q) {
+                      const currentFailed = progress.failedQuestions || [];
+                      if (!currentFailed.includes(questionData.q)) {
+                        updateProgress('failedQuestions', [...currentFailed, questionData.q]);
+                      }
+                    }
+                  }
+                }}
+                playSound={playSound}
+                addToast={addToast}
+              />
             )
           }
 
@@ -1306,7 +1629,9 @@ const App = () => {
               t={t}
               lang={lang}
               currentXp={currentXp}
+              currentXp={currentXp}
               onBack={() => setView('home')}
+              onJoinClass={handleJoinClass}
               onEquipAvatar={(id) => { updateProgress('activeAvatar', id); addToast(t?.toasts?.avatarEquipped || "Avatar equipado", 'success'); }}
               onEquipTheme={(id) => { updateProgress('activeTheme', id); addToast(t?.toasts?.themeEquipped || "Tema aplicado", 'success'); }}
             />

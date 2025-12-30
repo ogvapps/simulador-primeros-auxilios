@@ -13,13 +13,29 @@ const GuardiaGame = memo(({ onComplete, onExit, playSound = defaultPlaySound }) 
   const [gameOver, setGameOver] = useState(false);
   const [shake, setShake] = useState(false);
 
-  // Scenarios Data
+
+  // Scenarios Data - Expanded to 20 scenarios
   const scenarios = [
     { id: 's1', text: "¡Varón inconsciente, NO respira!", tool: "rcp", icon: <HeartPulse size={48} className="text-red-500 animate-pulse" />, hint: "RCP Inmediata" },
     { id: 's2', text: "¡Corte profundo en brazo, sangrado masivo!", tool: "venda", icon: <Droplets size={48} className="text-red-600 drop-shadow-lg" />, hint: "Compresión Directa" },
     { id: 's3', text: "¡Atragantamiento, manos al cuello!", tool: "heimlich", icon: <Wind size={48} className="text-blue-400" />, hint: "Maniobra Heimlich" },
     { id: 's4', text: "¡Mareo, palidez, sudor frío!", tool: "piernas", icon: <Frown size={48} className="text-yellow-400" />, hint: "Posición Antishock" },
     { id: 's5', text: "¡Parada cardiaca confirmada!", tool: "desa", icon: <Zap size={48} className="text-yellow-500 animate-pulse" />, hint: "Usar DESA" },
+    { id: 's6', text: "¡Mujer embarazada con hemorragia!", tool: "venda", icon: <Droplets size={48} className="text-red-500" />, hint: "Compresión y 112" },
+    { id: 's7', text: "¡Niño ahogándose con comida!", tool: "heimlich", icon: <Wind size={48} className="text-blue-500" />, hint: "Heimlich Pediátrico" },
+    { id: 's8', text: "¡Anciano con dolor torácico intenso!", tool: "telefono", icon: <Volume2 size={48} className="text-red-600" />, hint: "Llamar 112" },
+    { id: 's9', text: "¡Deportista desmayado en el suelo!", tool: "piernas", icon: <Frown size={48} className="text-yellow-500" />, hint: "Posición Antishock" },
+    { id: 's10', text: "¡Víctima de electrocución sin pulso!", tool: "desa", icon: <Zap size={48} className="text-yellow-600 animate-pulse" />, hint: "DESA + RCP" },
+    { id: 's11', text: "¡Herida en pierna, sangre a borbotones!", tool: "venda", icon: <Droplets size={48} className="text-red-700" />, hint: "Torniquete" },
+    { id: 's12', text: "¡Bebé no responde, labios azules!", tool: "rcp", icon: <HeartPulse size={48} className="text-red-600 animate-pulse" />, hint: "RCP Infantil" },
+    { id: 's13', text: "¡Persona convulsionando en el suelo!", tool: "telefono", icon: <Volume2 size={48} className="text-orange-500" />, hint: "Proteger y 112" },
+    { id: 's14', text: "¡Motorista inconsciente tras accidente!", tool: "telefono", icon: <Volume2 size={48} className="text-red-500" />, hint: "No mover, 112" },
+    { id: 's15', text: "¡Ahogamiento en piscina, sin respiración!", tool: "rcp", icon: <HeartPulse size={48} className="text-blue-500 animate-pulse" />, hint: "RCP Inmediata" },
+    { id: 's16', text: "¡Quemadura grave en brazo y pecho!", tool: "telefono", icon: <Volume2 size={48} className="text-orange-600" />, hint: "Enfriar y 112" },
+    { id: 's17', text: "¡Diabético con hipoglucemia severa!", tool: "telefono", icon: <Volume2 size={48} className="text-purple-500" />, hint: "Azúcar y 112" },
+    { id: 's18', text: "¡Fractura expuesta en pierna!", tool: "telefono", icon: <Volume2 size={48} className="text-red-400" />, hint: "Inmovilizar y 112" },
+    { id: 's19', text: "¡Reacción alérgica, dificultad respiratoria!", tool: "telefono", icon: <Volume2 size={48} className="text-pink-500" />, hint: "112 Urgente" },
+    { id: 's20', text: "¡Golpe de calor, temperatura muy alta!", tool: "piernas", icon: <Frown size={48} className="text-orange-400" />, hint: "Enfriar y elevar" },
   ];
 
   const tools = [
@@ -75,6 +91,8 @@ const GuardiaGame = memo(({ onComplete, onExit, playSound = defaultPlaySound }) 
     if (patientHealth <= 0 || timeLeft <= 0) {
       playSound('error'); // Game Over sound
     }
+    // Track that user played Guardia mode
+    if (onComplete) onComplete(score); // Pass score to parent for tracking
   };
 
   const handleTool = (toolId) => {
@@ -96,20 +114,44 @@ const GuardiaGame = memo(({ onComplete, onExit, playSound = defaultPlaySound }) 
   };
 
   if (gameOver) {
+    // Calculate XP: 20 XP per person saved
+    const xpEarned = score * 20;
+
     return (
       <div className="fixed inset-0 z-[60] bg-slate-950/90 backdrop-blur-md flex items-center justify-center p-4">
         <div className="bg-slate-900 border-2 border-slate-700 p-8 md:p-12 rounded-[2.5rem] shadow-2xl max-w-lg w-full text-center relative overflow-hidden animate-in zoom-in duration-300">
           <div className="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-transparent via-red-500 to-transparent opacity-50"></div>
 
           <div className="w-24 h-24 bg-red-500/10 rounded-full flex items-center justify-center mx-auto mb-6 ring-4 ring-red-500/20">
-            <Skull size={48} className="text-red-500" />
+            {score > 0 ? <Activity size={48} className="text-green-500" /> : <Skull size={48} className="text-red-500" />}
           </div>
 
-          <h2 className="text-4xl font-black text-white mb-2 tracking-tight">PACIENTE PERDIDO</h2>
-          <p className="text-slate-400 mb-8 font-medium">Has logrado salvar a <span className="text-white text-2xl font-bold">{score}</span> personas.</p>
+          <h2 className="text-4xl font-black text-white mb-2 tracking-tight">
+            {score > 0 ? 'TURNO COMPLETADO' : 'PACIENTE PERDIDO'}
+          </h2>
+          <p className="text-slate-400 mb-4 font-medium">
+            Has logrado salvar a <span className="text-white text-2xl font-bold">{score}</span> personas.
+          </p>
+
+          {/* XP Reward Display */}
+          {score > 0 && (
+            <div className="bg-yellow-500/10 border-2 border-yellow-500/30 rounded-xl p-4 mb-6">
+              <div className="flex items-center justify-center gap-2 text-yellow-400">
+                <Zap size={24} className="fill-yellow-400" />
+                <span className="text-3xl font-black">+{xpEarned} XP</span>
+              </div>
+              <p className="text-yellow-200 text-sm mt-1">20 XP por cada persona salvada</p>
+            </div>
+          )}
 
           <div className="grid grid-cols-2 gap-4">
-            <button onClick={onExit} className="bg-slate-800 text-slate-300 hover:bg-slate-700 hover:text-white py-4 rounded-xl font-bold transition-all">
+            <button
+              onClick={() => {
+                if (onComplete && score > 0) onComplete(score);
+                onExit();
+              }}
+              className="bg-slate-800 text-slate-300 hover:bg-slate-700 hover:text-white py-4 rounded-xl font-bold transition-all"
+            >
               ACEPTAR
             </button>
             <button

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ShoppingBag, Zap, User, Check, Lock } from 'lucide-react';
+import { ShoppingBag, Zap, User, Check, Lock, Palette, Award } from 'lucide-react';
 import { STORE_ITEMS } from '../../data/storeCatalog';
 
 const StoreComponent = ({ currentXp, inventory = {}, onPurchase, onBack, t, language = 'es' }) => {
@@ -8,12 +8,14 @@ const StoreComponent = ({ currentXp, inventory = {}, onPurchase, onBack, t, lang
     const ownedAvatars = inventory.avatars || ['default'];
     const ownedPowerups = inventory.powerups || {};
     const ownedThemes = inventory.themes || [];
+    const ownedTitles = inventory.titles || ['novice'];
 
     const canAfford = (price) => currentXp >= price;
     const isOwned = (category, id) => {
         if (category === 'avatars') return ownedAvatars.includes(id);
         if (category === 'powerups') return (ownedPowerups[id] || 0) > 0;
         if (category === 'themes') return ownedThemes.includes(id);
+        if (category === 'titles') return ownedTitles.includes(id);
         return false;
     };
 
@@ -48,20 +50,19 @@ const StoreComponent = ({ currentXp, inventory = {}, onPurchase, onBack, t, lang
                 <div className="flex items-center justify-between mt-4">
                     <div className="flex items-center gap-1 text-sm font-bold text-purple-600">
                         <Zap size={16} />
-                        <span>{item.price} XP</span>
+                        {item.price}
                     </div>
 
                     {owned ? (
-                        <div className="flex items-center gap-1 text-green-600 text-sm font-bold">
+                        <div className="flex items-center gap-1 text-green-600 text-xs font-bold">
                             <Check size={16} />
-                            {count !== null && count > 0 && <span>x{count}</span>}
-                            {count === null && <span>{t?.store?.owned || 'Owned'}</span>}
+                            {count !== null ? `x${count}` : (t?.store?.owned || 'Owned')}
                         </div>
                     ) : (
                         <button
                             onClick={() => handlePurchase(category, item)}
                             disabled={!affordable}
-                            className={`px-3 py-1 rounded-lg text-sm font-bold transition-all ${affordable ? 'bg-purple-600 text-white hover:bg-purple-700' : 'bg-slate-300 text-slate-500 cursor-not-allowed'}`}
+                            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${affordable ? 'bg-purple-600 text-white hover:bg-purple-700' : 'bg-slate-200 text-slate-400 cursor-not-allowed'}`}
                         >
                             {affordable ? (t?.store?.buy || 'Buy') : <Lock size={14} />}
                         </button>
@@ -72,58 +73,61 @@ const StoreComponent = ({ currentXp, inventory = {}, onPurchase, onBack, t, lang
     };
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-purple-50 to-pink-50 p-6">
-            <div className="max-w-6xl mx-auto">
+        <div className="max-w-6xl mx-auto p-4 md:p-8 animate-in fade-in">
+            <div className="bg-white rounded-2xl shadow-xl p-6 md:p-8">
                 {/* Header */}
-                <div className="bg-white rounded-2xl shadow-lg p-6 mb-6">
-                    <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                            <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full flex items-center justify-center">
-                                <ShoppingBag size={24} className="text-white" />
-                            </div>
-                            <div>
-                                <h1 className="text-2xl font-black text-slate-800">Rewards Store</h1>
-                                <p className="text-sm text-slate-500">Spend your XP on awesome rewards!</p>
-                            </div>
+                <div className="flex items-center justify-between mb-6 pb-4 border-b border-slate-100">
+                    <div className="flex items-center gap-3">
+                        <div className="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center">
+                            <ShoppingBag size={24} className="text-purple-600" />
                         </div>
-                        <div className="text-right">
-                            <p className="text-sm text-slate-500">Your Balance</p>
-                            <div className="flex items-center gap-2 text-2xl font-black text-purple-600">
-                                <Zap size={24} />
-                                <span>{currentXp} XP</span>
-                            </div>
+                        <div>
+                            <h2 className="text-2xl font-black text-slate-800">{t?.store?.title || 'Tienda'}</h2>
+                            <p className="text-sm text-slate-500">{t?.store?.subtitle || 'Gasta tu XP en objetos'}</p>
                         </div>
+                    </div>
+                    <div className="flex items-center gap-2 bg-purple-50 px-4 py-2 rounded-xl border border-purple-200">
+                        <Zap size={20} className="text-purple-600" />
+                        <span className="font-black text-purple-900">{currentXp}</span>
+                        <span className="text-xs text-purple-600">XP</span>
                     </div>
                 </div>
 
                 {/* Tabs */}
-                <div className="flex gap-4 mb-6">
+                <div className="flex gap-2 mb-6 overflow-x-auto pb-2">
                     <button
                         onClick={() => setSelectedTab('avatars')}
-                        className={`flex-1 py-3 rounded-xl font-bold transition-all ${selectedTab === 'avatars' ? 'bg-white shadow-lg text-purple-600' : 'bg-white/50 text-slate-500'}`}
+                        className={`px-4 py-2 rounded-lg font-bold transition-all whitespace-nowrap ${selectedTab === 'avatars' ? 'bg-purple-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}
                     >
-                        <User size={20} className="inline mr-2" />
-                        {t?.store?.avatars || 'Avatars'}
+                        <User size={16} className="inline mr-2" />
+                        {t?.store?.avatars || 'Avatares'}
                     </button>
                     <button
-                        onClick={() => setSelectedTab('powerups')}
-                        className={`flex-1 py-3 rounded-xl font-bold transition-all ${selectedTab === 'powerups' ? 'bg-white shadow-lg text-purple-600' : 'bg-white/50 text-slate-500'}`}
+                        onClick={() => setSelectedTab('titles')}
+                        className={`px-4 py-2 rounded-lg font-bold transition-all whitespace-nowrap ${selectedTab === 'titles' ? 'bg-purple-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}
                     >
-                        <Zap size={20} className="inline mr-2" />
-                        {t?.store?.powerups || 'Power-ups'}
+                        <Award size={16} className="inline mr-2" />
+                        {t?.store?.titles || 'Títulos'}
                     </button>
                     <button
                         onClick={() => setSelectedTab('themes')}
-                        className={`flex-1 py-3 rounded-xl font-bold transition-all ${selectedTab === 'themes' ? 'bg-white shadow-lg text-purple-600' : 'bg-white/50 text-slate-500'}`}
+                        className={`px-4 py-2 rounded-lg font-bold transition-all whitespace-nowrap ${selectedTab === 'themes' ? 'bg-purple-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}
                     >
-                        <ShoppingBag size={20} className="inline mr-2" />
-                        Themes
+                        <Palette size={16} className="inline mr-2" />
+                        {t?.store?.themes || 'Temas'}
+                    </button>
+                    <button
+                        onClick={() => setSelectedTab('powerups')}
+                        className={`px-4 py-2 rounded-lg font-bold transition-all whitespace-nowrap ${selectedTab === 'powerups' ? 'bg-purple-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}
+                    >
+                        <Zap size={16} className="inline mr-2" />
+                        {t?.store?.powerups || 'Power-ups'}
                     </button>
                 </div>
 
                 {/* Items Grid */}
-                <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                    {STORE_ITEMS[selectedTab].map(item => (
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                    {STORE_ITEMS[selectedTab]?.map(item => (
                         <ItemCard key={item.id} item={item} category={selectedTab} />
                     ))}
                 </div>
@@ -131,9 +135,9 @@ const StoreComponent = ({ currentXp, inventory = {}, onPurchase, onBack, t, lang
                 {/* Back Button */}
                 <button
                     onClick={onBack}
-                    className="mt-6 px-6 py-3 bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold rounded-xl transition-all"
+                    className="mt-6 w-full bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-3 rounded-xl transition-all"
                 >
-                    ← Back to Home
+                    {t?.store?.back || 'Volver'}
                 </button>
             </div>
         </div>

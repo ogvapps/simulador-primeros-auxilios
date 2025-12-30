@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
-import { User, Check, Palette, Zap, ArrowLeft, Star, ShoppingBag } from 'lucide-react';
-import InsigniasPanel from './InsigniasPanel';
+import { User, Check, Palette, Zap, ArrowLeft, Star, ShoppingBag, GraduationCap } from 'lucide-react';
 import {
     MODULES_ES, MODULES_EN,
     HIDDEN_BADGES_ES, HIDDEN_BADGES_EN
@@ -18,7 +17,7 @@ const getLocalizedDescription = (item, lang) => {
     return item.description[lang] || item.description.es || item.description;
 };
 
-const ProfileView = ({ progress, profile, onEquipAvatar, onEquipTheme, onBack, t, lang = 'es', currentXp }) => {
+const ProfileView = ({ progress, profile, onEquipAvatar, onEquipTheme, onBack, onJoinClass, t, lang = 'es', currentXp }) => {
     const [activeTab, setActiveTab] = useState('inventory'); // 'inventory', 'stats'
 
     const inventory = progress.inventory || { avatars: ['default'], themes: [], powerups: {} };
@@ -32,7 +31,7 @@ const ProfileView = ({ progress, profile, onEquipAvatar, onEquipTheme, onBack, t
                 {/* Avatars */}
                 <section>
                     <h3 className="text-xl font-bold text-slate-800 mb-4 flex items-center gap-2">
-                        <User className="text-brand-500" /> {t?.profile?.avatars || "Mis Avatares"}
+                        <User className="text-brand-500" /> {t?.profile?.avatars || "My Avatars"}
                     </h3>
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                         {inventory.avatars.map(avatarId => {
@@ -64,7 +63,7 @@ const ProfileView = ({ progress, profile, onEquipAvatar, onEquipTheme, onBack, t
                 {/* Themes */}
                 <section>
                     <h3 className="text-xl font-bold text-slate-800 mb-4 flex items-center gap-2">
-                        <Palette className="text-brand-500" /> {t?.profile?.themes || "Mis Temas"}
+                        <Palette className="text-brand-500" /> {t?.profile?.themes || "My Themes"}
                     </h3>
                     <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                         {/* Default Theme */}
@@ -76,7 +75,7 @@ const ProfileView = ({ progress, profile, onEquipAvatar, onEquipTheme, onBack, t
                                 <div className="w-6 h-6 rounded-full bg-slate-100 border border-slate-200" />
                                 <div className="w-6 h-6 rounded-full bg-white border border-slate-200" />
                             </div>
-                            <p className="text-xs font-black text-slate-800">Estándar</p>
+                            <p className="text-xs font-black text-slate-800">{t?.profile?.standard || "Standard"}</p>
                         </div>
 
                         {inventory.themes?.map(themeId => {
@@ -106,7 +105,7 @@ const ProfileView = ({ progress, profile, onEquipAvatar, onEquipTheme, onBack, t
                 {/* Power-ups Backpack */}
                 <section>
                     <h3 className="text-xl font-bold text-slate-800 mb-4 flex items-center gap-2">
-                        <Zap className="text-brand-500" /> {t?.profile?.backpack || "Mochila de Objetos"}
+                        <Zap className="text-brand-500" /> {t?.profile?.backpack || "Item Backpack"}
                     </h3>
                     <div className="bg-slate-50 border border-slate-200 rounded-2xl p-6">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -132,7 +131,7 @@ const ProfileView = ({ progress, profile, onEquipAvatar, onEquipTheme, onBack, t
                             })}
                             {Object.values(inventory.powerups || {}).every(v => v === 0) && (
                                 <p className="text-slate-400 italic text-sm col-span-2 text-center py-4">
-                                    No tienes objetos en tu mochila. ¡Visita la tienda!
+                                    {t?.profile?.emptyBackpack || "Your backpack is empty. Visit the store!"}
                                 </p>
                             )}
                         </div>
@@ -154,9 +153,9 @@ const ProfileView = ({ progress, profile, onEquipAvatar, onEquipTheme, onBack, t
                 </button>
                 <div className="text-center">
                     <h2 className="text-3xl font-black text-slate-900 uppercase tracking-tight">
-                        {t?.profile?.title || "Mi Perfil / Mochila"}
+                        {t?.profile?.title || "My Profile / Backpack"}
                     </h2>
-                    <p className="text-slate-500 font-medium">Gestiona tu equipo y recompensas</p>
+                    <p className="text-slate-500 font-medium">{t?.profile?.subtitle || "Manage your gear and rewards"}</p>
                 </div>
                 <div className="w-12 h-12 invisible" /> {/* Spacer */}
             </div>
@@ -190,32 +189,142 @@ const ProfileView = ({ progress, profile, onEquipAvatar, onEquipTheme, onBack, t
                     onClick={() => setActiveTab('inventory')}
                     className={`px-8 py-3 rounded-xl font-bold transition-all ${activeTab === 'inventory' ? 'bg-white text-brand-600 shadow-md' : 'text-slate-500 hover:text-slate-700'}`}
                 >
-                    Mi Equipo
+                    {t?.profile?.inventoryTab || "My Gear"}
                 </button>
                 <button
                     onClick={() => setActiveTab('stats')}
                     className={`px-8 py-3 rounded-xl font-bold transition-all ${activeTab === 'stats' ? 'bg-white text-brand-600 shadow-md' : 'text-slate-500 hover:text-slate-700'}`}
                 >
-                    Estadísticas
+                    {t?.profile?.statsTab || "Stats"}
+                </button>
+                <button
+                    onClick={() => setActiveTab('classroom')}
+                    className={`px-8 py-3 rounded-xl font-bold transition-all ${activeTab === 'classroom' ? 'bg-white text-brand-600 shadow-md' : 'text-slate-500 hover:text-slate-700'}`}
+                >
+                    {t?.profile?.classTab || "Clase"}
                 </button>
             </div>
 
             {activeTab === 'inventory' ? renderInventory() : (
-                <div className="space-y-6">
-                    {/* Render Insignias (Stats) here */}
-                    <InsigniasPanel
-                        progress={progress}
-                        currentLevel={progress.level}
-                        currentXp={currentXp}
-                        t={t}
-                        modules={lang === 'en' ? MODULES_EN : MODULES_ES}
-                        hiddenBadges={lang === 'en' ? HIDDEN_BADGES_EN : HIDDEN_BADGES_ES}
-                    />
+                <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
 
-                    <div className="bg-white border border-slate-100 rounded-3xl p-8 text-center animate-in zoom-in-95 duration-500 mt-4">
-                        <h3 className="text-lg font-bold text-slate-600 mb-2">Exámenes Realizados</h3>
-                        <div className="text-4xl font-black text-brand-500">{progress.examAttempts?.length || 0}</div>
+                    {/* Brutal Main Stats */}
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <div className="bg-gradient-to-br from-indigo-500 to-indigo-600 p-4 rounded-2xl shadow-lg text-white text-center transform hover:scale-105 transition-transform">
+                            <span className="text-indigo-200 text-xs font-bold uppercase tracking-widest">{t?.profile?.level || "Level"}</span>
+                            <div className="text-4xl font-black mt-1">{progress.level || 1}</div>
+                        </div>
+                        <div className="bg-gradient-to-br from-purple-500 to-purple-600 p-4 rounded-2xl shadow-lg text-white text-center transform hover:scale-105 transition-transform">
+                            <span className="text-purple-200 text-xs font-bold uppercase tracking-widest">{t?.profile?.totalXp || "Total XP"}</span>
+                            <div className="text-4xl font-black mt-1">{currentXp || 0}</div>
+                        </div>
+                        <div className="bg-gradient-to-br from-pink-500 to-pink-600 p-4 rounded-2xl shadow-lg text-white text-center transform hover:scale-105 transition-transform">
+                            <span className="text-pink-200 text-xs font-bold uppercase tracking-widest">{t?.profile?.streak || "Streak"}</span>
+                            <div className="text-4xl font-black mt-1 flex items-center justify-center gap-1">
+                                {progress.currentStreak || 0} <Zap size={20} className="fill-white" />
+                            </div>
+                        </div>
+                        <div className="bg-gradient-to-br from-orange-500 to-orange-600 p-4 rounded-2xl shadow-lg text-white text-center transform hover:scale-105 transition-transform">
+                            <span className="text-orange-200 text-xs font-bold uppercase tracking-widest">{t?.profile?.exams || "Exams"}</span>
+                            <div className="text-4xl font-black mt-1">{progress.examAttempts?.length || 0}</div>
+                        </div>
                     </div>
+
+                    {/* Detailed Progress Bars */}
+                    <div className="bg-white border-2 border-slate-100 rounded-3xl p-6 shadow-xl">
+                        <h3 className="text-xl font-black text-slate-800 mb-6 flex items-center gap-2">
+                            <Star className="text-brand-500" /> {t?.profile?.moduleProgress || "Module Progress"}
+                        </h3>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
+                            {(lang === 'en' ? MODULES_EN : MODULES_ES).filter(m => m.id !== 'exam').map(module => {
+                                const isCompleted = progress[`${module.id}Completed`];
+                                return (
+                                    <div key={module.id} className="relative">
+                                        <div className="flex justify-between mb-1">
+                                            <span className="font-bold text-slate-700 text-sm">{module.title}</span>
+                                            <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${isCompleted ? 'bg-green-100 text-green-700' : 'bg-slate-100 text-slate-500'}`}>
+                                                {isCompleted ? (t?.profile?.completed || 'COMPLETED') : (t?.profile?.inProgress || 'IN PROGRESS')}
+                                            </span>
+                                        </div>
+                                        <div className="h-3 w-full bg-slate-100 rounded-full overflow-hidden shadow-inner">
+                                            <div
+                                                className={`h-full rounded-full transition-all duration-1000 ease-out ${isCompleted ? 'bg-gradient-to-r from-brand-400 to-brand-600' : 'bg-slate-300'}`}
+                                                style={{ width: isCompleted ? '100%' : '30%' }}
+                                            />
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    </div>
+
+                    {/* Exam Performance */}
+                    <div className="bg-white border-2 border-slate-100 rounded-3xl p-6 shadow-xl">
+                        <h3 className="text-xl font-black text-slate-800 mb-6 flex items-center gap-2">
+                            <Zap className="text-yellow-500" /> {t?.profile?.examPerformance || "Exam Performance"}
+                        </h3>
+                        {(!progress.examAttempts || progress.examAttempts.length === 0) ? (
+                            <div className="text-center py-10 text-slate-400 italic">
+                                {t?.profile?.noExams || "You haven't taken any exams yet."}
+                            </div>
+                        ) : (
+                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                {progress.examAttempts.slice(-4).reverse().map((attempt, i) => (
+                                    <div key={i} className="bg-slate-50 p-4 rounded-xl border border-slate-200 text-center">
+                                        <div className="text-xs font-bold text-slate-400 uppercase mb-1">{t?.profile?.recentAttempt || "Recent Attempt"}</div>
+                                        <div className={`text-3xl font-black ${attempt.score >= 5 ? 'text-green-600' : 'text-red-500'}`}>
+                                            {attempt.score}/10
+                                        </div>
+                                        <div className="text-xs text-slate-400 mt-1">{new Date(attempt.date).toLocaleDateString()}</div>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+
+                </div>
+            )}
+
+            {/* Classroom Tab */}
+            {activeTab === 'classroom' && (
+                <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                    {progress.classId ? (
+                        <div className="bg-white border-2 border-brand-100 rounded-3xl p-8 text-center shadow-xl">
+                            <div className="w-24 h-24 bg-brand-50 rounded-full flex items-center justify-center mx-auto mb-6 text-brand-600">
+                                <GraduationCap size={48} />
+                            </div>
+                            <h2 className="text-2xl font-black text-slate-800 mb-2">Mi Clase</h2>
+                            <p className="text-3xl font-bold text-brand-600 mb-6">{progress.className || 'Clase Asignada'}</p>
+                            <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 inline-block">
+                                <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">ESTADO</p>
+                                <p className="font-mono text-xl font-black text-slate-700">INSCRITO</p>
+                            </div>
+                        </div>
+                    ) : (
+                        <div className="bg-white border-2 border-slate-100 rounded-3xl p-8 shadow-xl">
+                            <h3 className="text-xl font-black text-slate-800 mb-4 flex items-center gap-2">
+                                <GraduationCap className="text-brand-500" /> Unirse a una Clase
+                            </h3>
+                            <p className="text-slate-500 mb-6">Pide el código a tu profesor para unirte a su aula virtual y aparecer en su lista.</p>
+
+                            <form onSubmit={(e) => {
+                                e.preventDefault();
+                                const code = e.target.code.value.trim().toUpperCase();
+                                if (code.length > 2 && onJoinClass) onJoinClass(code);
+                            }} className="flex flex-col md:flex-row gap-4">
+                                <input
+                                    name="code"
+                                    type="text"
+                                    placeholder="CÓDIGO (ej. X7Y2Z1)"
+                                    className="flex-1 px-4 py-3 rounded-xl border border-slate-300 font-mono text-lg uppercase font-bold text-center md:text-left focus:ring-2 focus:ring-brand-500 outline-none"
+                                    maxLength={8}
+                                />
+                                <button type="submit" className="bg-brand-600 text-white px-8 py-3 rounded-xl font-bold hover:bg-brand-700 shadow-lg whitespace-nowrap">
+                                    Unirse
+                                </button>
+                            </form>
+                        </div>
+                    )}
                 </div>
             )}
         </div>

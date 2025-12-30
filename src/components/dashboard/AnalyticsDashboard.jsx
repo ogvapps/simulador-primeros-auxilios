@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell, AreaChart, Area } from 'recharts';
-import { Users, AlertTriangle, Trophy, TrendingUp } from 'lucide-react';
+import { Users, AlertTriangle, Trophy, TrendingUp, Crown } from 'lucide-react';
 import ErrorHeatmap from './ErrorHeatmap';
 import { EXAM_QUESTIONS } from '../../data/constants';
 
@@ -34,6 +34,21 @@ const AnalyticsDashboard = ({ students, badgeModules, t }) => {
         });
     }, [students, badgeModules]);
 
+    const classPerformanceData = useMemo(() => {
+        const classes = {};
+        students.forEach(s => {
+            const role = s.role || 'Sin Clase';
+            if (!classes[role]) classes[role] = { totalXp: 0, count: 0 };
+            classes[role].totalXp += s.progress?.xp || 0;
+            classes[role].count++;
+        });
+
+        return Object.entries(classes).map(([role, data]) => ({
+            name: role,
+            avgXp: Math.round(data.totalXp / data.count)
+        })).sort((a, b) => b.avgXp - a.avgXp);
+    }, [students]);
+
     const examData = useMemo(() => {
         const passed = students.filter(s => s.progress?.examenPassed).length;
         const total = students.length;
@@ -55,6 +70,17 @@ const AnalyticsDashboard = ({ students, badgeModules, t }) => {
 
     const topStudents = useMemo(() => {
         return [...students].sort((a, b) => (b.progress?.xp || 0) - (a.progress?.xp || 0)).slice(0, 3);
+    }, [students]);
+
+    const topByClass = useMemo(() => {
+        const classes = {};
+        students.forEach(s => {
+            const role = s.role || 'Sin Clase';
+            if (!classes[role] || (s.progress?.xp || 0) > (classes[role].xp || 0)) {
+                classes[role] = { name: s.name, xp: s.progress?.xp || 0, role };
+            }
+        });
+        return Object.values(classes).sort((a, b) => b.xp - a.xp);
     }, [students]);
 
     if (!students.length) return <div className="p-10 text-center text-slate-400">{t?.analytics?.noData || "No Data"}</div>;
@@ -100,6 +126,24 @@ const AnalyticsDashboard = ({ students, badgeModules, t }) => {
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
 
+                {/* PERFORMANCE BY CLASS CHART */}
+                <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+                    <h3 className="font-bold text-slate-700 mb-4">{t?.analytics?.classPerformance || "Class Performance (Avg XP)"}</h3>
+                    <div className="h-64 w-full">
+                        <ResponsiveContainer width="100%" height="100%">
+                            <BarChart data={classPerformanceData} layout="vertical">
+                                <CartesianGrid strokeDasharray="3 3" horizontal={false} />
+                                <XAxis type="number" />
+                                <YAxis dataKey="name" type="category" width={100} tick={{ fontSize: 10 }} />
+                                <Tooltip
+                                    contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                                />
+                                <Bar dataKey="avgXp" name={t?.analytics?.chart?.avgXp || "Avg XP"} fill="#10B981" radius={[0, 4, 4, 0]} barSize={20} />
+                            </BarChart>
+                        </ResponsiveContainer>
+                    </div>
+                </div>
+
                 {/* LEVEL DISTRIBUTION CHART */}
                 <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
                     <h3 className="font-bold text-slate-700 mb-4">{t?.analytics?.levelDist}</h3>
@@ -115,32 +159,6 @@ const AnalyticsDashboard = ({ students, badgeModules, t }) => {
                                 />
                                 <Bar dataKey="count" name={t?.analytics?.chart?.count} fill="#4F46E5" radius={[4, 4, 0, 0]} barSize={40} />
                             </BarChart>
-                        </ResponsiveContainer>
-                    </div>
-                </div>
-
-                {/* EXAM STATUS PIE CHART */}
-                <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
-                    <h3 className="font-bold text-slate-700 mb-4">{t?.analytics?.examStatus}</h3>
-                    <div className="h-64 w-full flex items-center justify-center">
-                        <ResponsiveContainer width="100%" height="100%">
-                            <PieChart>
-                                <Pie
-                                    data={examData}
-                                    cx="50%"
-                                    cy="50%"
-                                    innerRadius={60}
-                                    outerRadius={80}
-                                    paddingAngle={5}
-                                    dataKey="value"
-                                >
-                                    {examData.map((entry, index) => (
-                                        <Cell key={`cell-${index}`} fill={index === 0 ? '#10B981' : '#E5E7EB'} />
-                                    ))}
-                                </Pie>
-                                <Tooltip />
-                                <Legend verticalAlign="bottom" height={36} />
-                            </PieChart>
                         </ResponsiveContainer>
                     </div>
                 </div>
@@ -167,16 +185,32 @@ const AnalyticsDashboard = ({ students, badgeModules, t }) => {
                     </div>
                 </div>
 
-                {/* INSIGHTS LISTS */}
+                {/* ELITE BY CLASS */}
+                <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm lg:col-span-2">
+                    <h3 className="font-bold text-slate-700 mb-4 flex items-center gap-2">
+                        <Crown size={18} className="text-yellow-500" /> {t?.analytics?.topByClass || "Top Students by Class"}
+                    </h3>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                        {topByClass.map((s, i) => (
+                            <div key={i} className="bg-slate-50 p-4 rounded-xl border border-slate-100 flex flex-col items-center text-center">
+                                <span className="text-[10px] font-black text-slate-400 uppercase mb-1">{s.role}</span>
+                                <span className="font-bold text-slate-800 text-sm mb-1">{s.name}</span>
+                                <span className="text-xs text-brand-600 font-black bg-brand-50 px-2 py-0.5 rounded-full">{s.xp.toLocaleString()} XP</span>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+
+                {/* INSIGHTS */}
                 <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
                     <h3 className="font-bold text-slate-700 mb-4 flex items-center gap-2">
-                        <AlertTriangle size={18} className="text-red-500" /> {t?.analytics?.risk}
+                        <AlertTriangle size={18} className="text-red-500" /> {t?.analytics?.atRisk || "At Risk Students"}
                     </h3>
                     {atRiskStudents.length > 0 ? (
                         <ul className="space-y-3">
                             {atRiskStudents.map(s => (
                                 <li key={s.userId} className="flex justify-between items-center bg-red-50 p-3 rounded-lg border border-red-100">
-                                    <span className="font-bold text-slate-700 text-sm">{s.name}</span>
+                                    <span className="font-bold text-slate-700 text-sm">{s.name} ({s.role})</span>
                                     <span className="text-xs text-red-500 font-bold bg-white px-2 py-1 rounded-full">
                                         {Math.floor((new Date() - new Date(s.lastUpdate)) / (1000 * 60 * 60 * 24))}d
                                     </span>
@@ -184,25 +218,26 @@ const AnalyticsDashboard = ({ students, badgeModules, t }) => {
                             ))}
                         </ul>
                     ) : (
-                        <p className="text-slate-400 text-sm italic">No students at risk.</p>
+                        <p className="text-slate-400 text-sm italic">{t?.analytics?.noRisk || "No students at risk."}</p>
                     )}
                 </div>
 
+                {/* EXAM PIE CHART (smaller) */}
                 <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
-                    <h3 className="font-bold text-slate-700 mb-4 flex items-center gap-2">
-                        <Trophy size={18} className="text-yellow-500" /> {t?.analytics?.top}
-                    </h3>
-                    <ul className="space-y-3">
-                        {topStudents.map((s, i) => (
-                            <li key={s.userId} className="flex items-center gap-3 bg-slate-50 p-3 rounded-lg border border-slate-100">
-                                <div className={`w-6 h-6 rounded-full flex items-center justify-center font-bold text-white text-xs ${i === 0 ? 'bg-yellow-400' : i === 1 ? 'bg-slate-400' : 'bg-orange-400'}`}>
-                                    {i + 1}
-                                </div>
-                                <span className="font-bold text-slate-700 text-sm flex-1">{s.name}</span>
-                                <span className="text-xs text-brand-600 font-black bg-brand-50 px-2 py-1 rounded-full">{s.progress?.xp} XP</span>
-                            </li>
-                        ))}
-                    </ul>
+                    <h3 className="font-bold text-slate-700 mb-4">{t?.analytics?.examStatus}</h3>
+                    <div className="h-48 w-full">
+                        <ResponsiveContainer width="100%" height="100%">
+                            <PieChart>
+                                <Pie data={examData} innerRadius={40} outerRadius={60} paddingAngle={5} dataKey="value">
+                                    {examData.map((entry, index) => (
+                                        <Cell key={`cell-${index}`} fill={index === 0 ? '#10B981' : '#E5E7EB'} />
+                                    ))}
+                                </Pie>
+                                <Tooltip />
+                                <Legend verticalAlign="bottom" />
+                            </PieChart>
+                        </ResponsiveContainer>
+                    </div>
                 </div>
 
             </div>

@@ -1,163 +1,83 @@
 import React, { useState, useEffect } from 'react';
-import { TrendingUp, AlertTriangle, CheckCircle, Download } from 'lucide-react';
+import { TrendingUp, AlertTriangle, CheckCircle, Download, AlertOctagon } from 'lucide-react';
 import { generateErrorHeatmap, getErrorColor } from '../../utils/errorHeatmap';
 
 const ErrorHeatmap = ({ students, questionBank, t }) => {
     const [heatmapData, setHeatmapData] = useState([]);
-    const [selectedQuestion, setSelectedQuestion] = useState(null);
 
     useEffect(() => {
         if (students && questionBank) {
             const data = generateErrorHeatmap(students, questionBank);
-            // Sort by error rate (highest first)
+            // Sort by error rate (highest first) and take top 5
             data.sort((a, b) => b.errorRate - a.errorRate);
-            setHeatmapData(data);
+            setHeatmapData(data.slice(0, 5));
         }
     }, [students, questionBank]);
 
-    const exportCSV = () => {
-        const headers = ['Pregunta #', 'Texto Pregunta', 'Intentos Totales', 'Respuestas Incorrectas', 'Tasa Error %'];
-        const rows = heatmapData.map(stat => [
-            stat.questionIndex + 1,
-            `"${stat.question}"`,
-            stat.totalAttempts,
-            stat.wrongAnswers,
-            stat.errorRate
-        ]);
-
-        const csv = [headers, ...rows].map(row => row.join(',')).join('\n');
-        const blob = new Blob([csv], { type: 'text/csv' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `error_heatmap_${new Date().toISOString().slice(0, 10)}.csv`;
-        a.click();
-    };
-
-    if (!heatmapData.length) {
+    if (!heatmapData.length || heatmapData.every(d => d.totalAttempts === 0)) {
         return (
             <div className="bg-white p-8 rounded-2xl border border-slate-200 text-center">
-                <AlertTriangle className="mx-auto text-slate-300 mb-4" size={48} />
-                <p className="text-slate-500 font-bold">Sin datos de exámenes</p>
-                <p className="text-slate-400 text-sm mt-2">Los estudiantes deben completar exámenes para generar el mapa de calor.</p>
+                <p className="text-slate-400 text-sm font-bold italic">{t?.analytics?.noErrorData || "Not enough error data yet."}</p>
             </div>
         );
     }
 
     return (
-        <div className="space-y-6">
+        <div className="bg-white p-6 rounded-2xl border border-red-100 shadow-sm">
             {/* Header */}
-            <div className="flex justify-between items-center">
+            <div className="flex items-center gap-3 mb-6">
+                <div className="bg-red-100 p-2 rounded-lg">
+                    <AlertOctagon className="text-red-600" size={24} />
+                </div>
                 <div>
-                    <h3 className="text-2xl font-black text-slate-800 flex items-center gap-2">
-                        📊 Mapa de Errores (Heatmap)
+                    <h3 className="text-lg font-black text-slate-800">
+                        {t?.analytics?.focusAreas || "Critical Concepts Detected"}
                     </h3>
-                    <p className="text-slate-500 text-sm mt-1">Identifica las preguntas más difíciles para los alumnos</p>
-                </div>
-                <button onClick={exportCSV} className="px-4 py-2 bg-green-600 text-white rounded-lg font-bold hover:bg-green-700 flex items-center gap-2">
-                    <Download size={18} /> Exportar CSV
-                </button>
-            </div>
-
-            {/* Legend */}
-            <div className="flex gap-4 text-sm font-bold">
-                <div className="flex items-center gap-2">
-                    <div className="w-4 h-4 bg-green-500 rounded"></div>
-                    <span className="text-slate-600">Fácil (&lt;30%)</span>
-                </div>
-                <div className="flex items-center gap-2">
-                    <div className="w-4 h-4 bg-yellow-500 rounded"></div>
-                    <span className="text-slate-600">Medio (30-60%)</span>
-                </div>
-                <div className="flex items-center gap-2">
-                    <div className="w-4 h-4 bg-red-500 rounded"></div>
-                    <span className="text-slate-600">Difícil (&gt;60%)</span>
+                    <p className="text-slate-500 text-xs">
+                        {t?.analytics?.focusSubtitle || "Top 5 questions with the highest failure rate."}
+                    </p>
                 </div>
             </div>
 
-            {/* Heatmap Bars */}
-            <div className="space-y-3">
+            {/* List of Critical Failures */}
+            <div className="space-y-4">
                 {heatmapData.map((stat, idx) => {
-                    const colors = getErrorColor(stat.errorRate);
+                    const isCritical = stat.errorRate > 50;
                     return (
-                        <div
-                            key={idx}
-                            onClick={() => setSelectedQuestion(stat)}
-                            className={`p-4 rounded-xl border-2 ${colors.border} ${colors.bg} cursor-pointer hover:shadow-lg transition-all`}
-                        >
-                            <div className="flex items-center justify-between mb-2">
-                                <div className="flex items-center gap-3 flex-1">
-                                    <div className={`w-10 h-10 rounded-lg ${colors.bg} border-2 ${colors.border} flex items-center justify-center font-black ${colors.text}`}>
-                                        Q{stat.questionIndex + 1}
-                                    </div>
-                                    <div className="flex-1">
-                                        <p className="font-bold text-slate-800 text-sm line-clamp-1">{stat.question}</p>
-                                        <p className="text-xs text-slate-500 mt-1">
-                                            {stat.wrongAnswers}/{stat.totalAttempts} wrong answers
-                                        </p>
-                                    </div>
-                                </div>
-                                <div className="text-right">
-                                    <p className={`text-3xl font-black ${colors.text}`}>{stat.errorRate}%</p>
-                                    <p className="text-xs text-slate-500 uppercase font-bold">Tasa Error</p>
-                                </div>
+                        <div key={idx} className="relative pl-4 border-l-4 border-slate-200 hover:border-red-400 transition-colors">
+                            <div className="flex justify-between items-start mb-1">
+                                <p className="font-bold text-slate-700 text-sm line-clamp-2 pr-4">
+                                    "{stat.question}"
+                                </p>
+                                <span className={`text-xs font-black px-2 py-1 rounded-md ${isCritical ? 'bg-red-100 text-red-600' : 'bg-orange-50 text-orange-500'}`}>
+                                    {stat.errorRate}% {t?.analytics?.failures || "Failures"}
+                                </span>
                             </div>
 
-                            {/* Progress Bar */}
-                            <div className="w-full bg-slate-200 rounded-full h-2 overflow-hidden">
+                            {/* Simple Visual Bar */}
+                            <div className="w-full bg-slate-100 rounded-full h-1.5 mt-2 overflow-hidden">
                                 <div
-                                    className={`h-full ${stat.errorRate < 30 ? 'bg-green-500' : stat.errorRate < 60 ? 'bg-yellow-500' : 'bg-red-500'} transition-all`}
+                                    className={`h-full rounded-full ${isCritical ? 'bg-red-500' : 'bg-orange-400'}`}
                                     style={{ width: `${stat.errorRate}%` }}
                                 />
                             </div>
+
+                            {/* Insight Text */}
+                            {isCritical && (
+                                <p className="text-[10px] text-red-500 font-bold mt-1 flex items-center gap-1">
+                                    <AlertTriangle size={10} /> {stat.wrongAnswers} {t?.analytics?.of || "of"} {stat.totalAttempts} {t?.analytics?.studentsFailed || "students failed here."}
+                                </p>
+                            )}
                         </div>
                     );
                 })}
             </div>
 
-            {/* Detail Modal */}
-            {selectedQuestion && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4" onClick={() => setSelectedQuestion(null)}>
-                    <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full p-6" onClick={(e) => e.stopPropagation()}>
-                        <div className="flex justify-between items-start mb-4">
-                            <h4 className="text-xl font-black text-slate-800">Question {selectedQuestion.questionIndex + 1} Details</h4>
-                            <button onClick={() => setSelectedQuestion(null)} className="text-slate-400 hover:text-slate-600">✕</button>
-                        </div>
-
-                        <div className="bg-slate-50 p-4 rounded-xl mb-4">
-                            <p className="font-bold text-slate-700">{selectedQuestion.question}</p>
-                        </div>
-
-                        <div className="grid grid-cols-3 gap-4 mb-4">
-                            <div className="bg-blue-50 p-4 rounded-xl text-center border border-blue-200">
-                                <p className="text-2xl font-black text-blue-700">{selectedQuestion.totalAttempts}</p>
-                                <p className="text-xs text-blue-600 font-bold uppercase">Intentos Totales</p>
-                            </div>
-                            <div className="bg-red-50 p-4 rounded-xl text-center border border-red-200">
-                                <p className="text-2xl font-black text-red-700">{selectedQuestion.wrongAnswers}</p>
-                                <p className="text-xs text-red-600 font-bold uppercase">Respuestas Incorrectas</p>
-                            </div>
-                            <div className="bg-green-50 p-4 rounded-xl text-center border border-green-200">
-                                <p className="text-2xl font-black text-green-700">{selectedQuestion.totalAttempts - selectedQuestion.wrongAnswers}</p>
-                                <p className="text-xs text-green-600 font-bold uppercase">Correctas</p>
-                            </div>
-                        </div>
-
-                        {selectedQuestion.mostCommonWrongAnswer !== undefined && (
-                            <div className="bg-orange-50 p-4 rounded-xl border border-orange-200">
-                                <p className="font-bold text-orange-800 mb-2">⚠️ Error Más Común</p>
-                                <p className="text-sm text-orange-700">
-                                    La opción {selectedQuestion.mostCommonWrongAnswer + 1} fue elegida incorrectamente {selectedQuestion.mostCommonWrongAnswerCount} veces
-                                </p>
-                            </div>
-                        )}
-
-                        <button onClick={() => setSelectedQuestion(null)} className="w-full mt-4 py-2 bg-slate-800 text-white rounded-lg font-bold hover:bg-slate-900">
-                            Cerrar
-                        </button>
-                    </div>
-                </div>
-            )}
+            <div className="mt-6 p-4 bg-orange-50 rounded-xl border border-orange-100 text-center">
+                <p className="text-orange-800 text-xs font-bold">
+                    💡 {t?.analytics?.recommendation || "Recommendation: Review the module for these topics in the next class."}
+                </p>
+            </div>
         </div>
     );
 };

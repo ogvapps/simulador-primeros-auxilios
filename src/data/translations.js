@@ -67,8 +67,20 @@ export const TRANSLATIONS = {
                 level: "Nivel",
                 count: "Alumnos",
                 module: "Módulo",
-                completion: "Completado (%)"
-            }
+                completion: "Completado (%)",
+                avgXp: "XP Promedio"
+            },
+            focusAreas: "Conceptos Críticos Detectados",
+            focusSubtitle: "Las 5 preguntas con mayor tasa de fallo en la clase.",
+            failures: "Fallos",
+            of: "de",
+            studentsFailed: "alumnos fallaron aquí.",
+            recommendation: "Recomendación: Revisar el módulo correspondiente a estos temas en la próxima clase.",
+            noErrorData: "No hay suficientes datos de errores aún.",
+            classPerformance: "Rendimiento por Clase (XP Promedio)",
+            topByClass: "Mejores Alumnos por Clase",
+            atRisk: "Alumnos en Riesgo",
+            noRisk: "No hay alumnos en riesgo."
         },
         editor: {
             title: "Editor de Examen",
@@ -101,6 +113,45 @@ export const TRANSLATIONS = {
             soundEffects: "Efectos de Sonido (Aula)",
             save: "Guardar Cambios",
             saved: "Configuración guardada"
+        },
+        admin: {
+            panelTitle: "Panel Docente",
+            totalStudents: "Total Estudiantes",
+            avgLevel: "Nivel Promedio",
+            globalProgress: "Progreso Global",
+            examPasses: "Exámenes Aprobados",
+            searchPlaceholder: "Buscar estudiante...",
+            export: "Exportar",
+            listTab: "Lista",
+            analyticsTab: "Analíticas",
+            generating: "Generando...",
+            table: {
+                student: "Estudiante",
+                role: "Rol",
+                level: "Nivel",
+                finalExam: "Examen",
+                actions: "Acciones",
+                progress: "Progreso",
+                connection: "Conexión",
+                approved: "APROBADO",
+                pending: "PENDIENTE"
+            },
+            detail: {
+                level: "Nivel",
+                xp: "XP",
+                modules: "Progreso Detallado de Módulos",
+                examEvol: "Evolución de Exámenes",
+                noExams: "El estudiante aún no ha realizado ningún examen."
+            },
+            confirmDelete: "¿Seguro que quieres eliminar a {name}?",
+            errorDelete: "Error al eliminar usuario.",
+            confirmReset: "¿Resetear progreso de {name}?",
+            blockUser: "Bloquear Usuario",
+            unblockUser: "Desbloquear Usuario",
+            toast: {
+                blocked: "Usuario bloqueado",
+                unblocked: "Usuario desbloqueado"
+            }
         },
         bulk: {
             selected: "{n} seleccionados",
@@ -174,7 +225,19 @@ export const TRANSLATIONS = {
             performance: "Tu Rendimiento",
             vsClassmates: "vs. {n} compañeros",
             betterThan: "¡Vas mejor que el",
-            ofClass: "de tu clase!"
+            ofClass: "de tu clase!",
+            missingData: "Faltan datos para comparar.",
+            studentXp: "XP Estudiante",
+            classAvg: "Promedio Clase",
+            xpComparison: "Comparativa de XP vs Promedio",
+            xpDiff: "Diferencia de XP",
+            levelVsClass: "Nivel vs Clase",
+            insights: {
+                excellent: "Excelente Rendimiento",
+                aboveAvg: "Por encima del promedio",
+                belowAvg: "Necesita Refuerzo",
+                avg: "En el promedio"
+            }
         },
         streak: {
             current: "Racha Actual",
@@ -187,6 +250,38 @@ export const TRANSLATIONS = {
             title: "¡EXAMEN SORPRESA!",
             timeLeft: "Tiempo Restante",
             autoSubmit: "Se enviará automáticamente"
+        },
+        leaderboard: {
+            title: "Clasificación",
+            subtitle: "Top Alumnos por Experiencia (XP)",
+            loading: "Cargando ranking...",
+            noData: "Aún no hay datos suficientes.",
+            league: "LIGA {name}",
+            you: "(Tú)",
+            global: "Global",
+            myClass: "Mi Clase",
+            totalXp: "XP TOTAL"
+        },
+        profile: {
+            level: "Nivel",
+            totalXp: "XP Total",
+            streak: "Racha",
+            exams: "Exámenes",
+            moduleProgress: "Progreso de Módulos",
+            completed: "COMPLETADO",
+            inProgress: "EN CURSO",
+            examPerformance: "Rendimiento en Exámenes",
+            recentAttempt: "Intento Reciente",
+            noExams: "Aún no has realizado ningún examen. ¡Inténtalo!",
+            avatars: "Mis Avatares",
+            themes: "Mis Temas",
+            backpack: "Mochila de Objetos",
+            title: "Mi Perfil / Mochila",
+            subtitle: "Gestiona tu equipo y recompensas",
+            inventoryTab: "Mi Equipo",
+            statsTab: "Estadísticas",
+            standard: "Estándar",
+            emptyBackpack: "No tienes objetos en tu mochila. ¡Visita la tienda!"
         }
     },
     en: {
@@ -257,8 +352,20 @@ export const TRANSLATIONS = {
                 level: "Level",
                 count: "Students",
                 module: "Module",
-                completion: "Completed (%)"
-            }
+                completion: "Completed (%)",
+                avgXp: "Avg XP"
+            },
+            focusAreas: "Critical Concepts Detected",
+            focusSubtitle: "Top 5 questions with the highest failure rate.",
+            failures: "Failures",
+            of: "of",
+            studentsFailed: "students failed here.",
+            recommendation: "Recommendation: Review the module for these topics in the next class.",
+            noErrorData: "Not enough error data yet.",
+            classPerformance: "Class Performance (Avg XP)",
+            topByClass: "Top Students by Class",
+            atRisk: "At Risk Students",
+            noRisk: "No students at risk."
         },
         editor: {
             title: "Exam Editor",
@@ -291,6 +398,45 @@ export const TRANSLATIONS = {
             soundEffects: "Sound Effects (Classroom)",
             save: "Save Changes",
             saved: "Settings saved"
+        },
+        admin: {
+            panelTitle: "Teacher Panel",
+            totalStudents: "Total Students",
+            avgLevel: "Avg Level",
+            globalProgress: "Global Progress",
+            examPasses: "Exam Passes",
+            searchPlaceholder: "Search student...",
+            export: "Export",
+            listTab: "List",
+            analyticsTab: "Analytics",
+            generating: "Generating...",
+            table: {
+                student: "Student",
+                role: "Role",
+                level: "Level",
+                finalExam: "Exam",
+                actions: "Actions",
+                progress: "Progress",
+                connection: "Connection",
+                approved: "PASSED",
+                pending: "PENDING"
+            },
+            detail: {
+                level: "Level",
+                xp: "XP",
+                modules: "Detailed Module Progress",
+                examEvol: "Exam Evolution",
+                noExams: "Student hasn't taken any exams yet."
+            },
+            confirmDelete: "Are you sure you want to delete {name}?",
+            errorDelete: "Error deleting user.",
+            confirmReset: "Reset progress for {name}?",
+            blockUser: "Block User",
+            unblockUser: "Unblock User",
+            toast: {
+                blocked: "User blocked",
+                unblocked: "User unblocked"
+            }
         },
         bulk: {
             selected: "{n} selected",
@@ -363,7 +509,19 @@ export const TRANSLATIONS = {
             performance: "Your Performance",
             vsClassmates: "vs. {n} classmates",
             betterThan: "You're performing better than",
-            ofClass: "of your class!"
+            ofClass: "of your class!",
+            missingData: "Not enough data to compare.",
+            studentXp: "Student XP",
+            classAvg: "Class Avg",
+            xpComparison: "XP vs Average Comparison",
+            xpDiff: "XP Difference",
+            levelVsClass: "Level vs Class",
+            insights: {
+                excellent: "Excellent Performance",
+                aboveAvg: "Above Average",
+                belowAvg: "Needs Improvement",
+                avg: "Average"
+            }
         },
         streak: {
             current: "Current Streak",
@@ -376,6 +534,38 @@ export const TRANSLATIONS = {
             title: "SURPRISE EXAM!",
             timeLeft: "Time Remaining",
             autoSubmit: "Will auto-submit"
+        },
+        leaderboard: {
+            title: "Leaderboard",
+            subtitle: "Top Students by XP",
+            loading: "Loading leaderboard...",
+            noData: "Not enough data yet.",
+            league: "LEAGUE {name}",
+            you: "(You)",
+            global: "Global",
+            myClass: "My Class",
+            totalXp: "TOTAL XP"
+        },
+        profile: {
+            level: "Level",
+            totalXp: "Total XP",
+            streak: "Streak",
+            exams: "Exams",
+            moduleProgress: "Module Progress",
+            completed: "COMPLETED",
+            inProgress: "IN PROGRESS",
+            examPerformance: "Exam Performance",
+            recentAttempt: "Recent Attempt",
+            noExams: "You haven't taken any exams yet. Give it a try!",
+            avatars: "My Avatars",
+            themes: "My Themes",
+            backpack: "Item Backpack",
+            title: "My Profile / Backpack",
+            subtitle: "Manage your gear and rewards",
+            inventoryTab: "My Gear",
+            statsTab: "Stats",
+            standard: "Standard",
+            emptyBackpack: "Your backpack is empty. Visit the store!"
         }
     }
 };

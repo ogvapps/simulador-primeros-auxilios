@@ -5,8 +5,9 @@ import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 import { collection, getDocs, getFirestore, deleteDoc, doc, updateDoc, setDoc } from 'firebase/firestore';
 import AnalyticsDashboard from './AnalyticsDashboard';
 import SettingsTab from './SettingsTab';
+import Leaderboard from './Leaderboard';
+import ClassroomManager from './ClassroomManager';
 import LiveClassroom from './LiveClassroom';
-import QuestionEditor from './QuestionEditor';
 import BenchmarkCard from './BenchmarkCard';
 import { generateMentorInsight } from '../../utils/mentorAI';
 import { LEVELS, EXAM_QUESTIONS } from '../../data/constants';
@@ -136,7 +137,7 @@ const AdminPanel = ({ onBack, db, firebaseConfigId, playSound, t, modules, addTo
             await updateDoc(doc(db, 'artifacts', firebaseConfigId, 'public', 'data', 'user_summaries', uid), { blocked: !isBlocked });
 
             if (playSound) playSound('success');
-            addToast(isBlocked ? "Usuario desbloqueado" : "Usuario bloqueado", 'success');
+            addToast(isBlocked ? (t?.admin?.toast?.unblocked || "User unblocked") : (t?.admin?.toast?.blocked || "User blocked"), 'success');
 
             // Update local state
             setStudents(prev => prev.map(s => s.userId === uid ? { ...s, blocked: !isBlocked } : s));
@@ -157,6 +158,38 @@ const AdminPanel = ({ onBack, db, firebaseConfigId, playSound, t, modules, addTo
     const toggleSelectAll = () => {
         if (selectedIds.length === filteredStudents.length) setSelectedIds([]);
         else setSelectedIds(filteredStudents.map(s => s.userId));
+    };
+
+    const exportToCSV = () => {
+        if (!students.length) return;
+
+        // BOM for Excel to help with UTF-8
+        const BOM = "\uFEFF";
+        const headers = ["Nombre", "Rol", "Aula", "Último Acceso", "XP Total", "XP Semanal", "Nivel", "Nota Examen", "Estado"];
+        const rows = students.map(s => [
+            `"${s.name || 'Anónimo'}"`,
+            s.role || 'N/A',
+            s.progress?.className || 'General',
+            s.lastLogin ? new Date(s.lastLogin).toLocaleDateString() : 'Nunca',
+            s.progress?.lifetimeXp || s.progress?.xp || 0,
+            s.progress?.weeklyXP || 0,
+            s.progress?.level || 1,
+            s.progress?.examenPassed ? 'APROBADO' : (s.progress?.examAttempts?.length > 0 ? `${s.progress.examAttempts[s.progress.examAttempts.length - 1].score}/10` : 'PENDIENTE'),
+            s.blocked ? 'BLOQUEADO' : 'ACTIVO'
+        ]);
+
+        const csvContent = BOM + headers.join(",") + "\n" + rows.map(e => e.join(",")).join("\n");
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+
+        const link = document.createElement("a");
+        link.href = url;
+        link.setAttribute("download", `notas_simulador_${new Date().toISOString().slice(0, 10)}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+
+        addToast && addToast(t?.admin?.toast?.exported || "Excel exportado correctamente", "success");
     };
 
     const handleBulkDelete = async () => {
@@ -338,10 +371,10 @@ const AdminPanel = ({ onBack, db, firebaseConfigId, playSound, t, modules, addTo
 
             // Stats Grid
             const statsLabels = [
-                { label: t?.admin?.totalStudents || 'Total Estudiantes', val: stats.totalStudents, col: 'B' },
-                { label: t?.admin?.avgLevel || 'Nivel Promedio', val: stats.avgLevel, col: 'C' },
-                { label: t?.admin?.globalProgress || 'Progreso Global', val: `${stats.avgCompletion}%`, col: 'D' },
-                { label: t?.admin?.examPasses || 'Exámenes Aprobados', val: stats.passedExam, col: 'E' }
+                { label: t?.admin?.totalStudents || 'Total Students', val: stats.totalStudents, col: 'B' },
+                { label: t?.admin?.avgLevel || 'Avg Level', val: stats.avgLevel, col: 'C' },
+                { label: t?.admin?.globalProgress || 'Global Progress', val: `${stats.avgCompletion}%`, col: 'D' },
+                { label: t?.admin?.examPasses || 'Exam Passes', val: stats.passedExam, col: 'E' }
             ];
 
             statsLabels.forEach((item, idx) => {
@@ -369,15 +402,15 @@ const AdminPanel = ({ onBack, db, firebaseConfigId, playSound, t, modules, addTo
             });
 
             const headers = [
-                t?.admin?.table?.student || 'Estudiante',
-                t?.admin?.table?.role || 'Rol',
-                t?.admin?.table?.level || 'Nivel',
+                t?.admin?.table?.student || 'Student',
+                t?.admin?.table?.role || 'Role',
+                t?.admin?.table?.level || 'Level',
                 'XP Total',
-                t?.admin?.table?.finalExam || 'Examen Final',
-                '% Progreso'
+                t?.admin?.table?.finalExam || 'Exam',
+                '% Progress'
             ];
             badgeModules.forEach(m => headers.push(m.title));
-            headers.push('Última Actividad');
+            headers.push(t?.admin?.table?.connection || 'Last Activity');
 
             const headerRow = ws.getRow(1);
             headerRow.values = headers;
@@ -399,18 +432,20 @@ const AdminPanel = ({ onBack, db, firebaseConfigId, playSound, t, modules, addTo
                     s.role,
                     s.progress?.level || 1,
                     s.progress?.xp || 0,
-                    s.progress?.examenPassed ? 'APROBADO' : 'PENDIENTE',
+                    s.progress?.level || 1,
+                    s.progress?.xp || 0,
+                    s.progress?.examenPassed ? (t?.admin?.table?.approved || 'PASSED') : (t?.admin?.table?.pending || 'PENDING'),
                     progressPct
                 ];
 
-                badgeModules.forEach(m => rowData.push(s.progress?.[`${m.id}Completed`] ? 'SÍ' : 'NO'));
+                badgeModules.forEach(m => rowData.push(s.progress?.[`${m.id}Completed`] ? 'YES' : 'NO'));
                 rowData.push(s.lastUpdate ? new Date(s.lastUpdate).toLocaleString() : 'N/A');
 
                 const newRow = ws.addRow(rowData);
 
                 // Style Exam cell based on status
                 const examCell = newRow.getCell(5);
-                if (examCell.value === 'APROBADO') {
+                if (examCell.value === (t?.admin?.table?.approved || 'PASSED')) {
                     examCell.font = { color: { argb: 'FF15803D' }, bold: true };
                 } else {
                     examCell.font = { color: { argb: 'FF94A3B8' } };
@@ -461,7 +496,7 @@ const AdminPanel = ({ onBack, db, firebaseConfigId, playSound, t, modules, addTo
             doc.setTextColor(255, 255, 255);
             doc.setFontSize(18);
             doc.setFont('helvetica', 'bold');
-            doc.text("REPORTE GLOBAL DE RENDIMIENTO", pageWidth / 2, 16, { align: 'center' });
+            doc.text(t?.admin?.panelTitle ? `${t.admin.panelTitle} - SUMMARY` : "PERFORMANCE REPORT", pageWidth / 2, 16, { align: 'center' });
 
             doc.setTextColor(100);
             doc.setFontSize(10);
@@ -483,7 +518,14 @@ const AdminPanel = ({ onBack, db, firebaseConfigId, playSound, t, modules, addTo
 
             autoTable(doc, {
                 startY: 40,
-                head: [['Estudiante', 'Rol', 'Nivel', 'XP', 'Examen', 'Progreso']],
+                head: [[
+                    t?.admin?.table?.student || 'Student',
+                    t?.admin?.table?.role || 'Role',
+                    t?.admin?.table?.level || 'Level',
+                    'XP',
+                    t?.admin?.table?.finalExam || 'Exam',
+                    t?.admin?.table?.progress || 'Progress'
+                ]],
                 body: tableData,
                 headStyles: { fillColor: [30, 58, 138], textColor: 255 },
                 alternateRowStyles: { fillColor: [245, 247, 250] },
@@ -550,11 +592,14 @@ const AdminPanel = ({ onBack, db, firebaseConfigId, playSound, t, modules, addTo
                 <button onClick={() => setViewMode('analytics')} className={`pb-2 px-4 font-bold border-b-2 transition-all flex items-center gap-2 whitespace-nowrap ${viewMode === 'analytics' ? 'border-brand-500 text-brand-600' : 'border-transparent text-slate-400'}`}>
                     <BarChart3 size={18} /> {t?.admin?.analyticsTab || "Analytics"}
                 </button>
-                <button onClick={() => setViewMode('editor')} className={`pb-2 px-4 font-bold border-b-2 transition-all flex items-center gap-2 whitespace-nowrap ${viewMode === 'editor' ? 'border-brand-500 text-brand-600' : 'border-transparent text-slate-400'}`}>
-                    <FileText size={18} /> {t?.editor?.title || "Editor"}
-                </button>
                 <button onClick={() => setViewMode('settings')} className={`pb-2 px-4 font-bold border-b-2 transition-all flex items-center gap-2 whitespace-nowrap ${viewMode === 'settings' ? 'border-brand-500 text-brand-600' : 'border-transparent text-slate-400'}`}>
                     <SettingsIcon size={18} /> {t?.settings?.title || "Settings"}
+                </button>
+                <button onClick={() => setViewMode('leaderboard')} className={`pb-2 px-4 font-bold border-b-2 transition-all flex items-center gap-2 whitespace-nowrap ${viewMode === 'leaderboard' ? 'border-brand-500 text-brand-600' : 'border-transparent text-slate-400'}`}>
+                    <Award size={18} /> {t?.admin?.leaderboardTab || "Clasificación"}
+                </button>
+                <button onClick={() => setViewMode('classrooms')} className={`pb-2 px-4 font-bold border-b-2 transition-all flex items-center gap-2 whitespace-nowrap ${viewMode === 'classrooms' ? 'border-brand-500 text-brand-600' : 'border-transparent text-slate-400'}`}>
+                    <Users size={18} /> {t?.admin?.classroomsTab || "Aulas"}
                 </button>
                 <button onClick={() => setViewMode('benchmark')} className={`pb-2 px-4 font-bold border-b-2 transition-all flex items-center gap-2 whitespace-nowrap ${viewMode === 'benchmark' ? 'border-brand-500 text-brand-600' : 'border-transparent text-slate-400'}`}>
                     <Trophy size={18} /> Benchmark
@@ -563,8 +608,27 @@ const AdminPanel = ({ onBack, db, firebaseConfigId, playSound, t, modules, addTo
 
             {/* Content Views */}
             {viewMode === 'analytics' && <AnalyticsDashboard students={students} badgeModules={badgeModules} t={t} />}
-            {viewMode === 'editor' && <QuestionEditor db={db} firebaseConfigId={firebaseConfigId} t={t} addToast={addToast} playSound={playSound} />}
             {viewMode === 'settings' && <SettingsTab db={db} firebaseConfigId={firebaseConfigId} t={t} addToast={addToast} playSound={playSound} />}
+            {viewMode === 'leaderboard' && (
+                <div className="bg-slate-50 rounded-xl overflow-hidden border border-slate-200">
+                    <Leaderboard
+                        db={db}
+                        firebaseConfigId={firebaseConfigId}
+                        onBack={() => setViewMode('list')}
+                        currentUserId="admin_viewer"
+                        currentUserRole="admin"
+                        t={t}
+                    />
+                </div>
+            )}
+            {viewMode === 'classrooms' && (
+                <ClassroomManager
+                    db={db}
+                    firebaseConfigId={firebaseConfigId}
+                    t={t}
+                    addToast={addToast}
+                />
+            )}
             {viewMode === 'benchmark' && (
                 <div className="space-y-6">
                     <h3 className="text-2xl font-black text-slate-800">Student Performance Benchmarks</h3>
@@ -606,9 +670,14 @@ const AdminPanel = ({ onBack, db, firebaseConfigId, playSound, t, modules, addTo
                             <Search className="absolute left-3 top-3 text-slate-400" size={20} />
                             <input type="text" placeholder={t?.admin?.searchPlaceholder || "Search..."} value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-brand-500 outline-none" />
                         </div>
-                        <button onClick={() => setPresentationMode(!presentationMode)} className={`px-4 py-2 border rounded-lg font-bold ${presentationMode ? 'bg-slate-800 text-white' : 'bg-white text-slate-700'}`}>
-                            {presentationMode ? <EyeOff size={20} /> : <Eye size={20} />}
-                        </button>
+                        <div className="flex gap-2">
+                            <button onClick={exportToCSV} className="px-4 py-2 border rounded-lg font-bold bg-white text-green-700 border-green-200 hover:bg-green-50 flex items-center gap-2 transition-colors whitespace-nowrap" title={t?.admin?.exportExcel || "Exportar Notas a Excel"}>
+                                <FileSpreadsheet size={20} /> <span className="hidden md:inline">Excel</span>
+                            </button>
+                            <button onClick={() => setPresentationMode(!presentationMode)} className={`px-4 py-2 border rounded-lg font-bold transition-colors ${presentationMode ? 'bg-slate-800 text-white' : 'bg-white text-slate-700 hover:bg-slate-50'}`} title={presentationMode ? "Modo Presentación (Ocultar Nombres)" : "Modo Normal"}>
+                                {presentationMode ? <EyeOff size={20} /> : <Eye size={20} />}
+                            </button>
+                        </div>
                     </div>
 
                     {/* Table */}
@@ -621,12 +690,12 @@ const AdminPanel = ({ onBack, db, firebaseConfigId, playSound, t, modules, addTo
                                             <input type="checkbox" onChange={toggleSelectAll} checked={selectedIds.length === filteredStudents.length && filteredStudents.length > 0} className="w-4 h-4 rounded border-slate-300 text-brand-600 focus:ring-brand-500" />
                                         </th>
                                         <th className="p-5 font-bold text-slate-500">{t?.admin?.table?.student || "Student"}</th>
-                                        <th className="p-5 font-bold text-slate-500 hidden xl:table-cell">{t?.admin?.table?.role || "Role"}</th>
+                                        <th className="p-5 font-bold text-slate-500 hidden 2xl:table-cell">{t?.admin?.table?.role || "Role"}</th>
                                         <th className="p-5 font-bold text-slate-500 text-center hidden md:table-cell">{t?.admin?.table?.level || "Level"}</th>
                                         <th className="p-5 font-bold text-slate-500 text-center hidden lg:table-cell">XP</th>
-                                        <th className="p-5 font-bold text-slate-500 text-center hidden xl:table-cell">Progreso</th>
+                                        <th className="p-5 font-bold text-slate-500 text-center hidden md:table-cell">{t?.admin?.table?.progress || "Progress"}</th>
                                         <th className="p-5 font-bold text-slate-500 text-center hidden sm:table-cell">{t?.admin?.table?.finalExam || "Exam"}</th>
-                                        <th className="p-5 font-bold text-slate-500 text-center hidden 2xl:table-cell">Conexión</th>
+                                        <th className="p-5 font-bold text-slate-500 text-center hidden lg:table-cell">{t?.admin?.table?.connection || "Connection"}</th>
                                         <th className="p-5 font-bold text-slate-500 text-center">{t?.admin?.table?.actions || "Actions"}</th>
                                     </tr>
                                 </thead>
@@ -634,39 +703,59 @@ const AdminPanel = ({ onBack, db, firebaseConfigId, playSound, t, modules, addTo
                                     {filteredStudents.length === 0 ? <tr><td colSpan="9" className="p-8 text-center text-slate-400 italic">No students found</td></tr> :
                                         filteredStudents.map((s, idx) => {
                                             // Calc Progress
-                                            const completedCount = modules.filter(m => s.progress?.[`${m.id}Completed`]).length; // Use passed modules prop which is MODULES
-                                            const progressPct = Math.round((completedCount / (modules.length || 1)) * 100);
+                                            const completedCount = badgeModules.filter(m => s.progress?.[`${m.id}Completed`]).length;
+                                            const progressPct = Math.round((completedCount / (badgeModules.length || 1)) * 100);
+
+                                            // Get last exam score
+                                            const lastExamScore = s.progress?.examenScore || null;
+                                            const examPassed = s.progress?.examenPassed;
 
                                             return (
                                                 <tr key={idx} onClick={() => setSelectedStudent(s)} className={`hover:bg-brand-50/30 transition-colors group cursor-pointer border-l-4 ${selectedIds.includes(s.userId) ? 'bg-brand-50 border-l-brand-500' : 'border-l-transparent'} ${s.blocked ? 'bg-red-50/50' : ''}`}>
                                                     <td className="p-5" onClick={(e) => e.stopPropagation()}>
                                                         <input type="checkbox" checked={selectedIds.includes(s.userId)} onChange={() => toggleSelect(s.userId)} className="w-4 h-4 rounded border-slate-300 text-brand-600 focus:ring-brand-500" />
                                                     </td>
-                                                    <td className="p-5 font-bold text-slate-800 flex items-center gap-3">
-                                                        <div className={`w-8 h-8 rounded-full flex items-center justify-center text-lg font-bold bg-slate-100 text-slate-500 shadow-sm border border-slate-200`}>
-                                                            {presentationMode ? '*' : (STORE_ITEMS.avatars.find(a => a.id === s.progress?.activeAvatar)?.icon || (s.name || '?').charAt(0))}
-                                                        </div>
-                                                        <div className="flex flex-col">
-                                                            <span>{presentationMode ? `Student ${idx + 1}` : s.name}</span>
-                                                            <span className="text-xs text-slate-400 font-normal xl:hidden">{s.role}</span>
+                                                    <td className="p-5 font-bold text-slate-800">
+                                                        <div className="flex items-center gap-3">
+                                                            <div className={`w-10 h-10 rounded-full flex items-center justify-center text-lg font-bold shadow-sm border-2 ${presentationMode
+                                                                ? 'bg-slate-100 text-slate-500 border-slate-200'
+                                                                : 'bg-gradient-to-br from-brand-400 to-brand-600 text-white border-brand-300'
+                                                                }`}>
+                                                                {presentationMode ? '*' : (STORE_ITEMS.avatars.find(a => a.id === s.progress?.activeAvatar)?.icon || (s.name || '?').charAt(0).toUpperCase())}
+                                                            </div>
+                                                            <div className="flex flex-col">
+                                                                <span className="font-bold text-slate-800">{presentationMode ? `Student ${idx + 1}` : s.name}</span>
+                                                                <span className="text-xs text-slate-400 font-normal 2xl:hidden">{s.role}</span>
+                                                            </div>
                                                         </div>
                                                     </td>
-                                                    <td className="p-5 text-slate-500 text-sm hidden xl:table-cell">{s.role}</td>
+                                                    <td className="p-5 text-slate-500 text-sm hidden 2xl:table-cell">{s.role}</td>
                                                     <td className="p-5 text-center font-black text-slate-700 hidden md:table-cell">{s.progress?.level || 1}</td>
                                                     <td className="p-5 text-center font-bold text-amber-600 hidden lg:table-cell">{s.progress?.xp || 0}</td>
-                                                    <td className="p-5 w-32 hidden xl:table-cell">
-                                                        <div className="w-full bg-slate-100 rounded-full h-2 mb-1">
-                                                            <div className="bg-brand-500 h-2 rounded-full" style={{ width: `${progressPct}%` }}></div>
+                                                    <td className="p-5 w-40 hidden md:table-cell">
+                                                        <div className="space-y-1">
+                                                            <div className="w-full bg-slate-100 rounded-full h-2.5 overflow-hidden shadow-inner">
+                                                                <div
+                                                                    className={`h-full rounded-full transition-all duration-500 ${progressPct >= 80 ? 'bg-gradient-to-r from-green-400 to-emerald-500' :
+                                                                        progressPct >= 50 ? 'bg-gradient-to-r from-yellow-400 to-amber-500' :
+                                                                            'bg-gradient-to-r from-brand-400 to-brand-600'
+                                                                        }`}
+                                                                    style={{ width: `${progressPct}%` }}
+                                                                />
+                                                            </div>
+                                                            <p className="text-xs text-center font-bold text-slate-600">{progressPct}%</p>
                                                         </div>
-                                                        <p className="text-xs text-center text-slate-400">{progressPct}%</p>
                                                     </td>
                                                     <td className="p-5 text-center hidden sm:table-cell">
-                                                        {s.progress?.examenPassed
-                                                            ? <div className="text-green-600 font-bold bg-green-50 px-2 py-1 rounded-md text-xs border border-green-200 inline-block">APROBADO<br /><span className="text-lg">{s.progress?.examenScore || '10'}</span></div>
-                                                            : <span className="text-slate-300 font-bold text-xs">-</span>
+                                                        {examPassed
+                                                            ? <div className="inline-flex flex-col items-center justify-center bg-green-50 px-3 py-2 rounded-lg border-2 border-green-200 min-w-[60px]">
+                                                                <span className="text-[10px] font-bold text-green-600 uppercase tracking-wide">{t?.admin?.table?.approved || "PASSED"}</span>
+                                                                {lastExamScore && <span className="text-2xl font-black text-green-700">{lastExamScore}</span>}
+                                                            </div>
+                                                            : <span className="text-slate-300 font-bold text-2xl">-</span>
                                                         }
                                                     </td>
-                                                    <td className="p-5 text-center text-xs text-slate-400 hidden 2xl:table-cell">
+                                                    <td className="p-5 text-center text-xs text-slate-400 hidden lg:table-cell">
                                                         {s.lastUpdate ? new Date(s.lastUpdate).toLocaleDateString() : '-'}
                                                     </td>
                                                     <td className="p-5 text-center">
@@ -678,21 +767,21 @@ const AdminPanel = ({ onBack, db, firebaseConfigId, playSound, t, modules, addTo
                                                                             e.stopPropagation();
                                                                             generateStudentProgressPDF(s, modules);
                                                                         }}
-                                                                        className="p-2 text-slate-400 hover:text-purple-600 transition-colors"
+                                                                        className="p-2 text-slate-400 hover:text-purple-600 transition-colors hover:bg-purple-50 rounded-lg"
                                                                         title="Download Progress PDF"
                                                                     >
                                                                         <Download size={18} />
                                                                     </button>
                                                                     <button
                                                                         onClick={(e) => { e.stopPropagation(); handleToggleBlock(s); }}
-                                                                        className={`p-2 transition-colors ${s.blocked ? 'text-red-500 hover:text-red-700' : 'text-slate-400 hover:text-red-500'}`}
+                                                                        className={`p-2 transition-colors rounded-lg ${s.blocked ? 'text-red-500 hover:text-red-700 hover:bg-red-50' : 'text-slate-400 hover:text-red-500 hover:bg-red-50'}`}
                                                                         title={s.blocked ? "Unblock User" : "Block User"}
                                                                     >
                                                                         {s.blocked ? <UserCheck size={18} /> : <EyeOff size={18} />}
                                                                     </button>
                                                                     <button
                                                                         onClick={(e) => { e.stopPropagation(); handleDelete(s); }}
-                                                                        className="p-2 text-slate-400 hover:text-red-600 transition-colors"
+                                                                        className="p-2 text-slate-400 hover:text-red-600 transition-colors hover:bg-red-50 rounded-lg"
                                                                         title="Delete Student"
                                                                     >
                                                                         <Trash2 size={18} />
@@ -727,7 +816,7 @@ const AdminPanel = ({ onBack, db, firebaseConfigId, playSound, t, modules, addTo
 
                             <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 mb-6">
                                 <h4 className="font-bold text-slate-700 mb-4 flex items-center gap-2">
-                                    <BookOpen size={20} className="text-brand-500" /> {t?.admin?.detail?.modules || "Progreso Detallado de Módulos"}
+                                    <BookOpen size={20} className="text-brand-500" /> {t?.admin?.detail?.modules || "Detailed Module Progress"}
                                 </h4>
                                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                                     {badgeModules.map(m => {
@@ -739,7 +828,7 @@ const AdminPanel = ({ onBack, db, firebaseConfigId, playSound, t, modules, addTo
                                                 </div>
                                                 <div className="flex-1 min-w-0">
                                                     <p className={`text-sm font-bold truncate ${isCompleted ? 'text-slate-800' : 'text-slate-400'}`}>{m.title}</p>
-                                                    {isCompleted && <p className="text-[10px] text-green-600 font-bold">COMPLETADO</p>}
+                                                    {isCompleted && <p className="text-[10px] text-green-600 font-bold">{t?.profile?.completed || "COMPLETED"}</p>}
                                                 </div>
                                             </div>
                                         );
@@ -750,12 +839,12 @@ const AdminPanel = ({ onBack, db, firebaseConfigId, playSound, t, modules, addTo
                             {/* Exam Evolution Chart */}
                             <div className="bg-white p-4 rounded-xl border border-slate-200 mb-6 shadow-sm">
                                 <h4 className="font-bold text-slate-700 mb-4 flex items-center gap-2">
-                                    <TrendingUp size={20} className="text-brand-500" /> {t?.admin?.detail?.examEvol || "Evolución de Exámenes"}
+                                    <TrendingUp size={20} className="text-brand-500" /> {t?.admin?.detail?.examEvol || "Exam Evolution"}
                                 </h4>
-                                {selectedStudent.examAttempts && selectedStudent.examAttempts.length > 0 ? (
+                                {selectedStudent.progress?.examAttempts && selectedStudent.progress.examAttempts.length > 0 ? (
                                     <div className="h-48 w-full">
                                         <ResponsiveContainer width="100%" height="100%">
-                                            <AreaChart data={selectedStudent.examAttempts.map((a, i) => ({
+                                            <AreaChart data={selectedStudent.progress.examAttempts.map((a, i) => ({
                                                 name: `${i + 1}`,
                                                 score: a.score || 0,
                                                 date: new Date(a.date).toLocaleDateString()
@@ -780,7 +869,7 @@ const AdminPanel = ({ onBack, db, firebaseConfigId, playSound, t, modules, addTo
                                     </div>
                                 ) : (
                                     <div className="p-8 text-center text-slate-400 italic bg-slate-50 rounded-xl border-2 border-dashed border-slate-200">
-                                        {t?.admin?.detail?.noExams || "El estudiante aún no ha realizado ningún examen."}
+                                        {t?.admin?.detail?.noExams || "Student hasn't taken any exams yet."}
                                     </div>
                                 )}
                             </div>
