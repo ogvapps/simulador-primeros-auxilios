@@ -237,21 +237,21 @@ const DesaSimulator = ({ onComplete, onBack, playSound, t, lang }) => {
 
     return (
         <div className="flex flex-col h-full bg-slate-950 text-white overflow-hidden font-sans select-none">
-            {/* AED Header */}
-            <div className="flex items-center justify-between p-6 bg-slate-900 border-b border-white/10 shadow-2xl z-20">
-                <div className="flex items-center gap-4">
-                    <div className="w-14 h-14 bg-red-600 rounded-3xl flex items-center justify-center shadow-[0_0_20px_rgba(220,38,38,0.4)]">
-                        <Activity className="text-white" size={32} />
+            {/* AE Header */}
+            <div className="flex items-center justify-between p-4 md:p-6 bg-slate-900 border-b border-white/10 shadow-2xl z-20 shrink-0">
+                <div className="flex items-center gap-2 md:gap-4">
+                    <div className="w-10 h-10 md:w-14 md:h-14 bg-red-600 rounded-xl md:rounded-3xl flex items-center justify-center shadow-[0_0_20px_rgba(220,38,38,0.4)]">
+                        <Activity className="text-white" size={24} />
                     </div>
                     <div>
-                        <h2 className="text-3xl font-black tracking-tighter leading-none flex items-center gap-2">
-                            DESA <span className="text-red-500 bg-red-500/10 px-2 py-1 rounded-lg text-sm border border-red-500/20">PRO v3</span>
+                        <h2 className="text-xl md:text-3xl font-black tracking-tighter leading-none flex items-center gap-2">
+                            DESA <span className="text-red-500 bg-red-500/10 px-1.5 py-0.5 rounded-lg text-[10px] md:text-sm border border-red-500/20">PRO v3</span>
                         </h2>
-                        <p className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em] mt-1">Advanced Life Support System</p>
+                        <p className="text-[8px] md:text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em] mt-0.5 md:mt-1">ALS System</p>
                     </div>
                 </div>
 
-                {/* CENTRAL INSTRUCTION - Integrated into header to avoid blocking patient */}
+                {/* CENTRAL INSTRUCTION - LCD Panel */}
                 {step !== 'OFF' && (
                     <div className="hidden lg:flex flex-1 max-w-2xl mx-12 bg-black/40 border border-white/5 rounded-2xl p-4 items-center gap-5 animate-in slide-in-from-top-4 shadow-inner">
                         <div className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 ${steps[step]?.color || 'bg-slate-800'} shadow-lg ring-2 ring-white/5`}>
@@ -266,160 +266,165 @@ const DesaSimulator = ({ onComplete, onBack, playSound, t, lang }) => {
                     </div>
                 )}
 
-                <div className="flex items-center gap-4">
+                <div className="flex items-center gap-2 md:gap-4">
                     {step === 'OFF' && (
-                        <div className="flex bg-slate-800 p-1.5 rounded-2xl border border-white/5">
-                            <button onClick={() => setPatientMode('adult')} className={`px-5 py-2.5 rounded-xl text-xs font-black transition-all ${patientMode === 'adult' ? 'bg-white text-slate-950 shadow-lg scale-105' : 'text-slate-500 hover:text-slate-300'}`}>ADULTO</button>
-                            <button onClick={() => setPatientMode('pediatric')} className={`px-5 py-2.5 rounded-xl text-xs font-black transition-all ${patientMode === 'pediatric' ? 'bg-yellow-500 text-slate-950 shadow-lg scale-105' : 'text-slate-500 hover:text-slate-300'}`}>NIÑO</button>
+                        <div className="flex bg-slate-800 p-1 rounded-xl md:p-1.5 md:rounded-2xl border border-white/5">
+                            <button onClick={() => setPatientMode('adult')} className={`px-3 py-1.5 md:px-5 md:py-2.5 rounded-lg md:rounded-xl text-[10px] md:text-xs font-black transition-all ${patientMode === 'adult' ? 'bg-white text-slate-950 shadow-lg scale-105' : 'text-slate-500 hover:text-slate-300'}`}>ADULTO</button>
+                            <button onClick={() => setPatientMode('pediatric')} className={`px-3 py-1.5 md:px-5 md:py-2.5 rounded-lg md:rounded-xl text-[10px] md:text-xs font-black transition-all ${patientMode === 'pediatric' ? 'bg-yellow-500 text-slate-950 shadow-lg scale-105' : 'text-slate-500 hover:text-slate-300'}`}>NIÑO</button>
                         </div>
                     )}
 
-                    <div className="flex bg-slate-800 p-1 rounded-2xl border border-white/5">
-                        <button onClick={() => setMuted(!muted)} className={`p-3 rounded-xl transition-all ${muted ? 'text-slate-500 bg-slate-700' : 'text-brand-400 bg-brand-400/10'} hover:scale-105`}>
-                            {muted ? <VolumeX size={24} /> : <Volume2 size={24} className={isSpeaking ? 'animate-pulse' : ''} />}
+                    <div className="flex bg-slate-800 p-1 rounded-xl md:rounded-2xl border border-white/5">
+                        <button onClick={() => setMuted(!muted)} className={`p-2 md:p-3 rounded-lg md:rounded-xl transition-all ${muted ? 'text-slate-500 bg-slate-700' : 'text-brand-400 bg-brand-400/10'} hover:scale-105`}>
+                            {muted ? <VolumeX size={20} /> : <Volume2 size={20} className={isSpeaking ? 'animate-pulse' : ''} />}
                         </button>
-                        <button onClick={onBack} className="p-3 text-slate-400 hover:text-white transition-colors"><X size={24} /></button>
+                        <button onClick={onBack} className="p-2 md:p-3 text-slate-400 hover:text-white transition-colors"><X size={20} /></button>
                     </div>
                 </div>
             </div>
 
-            <div className="flex-1 flex flex-col lg:flex-row p-6 md:p-8 gap-8 overflow-hidden">
+            <div className="flex-1 flex flex-col lg:flex-row p-4 md:p-8 gap-4 md:gap-8 overflow-hidden min-h-0">
                 {/* Patient Viewport */}
-                <div className="flex-[1.8] bg-slate-900/40 rounded-[60px] border border-white/5 relative flex items-center justify-center overflow-hidden shadow-inner group">
+                <div className="flex-[1.5] bg-slate-900/40 rounded-[30px] md:rounded-[60px] border border-white/5 relative flex items-center justify-center overflow-hidden shadow-inner group min-h-[300px]">
                     <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(37,99,235,0.05)_0%,transparent_70%)]"></div>
 
-                    {/* Patient Figure Container */}
-                    <div className={`relative transition-all duration-1000 transform ${patientMode === 'adult' ? 'w-[400px] h-[600px]' : 'w-[300px] h-[450px]'} ${viewSide === 'back' ? 'scale-x-[-1]' : ''}`}>
-
-                        {/* Anatomical Torso - SVG for better precision */}
-                        <div className="absolute inset-0 z-0">
-                            <svg viewBox="0 0 400 600" className={`w-full h-full transition-colors duration-1000 ${step !== 'OFF' ? 'fill-slate-800' : 'fill-slate-900'}`}>
-                                <defs>
-                                    <radialGradient id="torsoGrad" cx="50%" cy="40%" r="60%">
-                                        <stop offset="0%" stopColor={step !== 'OFF' ? '#2f3542' : '#1e2124'} />
-                                        <stop offset="100%" stopColor="#0f172a" />
-                                    </radialGradient>
-                                </defs>
-                                {/* Torso Main Shape */}
-                                <path
-                                    d="M100,80 Q200,40 300,80 Q360,120 370,250 Q380,450 330,520 Q280,580 200,580 Q120,580 70,520 Q20,450 30,250 Q40,120 100,80 Z"
-                                    fill="url(#torsoGrad)"
-                                    stroke="rgba(255,255,255,0.05)"
-                                    strokeWidth="2"
-                                />
-
-                                {/* Anatomical Landmarks (Subtle) */}
-                                <g className="opacity-20 stroke-slate-400 fill-none" strokeWidth="1">
-                                    {/* Collarbones */}
-                                    <path d="M100,90 Q200,120 300,90" />
-                                    {/* Pectorals / Ribs */}
-                                    <path d="M80,220 Q200,260 320,220" />
-                                    <path d="M70,280 Q200,320 330,280" />
-                                    <path d="M70,340 Q200,380 330,340" />
-                                    {/* Sternum */}
-                                    <rect x="192" y="140" width="16" height="220" rx="8" className="fill-slate-400/10 stroke-none" />
-                                </g>
-
-                                {viewSide === 'front' && (
-                                    <>
-                                        {/* Nipples (Only for reference) */}
-                                        <circle cx="120" cy="280" r="4" className="fill-pink-900/40" />
-                                        <circle cx="280" cy="280" r="4" className="fill-pink-900/40" />
-                                    </>
-                                )}
-                            </svg>
+                    {/* Instruction Overlay for Mobile */}
+                    {step !== 'OFF' && (
+                        <div className="absolute top-4 left-4 right-4 z-30 lg:hidden pointer-events-none">
+                            <div className="bg-black/80 backdrop-blur-md border border-white/10 p-3 rounded-2xl flex items-center gap-3">
+                                <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${steps[step]?.color || 'bg-slate-800'}`}>
+                                    <Volume2 size={16} className={isSpeaking ? 'animate-pulse' : ''} />
+                                </div>
+                                <p className="text-xs font-bold text-white line-clamp-2">{steps[step]?.message}</p>
+                            </div>
                         </div>
+                    )}
 
-                        {/* CPR Press Target */}
-                        {step === 'CPR' && cprPhase === 'compressing' && (
-                            <div
-                                onClick={handleCpr}
-                                className="absolute top-[40%] left-1/2 -translate-x-1/2 -translate-y-1/2 w-48 h-48 rounded-full border-8 border-brand-500/30 flex items-center justify-center cursor-pointer group/cpr z-50 animate-ping-slow"
-                            >
-                                <div className="w-32 h-32 rounded-full bg-brand-500/20 border-4 border-brand-500 flex items-center justify-center group-hover/cpr:scale-110 transition-transform">
-                                    <Activity size={48} className="text-brand-400" />
+                    {/* Patient Figure Container - Scaled based on available space */}
+                    <div className={`relative transition-all duration-1000 transform origin-center flex items-center justify-center 
+                        ${patientMode === 'adult' ? 'w-[400px] h-[600px] scale-[0.5] sm:scale-[0.7] md:scale-[0.85] lg:scale-100' : 'w-[300px] h-[450px] scale-[0.6] sm:scale-[0.8] md:scale-[0.9] lg:scale-100'} 
+                        ${viewSide === 'back' ? 'translate-x-0' : ''}`}>
+
+                        <div className={`w-full h-full relative ${viewSide === 'back' ? 'scale-x-[-1]' : ''}`}>
+                            {/* Anatomical Torso - SVG */}
+                            <div className="absolute inset-0 z-0">
+                                <svg viewBox="0 0 400 600" className={`w-full h-full transition-colors duration-1000 ${step !== 'OFF' ? 'fill-slate-800' : 'fill-slate-900'}`}>
+                                    <defs>
+                                        <radialGradient id="torsoGrad" cx="50%" cy="40%" r="60%">
+                                            <stop offset="0%" stopColor={step !== 'OFF' ? '#2f3542' : '#1e2124'} />
+                                            <stop offset="100%" stopColor="#0f172a" />
+                                        </radialGradient>
+                                    </defs>
+                                    <path
+                                        d="M100,80 Q200,40 300,80 Q360,120 370,250 Q380,450 330,520 Q280,580 200,580 Q120,580 70,520 Q20,450 30,250 Q40,120 100,80 Z"
+                                        fill="url(#torsoGrad)"
+                                        stroke="rgba(255,255,255,0.05)"
+                                        strokeWidth="2"
+                                    />
+                                    <g className="opacity-20 stroke-slate-400 fill-none" strokeWidth="1">
+                                        <path d="M100,90 Q200,120 300,90" />
+                                        <path d="M80,220 Q200,260 320,220" />
+                                        <path d="M70,280 Q200,320 330,280" />
+                                        <path d="M70,340 Q200,380 330,340" />
+                                        <rect x="192" y="140" width="16" height="220" rx="8" className="fill-slate-400/10 stroke-none" />
+                                    </g>
+                                    {viewSide === 'front' && (
+                                        <>
+                                            <circle cx="120" cy="280" r="4" className="fill-pink-900/40" />
+                                            <circle cx="280" cy="280" r="4" className="fill-pink-900/40" />
+                                        </>
+                                    )}
+                                </svg>
+                            </div>
+
+                            {/* CPR Press Target */}
+                            {step === 'CPR' && cprPhase === 'compressing' && (
+                                <div
+                                    onClick={handleCpr}
+                                    className="absolute top-[40%] left-1/2 -translate-x-1/2 -translate-y-1/2 w-48 h-48 rounded-full border-8 border-brand-500/30 flex items-center justify-center cursor-pointer group/cpr z-50 animate-ping-slow"
+                                >
+                                    <div className="w-32 h-32 rounded-full bg-brand-500/20 border-4 border-brand-500 flex items-center justify-center group-hover/cpr:scale-110 transition-transform">
+                                        <Activity size={48} className="text-brand-400" />
+                                    </div>
                                 </div>
-                            </div>
-                        )}
+                            )}
 
-                        {/* Breath Target */}
-                        {step === 'CPR' && cprPhase === 'breathing' && (
-                            <div
-                                onClick={handleBreath}
-                                className="absolute top-[18%] left-1/2 -translate-x-1/2 -translate-y-1/2 w-48 h-48 rounded-full border-8 border-pink-500/30 flex items-center justify-center cursor-pointer group/breath z-50 animate-ping-slow"
-                            >
-                                <div className="w-32 h-32 rounded-full bg-pink-500/20 border-4 border-pink-500 flex items-center justify-center group-hover/breath:scale-110 transition-transform">
-                                    <Wind size={48} className="text-pink-400" />
+                            {/* Breath Target */}
+                            {step === 'CPR' && cprPhase === 'breathing' && (
+                                <div
+                                    onClick={handleBreath}
+                                    className="absolute top-[18%] left-1/2 -translate-x-1/2 -translate-y-1/2 w-48 h-48 rounded-full border-8 border-pink-500/30 flex items-center justify-center cursor-pointer group/breath z-50 animate-ping-slow"
+                                >
+                                    <div className="w-32 h-32 rounded-full bg-pink-500/20 border-4 border-pink-500 flex items-center justify-center group-hover/breath:scale-110 transition-transform">
+                                        <Wind size={48} className="text-pink-400" />
+                                    </div>
                                 </div>
-                            </div>
-                        )}
+                            )}
 
-                        {/* Interactive Pads Overlay */}
-                        {step === 'PLACE_PADS' && (
-                            <>
-                                {/* Adult Logic */}
-                                {patientMode === 'adult' && (
-                                    <>
-                                        {!pads.top && (
-                                            <PadTarget
-                                                onClick={() => placePad('top')}
-                                                className="top-[15%] right-[12%] w-28 h-36"
-                                                label="Hombro Derecho"
-                                            />
-                                        )}
-                                        {!pads.bottom && (
-                                            <PadTarget
-                                                onClick={() => placePad('bottom')}
-                                                className="bottom-[28%] left-[10%] w-28 h-36 rotate-[-15deg]"
-                                                label="Costado Izquierdo"
-                                            />
-                                        )}
-                                    </>
-                                )}
+                            {/* Interactive Pads Overlay */}
+                            {step === 'PLACE_PADS' && (
+                                <>
+                                    {patientMode === 'adult' && (
+                                        <>
+                                            {!pads.top && (
+                                                <PadTarget
+                                                    onClick={() => placePad('top')}
+                                                    className="top-[15%] right-[12%] w-28 h-36"
+                                                    label="Hombro Derecho"
+                                                />
+                                            )}
+                                            {!pads.bottom && (
+                                                <PadTarget
+                                                    onClick={() => placePad('bottom')}
+                                                    className="bottom-[28%] left-[10%] w-28 h-36 rotate-[-15deg]"
+                                                    label="Costado Izquierdo"
+                                                />
+                                            )}
+                                        </>
+                                    )}
+                                    {patientMode === 'pediatric' && (
+                                        <>
+                                            {viewSide === 'front' && !pads.top && (
+                                                <PadTarget
+                                                    onClick={() => placePad('top')}
+                                                    className="top-[30%] left-1/2 -translate-x-1/2 w-24 h-32"
+                                                    label="Pecho"
+                                                />
+                                            )}
+                                            {viewSide === 'back' && !pads.bottom && (
+                                                <PadTarget
+                                                    onClick={() => placePad('bottom')}
+                                                    className="top-[30%] left-1/2 -translate-x-1/2 w-24 h-32"
+                                                    label="Espalda"
+                                                />
+                                            )}
+                                        </>
+                                    )}
+                                </>
+                            )}
 
-                                {/* Pediatric Logic */}
-                                {patientMode === 'pediatric' && (
-                                    <>
-                                        {viewSide === 'front' && !pads.top && (
-                                            <PadTarget
-                                                onClick={() => placePad('top')}
-                                                className="top-[30%] left-1/2 -translate-x-1/2 w-24 h-32"
-                                                label="Pecho"
-                                            />
-                                        )}
-                                        {viewSide === 'back' && !pads.bottom && (
-                                            <PadTarget
-                                                onClick={() => placePad('bottom')}
-                                                className="top-[30%] left-1/2 -translate-x-1/2 w-24 h-32"
-                                                label="Espalda"
-                                            />
-                                        )}
-                                    </>
-                                )}
-                            </>
-                        )}
-
-                        {/* Visual Placed Pads */}
-                        {pads.top && (patientMode === 'adult' || viewSide === 'front') && (
-                            <div className={`absolute z-20 animate-in zoom-in duration-300 ${patientMode === 'adult' ? 'top-[15%] right-[12%] w-28 h-36 rotate-[10deg]' : 'top-[30%] left-1/2 -translate-x-1/2 w-24 h-32'}`}>
-                                <RealisticPad id="1" />
-                            </div>
-                        )}
-                        {pads.bottom && (patientMode === 'adult' || viewSide === 'back') && (
-                            <div className={`absolute z-20 animate-in zoom-in duration-300 ${patientMode === 'adult' ? 'bottom-[28%] left-[10%] w-28 h-36 rotate-[-15deg]' : 'top-[30%] left-1/2 -translate-x-1/2 w-24 h-32'}`}>
-                                <RealisticPad id="2" />
-                            </div>
-                        )}
+                            {/* Visual Placed Pads */}
+                            {pads.top && (patientMode === 'adult' || viewSide === 'front') && (
+                                <div className={`absolute z-20 animate-in zoom-in duration-300 ${patientMode === 'adult' ? 'top-[15%] right-[12%] w-28 h-36 rotate-[10deg]' : 'top-[30%] left-1/2 -translate-x-1/2 w-24 h-32'}`}>
+                                    <RealisticPad id="1" />
+                                </div>
+                            )}
+                            {pads.bottom && (patientMode === 'adult' || viewSide === 'back') && (
+                                <div className={`absolute z-20 animate-in zoom-in duration-300 ${patientMode === 'adult' ? 'bottom-[28%] left-[10%] w-28 h-36 rotate-[-15deg]' : 'top-[30%] left-1/2 -translate-x-1/2 w-24 h-32'}`}>
+                                    <RealisticPad id="2" />
+                                </div>
+                            )}
+                        </div>
                     </div>
 
                     {/* Pediatric Toggle View */}
                     {patientMode === 'pediatric' && step === 'PLACE_PADS' && (
-                        <div className="absolute top-10 left-10 flex flex-col gap-2 z-30">
+                        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 md:top-10 md:left-10 md:translate-x-0 flex flex-col gap-2 z-30">
                             <button
                                 onClick={() => setViewSide(viewSide === 'front' ? 'back' : 'front')}
-                                className="bg-slate-800/80 backdrop-blur text-white px-6 py-4 rounded-3xl border border-white/10 flex items-center gap-3 font-black text-sm uppercase tracking-widest hover:bg-slate-700 transition-all shadow-xl"
+                                className="bg-slate-800/80 backdrop-blur text-white px-4 py-3 md:px-6 md:py-4 rounded-2xl md:rounded-3xl border border-white/10 flex items-center gap-3 font-black text-[10px] md:text-sm uppercase tracking-widest hover:bg-slate-700 transition-all shadow-xl"
                             >
-                                <RefreshCw size={20} className={viewSide === 'back' ? 'rotate-180 transition-transform' : ''} />
+                                <RefreshCw size={18} className={viewSide === 'back' ? 'rotate-180 transition-transform' : ''} />
                                 {viewSide === 'front' ? 'Girar a Espalda' : 'Girar a Pecho'}
                             </button>
                         </div>
@@ -427,57 +432,57 @@ const DesaSimulator = ({ onComplete, onBack, playSound, t, lang }) => {
                 </div>
 
                 {/* Device Console */}
-                <div className="flex-1 bg-slate-800 rounded-[70px] border-[12px] border-slate-700 shadow-[20px_20px_60px_-15px_rgba(0,0,0,0.7)] flex flex-col overflow-hidden relative">
+                <div className="flex-1 bg-slate-800 rounded-[30px] md:rounded-[70px] border-[6px] md:border-[12px] border-slate-700 shadow-[10px_10px_40px_-5px_rgba(0,0,0,0.5)] flex flex-col overflow-hidden relative min-h-[400px]">
                     {/* Screen Section */}
-                    <div className="m-8 flex-1 bg-black rounded-[45px] border-[15px] border-slate-900 shadow-inner relative flex flex-col p-10 overflow-hidden">
+                    <div className="m-4 md:m-8 flex-1 bg-black rounded-[25px] md:rounded-[45px] border-[10px] md:border-[15px] border-slate-900 shadow-inner relative flex flex-col p-6 md:p-10 overflow-hidden">
                         {/* CRT Effect */}
                         <div className="absolute inset-0 pointer-events-none bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.1)_50%),linear-gradient(90deg,rgba(255,0,0,0.03),rgba(0,255,0,0.01),rgba(0,0,255,0.03))] bg-[length:100%_4px,3px_100%] z-20"></div>
 
                         {step === 'OFF' ? (
                             <div className="h-full flex flex-col items-center justify-center opacity-20">
-                                <Power size={80} className="text-slate-700 mb-4" />
-                                <span className="text-slate-700 font-bold uppercase tracking-[0.5em]">System Standby</span>
+                                <Power size={48} className="md:size-20 text-slate-700 mb-4" />
+                                <span className="text-[10px] md:text-sm text-slate-700 font-bold uppercase tracking-[0.3em] md:tracking-[0.5em]">System Standby</span>
                             </div>
                         ) : (
                             <div className="h-full flex flex-col animate-in fade-in duration-1000">
                                 {/* Status Bar */}
-                                <div className="flex justify-between items-center mb-10 text-[10px] font-black tracking-widest text-slate-500 uppercase">
-                                    <div className="flex items-center gap-2">
-                                        <Activity size={14} className="text-emerald-500" />
-                                        <span>System Nominal</span>
+                                <div className="flex justify-between items-center mb-6 md:mb-10 text-[8px] md:text-[10px] font-black tracking-widest text-slate-500 uppercase">
+                                    <div className="flex items-center gap-1.5 md:gap-2">
+                                        <Activity size={12} className="text-emerald-500" />
+                                        <span>Nominal</span>
                                     </div>
-                                    <div className="px-3 py-1 bg-slate-900 rounded-full border border-white/5">
-                                        {patientMode === 'pediatric' ? 'Pediatric Mode' : 'Adult Mode'}
+                                    <div className="px-2 py-1 bg-slate-900 rounded-full border border-white/5">
+                                        {patientMode === 'pediatric' ? 'Pediatric' : 'Adult'}
                                     </div>
                                 </div>
 
                                 <div className="flex-1 flex flex-col items-center justify-center text-center">
                                     {step === 'ANALYZING' && (
-                                        <div className="flex gap-3 h-20 items-end mb-12">
-                                            {[1, 2, 3, 4, 5, 6, 7].map(i => (
-                                                <div key={i} className="w-4 bg-yellow-500 rounded-full animate-pulse shadow-[0_0_15px_rgba(234,179,8,0.5)]" style={{ height: `${20 + Math.random() * 80}%`, animationDelay: `${i * 100}ms` }}></div>
+                                        <div className="flex gap-2 md:gap-3 h-12 md:h-20 items-end mb-8 md:mb-12">
+                                            {[1, 2, 3, 4, 5].map(i => (
+                                                <div key={i} className="w-2 md:w-4 bg-yellow-500 rounded-full animate-pulse shadow-[0_0_15px_rgba(234,179,8,0.5)]" style={{ height: `${20 + Math.random() * 80}%`, animationDelay: `${i * 100}ms` }}></div>
                                             ))}
                                         </div>
                                     )}
                                     {step === 'SHOCK_ADVISED' && (
-                                        <div className="mb-10 p-8 bg-orange-500/10 rounded-full border-4 border-orange-500/20 animate-pulse">
-                                            <ShieldAlert size={100} className="text-orange-500" />
+                                        <div className="mb-6 md:mb-10 p-6 md:p-8 bg-orange-500/10 rounded-full border-2 md:border-4 border-orange-500/20 animate-pulse">
+                                            <ShieldAlert size={60} className="md:size-[100px] text-orange-500" />
                                         </div>
                                     )}
-                                    {step === 'SHOCKING' && <Zap size={140} className="text-red-500 mb-10 animate-flash drop-shadow-[0_0_40px_rgba(239,68,68,0.8)]" />}
+                                    {step === 'SHOCKING' && <Zap size={80} className="md:size-[140px] text-red-500 mb-6 md:mb-10 animate-flash drop-shadow-[0_0_40px_rgba(239,68,68,0.8)]" />}
 
                                     {step === 'CPR' && (
-                                        <div className="mb-10">
-                                            <div className="text-[120px] font-black text-brand-400 leading-none tabular-nums tracking-tighter shadow-brand-500/20">
+                                        <div className="mb-6 md:mb-10">
+                                            <div className="text-7xl md:text-[120px] font-black text-brand-400 leading-none tabular-nums tracking-tighter">
                                                 {cprPhase === 'compressing' ? 30 - cprCount : 2 - breathCount}
                                             </div>
-                                            <div className="text-[14px] uppercase tracking-[0.6em] font-black text-brand-200/60 mt-4">
+                                            <div className="text-[10px] md:text-[14px] uppercase tracking-[0.4em] md:tracking-[0.6em] font-black text-brand-200/60 mt-2 md:mt-4">
                                                 {cprPhase === 'compressing' ? 'Compresiones' : 'Insuflaciones'}
                                             </div>
                                         </div>
                                     )}
 
-                                    <h3 className={`text-4xl lg:text-5xl font-black uppercase tracking-tight leading-[0.9] px-4 ${step === 'SHOCK_ADVISED' || step === 'SHOCKING' ? 'text-orange-500' : 'text-white'}`}>
+                                    <h3 className={`text-2xl md:text-4xl lg:text-5xl font-black uppercase tracking-tight leading-[0.9] px-2 md:px-4 ${step === 'SHOCK_ADVISED' || step === 'SHOCKING' ? 'text-orange-500' : 'text-white'}`}>
                                         {steps[step]?.message || ''}
                                     </h3>
                                 </div>
@@ -486,38 +491,38 @@ const DesaSimulator = ({ onComplete, onBack, playSound, t, lang }) => {
                     </div>
 
                     {/* Controls Section */}
-                    <div className="h-[280px] px-16 flex items-center justify-between gap-12 bg-slate-700/30">
+                    <div className="h-[180px] md:h-[280px] px-8 md:px-16 flex items-center justify-between gap-4 md:gap-12 bg-slate-700/30">
                         {/* Power Button */}
-                        <div className="flex flex-col items-center gap-4">
-                            <button onClick={handlePower} className={`w-28 h-28 rounded-full flex items-center justify-center transition-all active:scale-90 shadow-2xl border-b-[10px] ${step === 'OFF' ? 'bg-slate-800 border-slate-950 text-slate-600' : 'bg-green-600 border-green-900 text-white shadow-green-500/30'}`}>
-                                <Power size={48} className={step !== 'OFF' ? 'animate-pulse' : ''} />
+                        <div className="flex flex-col items-center gap-2 md:gap-4">
+                            <button onClick={handlePower} className={`w-16 h-16 md:w-28 md:h-28 rounded-full flex items-center justify-center transition-all active:scale-90 shadow-2xl border-b-[6px] md:border-b-[10px] ${step === 'OFF' ? 'bg-slate-800 border-slate-950 text-slate-600' : 'bg-green-600 border-green-900 text-white shadow-green-500/30'}`}>
+                                <Power size={24} className={step !== 'OFF' ? 'animate-pulse' : ''} />
                             </button>
-                            <span className="text-[11px] uppercase font-black text-slate-500 tracking-widest">Power</span>
+                            <span className="text-[8px] md:text-[11px] uppercase font-black text-slate-500 tracking-widest leading-none">Power</span>
                         </div>
 
                         {/* Shock Button */}
-                        <div className="flex flex-col items-center gap-4">
+                        <div className="flex flex-col items-center gap-2 md:gap-4">
                             <button
                                 onClick={deliverShock}
                                 disabled={step !== 'SHOCKING'}
-                                className={`w-36 h-36 rounded-full flex items-center justify-center transition-all shadow-2xl relative overflow-hidden active:scale-95 ${step === 'SHOCKING' ? 'bg-orange-500 border-b-[14px] border-orange-900 animate-flash cursor-pointer' : 'bg-slate-300/10 border-b-[14px] border-slate-950 opacity-10 cursor-not-allowed'}`}
+                                className={`w-20 h-20 md:w-36 md:h-36 rounded-full flex items-center justify-center transition-all shadow-2xl relative overflow-hidden active:scale-95 ${step === 'SHOCKING' ? 'bg-orange-500 border-b-[8px] md:border-b-[14px] border-orange-900 animate-flash cursor-pointer' : 'bg-slate-300/10 border-b-[8px] md:border-b-[14px] border-slate-950 opacity-10 cursor-not-allowed'}`}
                             >
-                                <Zap size={64} className="text-white relative z-10" />
+                                <Zap size={32} className="md:size-[64px] text-white relative z-10" />
                                 {step === 'SHOCKING' && <div className="absolute inset-0 bg-white/30 animate-pulse"></div>}
                             </button>
-                            <span className={`text-[12px] uppercase font-black tracking-[0.2em] ${step === 'SHOCKING' ? 'text-orange-500 animate-pulse' : 'text-slate-500'}`}>Deliver Shock</span>
+                            <span className={`text-[9px] md:text-[12px] uppercase font-black tracking-[0.1em] md:tracking-[0.2em] leading-none ${step === 'SHOCKING' ? 'text-orange-500 animate-pulse' : 'text-slate-500'}`}>Shock</span>
                         </div>
 
                         {/* CPR/Interaction Button */}
-                        <div className="flex flex-col items-center gap-4">
+                        <div className="flex flex-col items-center gap-2 md:gap-4">
                             <button
                                 onClick={cprPhase === 'compressing' ? handleCpr : handleBreath}
                                 disabled={step !== 'CPR'}
-                                className={`w-28 h-28 rounded-full flex items-center justify-center transition-all active:scale-90 shadow-2xl border-b-[10px] ${step === 'CPR' ? (cprPhase === 'compressing' ? 'bg-brand-600 border-brand-900' : 'bg-pink-600 border-pink-900') : 'bg-slate-300/10 border-b-[10px] border-slate-950 opacity-10'}`}
+                                className={`w-16 h-16 md:w-28 md:h-28 rounded-full flex items-center justify-center transition-all active:scale-90 shadow-2xl border-b-[6px] md:border-b-[10px] ${step === 'CPR' ? (cprPhase === 'compressing' ? 'bg-brand-600 border-brand-900' : 'bg-pink-600 border-pink-900') : 'bg-slate-300/10 border-b-[6px] md:border-b-[10px] border-slate-950 opacity-10'}`}
                             >
-                                <Activity size={48} className="text-white" />
+                                <Activity size={24} className="md:size-[48px] text-white" />
                             </button>
-                            <span className="text-[11px] uppercase font-black text-slate-500 tracking-widest">{cprPhase === 'compressing' ? 'Comp' : 'Breath'}</span>
+                            <span className="text-[8px] md:text-[11px] uppercase font-black text-slate-500 tracking-widest leading-none">{cprPhase === 'compressing' ? 'Comp' : 'Breath'}</span>
                         </div>
                     </div>
                 </div>

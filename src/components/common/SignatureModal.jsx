@@ -24,8 +24,14 @@ const SignatureModal = ({ isOpen, onClose, onSave, t }) => {
     const startDrawing = (e) => {
         const canvas = canvasRef.current;
         const rect = canvas.getBoundingClientRect();
-        const x = (e.clientX || e.touches[0].clientX) - rect.left;
-        const y = (e.clientY || e.touches[0].clientY) - rect.top;
+        const scaleX = canvas.width / rect.width;
+        const scaleY = canvas.height / rect.height;
+
+        const clientX = e.clientX || e.touches[0].clientX;
+        const clientY = e.clientY || e.touches[0].clientY;
+
+        const x = (clientX - rect.left) * scaleX;
+        const y = (clientY - rect.top) * scaleY;
 
         const ctx = canvas.getContext('2d');
         ctx.beginPath();
@@ -37,8 +43,14 @@ const SignatureModal = ({ isOpen, onClose, onSave, t }) => {
         if (!isDrawing) return;
         const canvas = canvasRef.current;
         const rect = canvas.getBoundingClientRect();
-        const x = (e.clientX || e.touches[0].clientX) - rect.left;
-        const y = (e.clientY || e.touches[0].clientY) - rect.top;
+        const scaleX = canvas.width / rect.width;
+        const scaleY = canvas.height / rect.height;
+
+        const clientX = e.clientX || e.touches[0].clientX;
+        const clientY = e.clientY || e.touches[0].clientY;
+
+        const x = (clientX - rect.left) * scaleX;
+        const y = (clientY - rect.top) * scaleY;
 
         const ctx = canvas.getContext('2d');
         ctx.lineTo(x, y);

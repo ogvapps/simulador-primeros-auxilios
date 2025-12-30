@@ -1574,51 +1574,68 @@ const App = () => {
             }
           `}</style>
 
-                <div className="bg-white p-6 md:p-12 rounded-lg shadow-2xl w-full max-w-6xl aspect-[1.41] md:aspect-[1.41] flex flex-col justify-center text-center border-[10px] md:border-[20px] border-double border-yellow-600 relative overflow-hidden print:absolute print:top-0 print:left-0 print:w-full print:h-screen print:border-0 print:shadow-none print:z-[100] transform scale-[0.65] md:scale-100 origin-center h-fit">
-                  {/* Watermark */}
-                  <div className="absolute inset-0 flex items-center justify-center opacity-5 pointer-events-none">
-                    <BadgeCheck size={500} />
-                  </div>
-
-                  <div className="relative z-10 flex flex-col items-center justify-center h-full">
-                    <div className="mb-4 md:mb-8">
-                      <Award size={80} className="text-yellow-500 fill-yellow-100 inline-block" />
+                <div className="w-full max-w-4xl mx-auto px-2 sm:px-4">
+                  <div className="bg-white p-6 sm:p-8 md:p-12 rounded-lg shadow-2xl w-full aspect-[1.414] flex flex-col justify-center text-center border-[6px] sm:border-[10px] md:border-[20px] border-double border-yellow-600 relative overflow-hidden print:absolute print:top-0 print:left-0 print:w-full print:h-screen print:border-0 print:shadow-none print:z-[100]">
+                    {/* Watermark */}
+                    <div className="absolute inset-0 flex items-center justify-center opacity-5 pointer-events-none">
+                      <BadgeCheck className="w-1/2 h-1/2" />
                     </div>
-                    <h1 className="text-4xl md:text-6xl font-serif font-black text-slate-900 mb-2 md:mb-4 uppercase tracking-widest">Certificado de Honor</h1>
-                    <div className="w-32 h-1 bg-yellow-500 mx-auto mb-6 md:mb-10"></div>
 
-                    <p className="text-xl md:text-2xl text-slate-500 font-serif italic mb-4 md:mb-8">Se otorga el presente reconocimiento a</p>
-
-                    <h2 className="text-5xl md:text-7xl font-black text-brand-700 mb-6 md:mb-10 font-serif border-b-4 border-slate-200 inline-block px-12 pb-4">
-                      {profile.name}
-                    </h2>
-
-                    <p className="text-lg md:text-xl text-slate-600 font-serif leading-relaxed max-w-4xl mx-auto mb-10 md:mb-16">
-                      ha demostrado excelencia y dominio teórico-práctico en el programa de<br />
-                      <strong className="text-slate-900 text-2xl md:text-3xl mt-2 block uppercase tracking-tight">PRIMEROS AUXILIOS - SOPORTE VITAL BÁSICO (P.A.S.) - DESA</strong>
-                    </p>
-
-                    <div className="flex justify-between w-full max-w-5xl mx-auto px-12 mt-auto pb-10">
-                      <div className="text-center w-80">
-                        <div className="w-full border-b-2 border-slate-800 mb-3 mx-auto"></div>
-                        <p className="text-sm uppercase tracking-[0.2em] font-black text-slate-900">Orestes González Villanueva</p>
-                        <p className="text-xs uppercase tracking-widest font-bold text-slate-400 mt-1">Profesor de Educación Física</p>
+                    <div className="relative z-10 flex flex-col items-center justify-between h-full py-4 sm:py-8">
+                      {/* Header */}
+                      <div className="flex flex-col items-center">
+                        <div className="mb-2 sm:mb-4 md:mb-8">
+                          <Award className="w-10 h-10 sm:w-16 sm:h-16 md:w-20 md:h-20 text-yellow-500 fill-yellow-100" />
+                        </div>
+                        <h1 className="text-xl sm:text-3xl md:text-5xl lg:text-6xl font-serif font-black text-slate-900 mb-1 sm:mb-2 md:mb-4 uppercase tracking-widest">Certificado de Honor</h1>
+                        <div className="w-16 sm:w-24 md:w-32 h-0.5 sm:h-1 bg-yellow-500 mx-auto mb-3 sm:mb-6 md:mb-10"></div>
                       </div>
-                      <div className="text-center w-80">
-                        <div className="w-full border-b-2 border-slate-800 mb-3 mx-auto"></div>
-                        <p className="text-sm uppercase tracking-[0.2em] font-black text-slate-900">Fecha de Expedición</p>
-                        <p className="text-base font-serif text-slate-700 mt-1">{new Date().toLocaleDateString()}</p>
+
+                      {/* Content */}
+                      <div className="flex-1 flex flex-col justify-center w-full">
+                        <p className="text-xs sm:text-lg md:text-xl text-slate-500 font-serif italic mb-2 sm:mb-4 md:mb-8">Se otorga el presente reconocimiento a</p>
+
+                        <h2 className="text-2xl sm:text-4xl md:text-5xl lg:text-6xl font-black text-brand-700 mb-4 sm:mb-6 md:mb-10 font-serif border-b-2 sm:border-b-4 border-slate-200 inline-block px-4 sm:px-12 pb-2 sm:pb-4 mx-auto max-w-[90%] break-words">
+                          {profile.name}
+                        </h2>
+
+                        <p className="text-xs sm:text-base md:text-lg lg:text-xl text-slate-600 font-serif leading-relaxed max-w-4xl mx-auto px-4">
+                          ha demostrado excelencia y dominio teórico-práctico en el programa de<br />
+                          <strong className="text-slate-900 text-sm sm:text-xl md:text-2xl lg:text-3xl mt-2 block uppercase tracking-tight">PRIMEROS AUXILIOS - SOPORTE VITAL BÁSICO (P.A.S.) - DESA</strong>
+                        </p>
+                      </div>
+
+                      {/* Footer */}
+                      <div className="flex justify-between w-full max-w-5xl mx-auto px-4 sm:px-12 mt-4 sm:mt-auto pt-4 sm:pt-10 items-end">
+                        <div className="text-center w-1/3">
+                          <div className="w-full border-b sm:border-b-2 border-slate-800 mb-1 sm:mb-3 mx-auto"></div>
+                          <p className="text-[8px] sm:text-xs md:text-sm uppercase tracking-wider font-black text-slate-900 leading-tight">Orestes González V.</p>
+                          <p className="text-[6px] sm:text-[10px] md:text-xs uppercase tracking-widest font-bold text-slate-400 mt-1 leading-tight">Profesor EF</p>
+                        </div>
+
+                        {/* QR Placeholder for Screen */}
+                        <div className="hidden sm:flex flex-col items-center justify-end pb-2 opacity-50">
+                          <div className="border border-slate-200 p-1 bg-white">
+                            <div className="w-10 h-10 sm:w-16 sm:h-16 bg-slate-900 pattern-grid-lg"></div>
+                          </div>
+                        </div>
+
+                        <div className="text-center w-1/3">
+                          <div className="w-full border-b sm:border-b-2 border-slate-800 mb-1 sm:mb-3 mx-auto"></div>
+                          <p className="text-[8px] sm:text-xs md:text-sm uppercase tracking-wider font-black text-slate-900 leading-tight">Fecha</p>
+                          <p className="text-[8px] sm:text-sm md:text-base font-serif text-slate-700 mt-1 leading-tight">{new Date().toLocaleDateString()}</p>
+                        </div>
                       </div>
                     </div>
-                  </div>
 
-                  <div className="absolute top-8 right-8 print:hidden flex gap-2">
-                    <button onClick={handleDownloadDiploma} className="bg-brand-600 text-white p-3 rounded-full hover:bg-brand-700 shadow-lg hover:scale-110 transition-transform" title="Descargar como PDF">
-                      <Download />
-                    </button>
-                    <button onClick={() => setView('home')} className="bg-slate-200 text-slate-500 p-3 rounded-full hover:bg-slate-300 hover:scale-110 transition-transform" title="Cerrar">
-                      <XCircle />
-                    </button>
+                    <div className="absolute top-2 right-2 sm:top-4 sm:right-4 md:top-8 md:right-8 print:hidden flex gap-2">
+                      <button onClick={handleDownloadDiploma} className="bg-brand-600 text-white p-2 sm:p-3 rounded-full hover:bg-brand-700 shadow-lg hover:scale-110 transition-transform z-50 relative" title="Descargar como PDF">
+                        <Download size={20} className="sm:w-6 sm:h-6" />
+                      </button>
+                      <button onClick={() => setView('home')} className="bg-slate-200 text-slate-500 p-2 sm:p-3 rounded-full hover:bg-slate-300 hover:scale-110 transition-transform z-50 relative" title="Cerrar">
+                        <XCircle size={20} className="sm:w-6 sm:h-6" />
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>
