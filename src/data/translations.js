@@ -282,6 +282,13 @@ export const TRANSLATIONS = {
             statsTab: "Estadísticas",
             standard: "Estándar",
             emptyBackpack: "No tienes objetos en tu mochila. ¡Visita la tienda!"
+        },
+        toasts: {
+            desaSuccess: "¡Simulación DESA completada! +100 XP",
+            levelUp: "¡Sube de nivel!",
+            avatarEquipped: "Avatar equipado",
+            themeEquipped: "Tema aplicado",
+            dailySuccess: "¡Desafío completado! +50 XP"
         }
     },
     en: {
@@ -566,6 +573,13 @@ export const TRANSLATIONS = {
             statsTab: "Stats",
             standard: "Standard",
             emptyBackpack: "Your backpack is empty. Visit the store!"
+        },
+        toasts: {
+            desaSuccess: "DESA Simulation completed! +100 XP",
+            levelUp: "Level Up!",
+            avatarEquipped: "Avatar equipped",
+            themeEquipped: "Theme applied",
+            dailySuccess: "Challenge completed! +50 XP"
         }
     }
 };

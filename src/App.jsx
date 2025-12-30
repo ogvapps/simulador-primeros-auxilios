@@ -38,6 +38,7 @@ const StoreComponent = React.lazy(() => import('./components/dashboard/StoreComp
 const ProfileView = React.lazy(() => import('./components/dashboard/ProfileView'));
 const GlossaryView = React.lazy(() => import('./components/dashboard/GlossaryView'));
 const PracticeMode = React.lazy(() => import('./components/dashboard/PracticeMode'));
+const DesaSimulator = React.lazy(() => import('./components/games/DesaSimulator'));
 
 
 const DashboardSkeleton = React.lazy(() => import('./components/common/Skeleton').then(module => ({ default: module.DashboardSkeleton })));
@@ -54,7 +55,7 @@ import {
   AVATARS_ES, AVATARS_EN,
   HIDDEN_BADGES_ES, HIDDEN_BADGES_EN,
   QUESTION_CATEGORIES_ES,
-  XP_REWARDS, DESA_SIMULATOR_URL, ADMIN_PIN
+  XP_REWARDS, ADMIN_PIN
 } from './data/constants';
 import { TRANSLATIONS } from './data/translations';
 
@@ -710,6 +711,15 @@ const App = () => {
       console.error('Quest reward error:', e);
       addToast('Error al reclamar recompensa', 'error');
     }
+  };
+
+  const handleDesaComplete = () => {
+    updateProgress({
+      desaCompleted: true,
+      xpGain: 100
+    });
+    addToast(t?.toasts?.desaSuccess || "¡Simulación DESA completada! +100 XP", 'success');
+    setShowDesa(false);
   };
 
 
@@ -1578,9 +1588,15 @@ const App = () => {
           {
             showDesa && (
               <div className="fixed inset-0 z-[60] bg-black/90 flex items-center justify-center p-4 animate-in fade-in duration-300">
-                <div className="bg-white rounded-2xl w-full max-w-6xl h-[85vh] relative overflow-hidden shadow-2xl">
-                  <button onClick={() => setShowDesa(false)} className="absolute top-4 right-4 z-10 bg-black/50 hover:bg-black/70 p-2 rounded-full text-white backdrop-blur-sm transition-colors"><XCircle size={28} /></button>
-                  <iframe src={DESA_SIMULATOR_URL} title="Simulador DESA" className="w-full h-full border-0 bg-slate-100" />
+                <div className="bg-white rounded-[40px] w-full max-w-6xl h-[85vh] relative overflow-hidden shadow-2xl border-4 border-slate-800">
+                  <React.Suspense fallback={<div className="h-full flex flex-col items-center justify-center bg-slate-900 text-white"><Activity className="animate-spin mb-4" size={48} /> <p className="font-bold">Cargando Simulador Avanzado...</p></div>}>
+                    <DesaSimulator
+                      onBack={() => setShowDesa(false)}
+                      onComplete={handleDesaComplete}
+                      playSound={playSound}
+                      t={t}
+                    />
+                  </React.Suspense>
                 </div>
               </div>
             )
