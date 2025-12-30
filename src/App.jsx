@@ -1595,6 +1595,7 @@ const App = () => {
                       onComplete={handleDesaComplete}
                       playSound={playSound}
                       t={t}
+                      lang={lang}
                     />
                   </React.Suspense>
                 </div>

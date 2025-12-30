@@ -289,6 +289,45 @@ export const TRANSLATIONS = {
             avatarEquipped: "Avatar equipado",
             themeEquipped: "Tema aplicado",
             dailySuccess: "¡Desafío completado! +50 XP"
+        },
+        desa: {
+            adult: "Modo Adulto",
+            pediatric: "Modo Pediátrico",
+            adultBtn: "ADULTO",
+            pediatricBtn: "PEDIÁTRICO",
+            steps: {
+                off: "Pulse el botón de encendido",
+                powerOn: "Iniciando sistema. Espere...",
+                padsAdult: "Conecte los electrodos en el tórax desnudo",
+                padsPedia: "Conecte los electrodos en Pecho y Espalda",
+                analyzing: "Analizando ritmo. No toque al paciente.",
+                shockAdvised: "Descarga recomendada. Manténgase alejado.",
+                shocking: "Pulse el botón de descarga AHORA",
+                shockDelivered: "Descarga realizada. Comience RCP.",
+                cpr: "Realice compresiones al ritmo del metrónomo"
+            },
+            instructions: {
+                off: "Encender el DESA es el primer paso vital.",
+                powerOn: "Escuche atentamente las instrucciones de voz.",
+                padsAdult: "Un parche en hombro derecho y otro en costado izquierdo.",
+                padsPedia: "Un parche en el centro del pecho y otro en la espalda.",
+                analyzing: "Asegúrese de que nadie esté tocando a la víctima.",
+                shockAdvised: "El equipo se carga. Grite: ¡FUERA TODOS!",
+                shocking: "Presione el botón parpadeante inmediatamente.",
+                shockDelivered: "30 compresiones y 2 insuflaciones.",
+                cpr: "Mantenga un ritmo de 100-120 por minuto."
+            },
+            pads: {
+                topRight: "Electrodo Superior Derecho",
+                bottomLeft: "Electrodo Lateral Izquierdo",
+                front: "Electrodo Pecho (Front)",
+                back: "Electrodo Espalda (Back)"
+            },
+            voice: {
+                pad1: "Primer electrodo conectado",
+                pad2: "Segundo electrodo conectado",
+                cprDone: "Ciclo completado. Buen trabajo."
+            }
         }
     },
     en: {
@@ -580,6 +619,45 @@ export const TRANSLATIONS = {
             avatarEquipped: "Avatar equipped",
             themeEquipped: "Theme applied",
             dailySuccess: "Challenge completed! +50 XP"
+        },
+        desa: {
+            adult: "Adult Mode",
+            pediatric: "Pediatric Mode",
+            adultBtn: "ADULT",
+            pediatricBtn: "PEDIATRIC",
+            steps: {
+                off: "Press the Power Button",
+                powerOn: "Starting system. Please wait...",
+                padsAdult: "Apply pads to the bare chest",
+                padsPedia: "Apply pads to Chest and Back",
+                analyzing: "Analyzing rhythm. Do not touch the patient.",
+                shockAdvised: "Shock advised. Stand clear.",
+                shocking: "Press the shock button NOW",
+                shockDelivered: "Shock delivered. Start CPR.",
+                cpr: "Perform compressions to the metronome"
+            },
+            instructions: {
+                off: "Powering on the AED is the first vital step.",
+                powerOn: "Listen carefully to the voice instructions.",
+                padsAdult: "One pad on the upper right, one on the lower left.",
+                padsPedia: "One pad in center chest, one in center back.",
+                analyzing: "Ensure no one is touching the victim.",
+                shockAdvised: "Unit is charging. Shout: EVERYBODY CLEAR!",
+                shocking: "Press the flashing button immediately.",
+                shockDelivered: "30 compressions and 2 breaths.",
+                cpr: "Maintain a rhythm of 100-120 per minute."
+            },
+            pads: {
+                topRight: "Upper Right Pad",
+                bottomLeft: "Lower Left Pad",
+                front: "Chest Pad (Front)",
+                back: "Back Pad (Back)"
+            },
+            voice: {
+                pad1: "First pad connected",
+                pad2: "Second pad connected",
+                cprDone: "Cycle complete. Good job."
+            }
         }
     }
 };

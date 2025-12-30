@@ -14,57 +14,92 @@ import {
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
-const DesaSimulator = ({ onComplete, onBack, playSound, t }) => {
+const DesaSimulator = ({ onComplete, onBack, playSound, t, lang }) => {
     const [step, setStep] = useState('OFF'); // OFF, POWERING_ON, PLACE_PADS, ANALYZING, SHOCK_ADVISED, SHOCKING, SHOCK_DELIVERED, CPR
+    const [patientMode, setPatientMode] = useState('adult'); // adult, pediatric
     const [pads, setPads] = useState({ top: false, bottom: false });
     const [muted, setMuted] = useState(false);
     const [timer, setTimer] = useState(0);
     const [cprCount, setCprCount] = useState(0);
-    const audioRef = useRef(null);
+    const [isSpeaking, setIsSpeaking] = useState(false);
+    const synthRef = useRef(window.speechSynthesis);
+
+    // Voice Engine
+    const speak = (text) => {
+        if (muted || !text) return;
+
+        // Cancel previous speech
+        if (synthRef.current) {
+            synthRef.current.cancel();
+        }
+
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.lang = lang === 'en' ? 'en-US' : 'es-ES';
+        utterance.rate = 0.9;
+        utterance.pitch = 1;
+
+        utterance.onstart = () => setIsSpeaking(true);
+        utterance.onend = () => setIsSpeaking(false);
+
+        if (synthRef.current) {
+            synthRef.current.speak(utterance);
+        }
+    };
 
     // Simulation steps configuration
     const steps = {
         'OFF': {
-            message: 'Pulse el botón de encendido para comenzar',
-            instruction: 'Encender el DESA es el primer paso vital.',
+            message: t?.desa?.steps?.off || 'Pulse el botón de encendido para comenzar',
+            instruction: t?.desa?.instructions?.off || 'Encender el DESA es el primer paso vital.',
             color: 'bg-slate-800'
         },
         'POWERING_ON': {
-            message: 'Iniciando sistema...',
-            instruction: 'Escuche atentamente las instrucciones de voz.',
+            message: t?.desa?.steps?.powerOn || 'Iniciando sistema...',
+            instruction: t?.desa?.instructions?.powerOn || 'Escuche atentamente las instrucciones de voz.',
             color: 'bg-brand-600'
         },
         'PLACE_PADS': {
-            message: 'Conecte los electrodos en el tórax desnudo del paciente',
-            instruction: 'Coloque un parche en el hombro derecho y otro en el costado izquierdo.',
+            message: patientMode === 'adult'
+                ? (t?.desa?.steps?.padsAdult || 'Conecte los electrodos en el tórax desnudo del paciente')
+                : (t?.desa?.steps?.padsPedia || 'Conecte los electrodos PEDIÁTRICOS (Pecho y Espalda)'),
+            instruction: patientMode === 'adult'
+                ? (t?.desa?.instructions?.padsAdult || 'Coloque un parche en el hombro derecho y otro en el costado izquierdo.')
+                : (t?.desa?.instructions?.padsPedia || 'Coloque un parche en el CENTRO DEL PECHO y otro en el CENTRO DE LA ESPALDA.'),
             color: 'bg-blue-600'
         },
         'ANALYZING': {
-            message: 'Analizando ritmo cardíaco. No toque al paciente.',
-            instruction: 'Asegúrese de que nadie esté tocando a la víctima.',
+            message: t?.desa?.steps?.analyzing || 'Analizando ritmo cardíaco. No toque al paciente.',
+            instruction: t?.desa?.instructions?.analyzing || 'Asegúrese de que nadie esté tocando a la víctima.',
             color: 'bg-yellow-500'
         },
         'SHOCK_ADVISED': {
-            message: 'Descarga recomendada. Manténgase alejado.',
-            instruction: 'El equipo se está cargando. Grite: "¡FUERA TODOS!".',
+            message: t?.desa?.steps?.shockAdvised || 'Descarga recomendada. Manténgase alejado.',
+            instruction: t?.desa?.instructions?.shockAdvised || 'El equipo se está cargando. Grite: "¡FUERA TODOS!".',
             color: 'bg-orange-600'
         },
         'SHOCKING': {
-            message: 'Pulse el botón de descarga AHORA',
-            instruction: 'Presione el botón parpadeante inmediatamente.',
+            message: t?.desa?.steps?.shocking || 'Pulse el botón de descarga AHORA',
+            instruction: t?.desa?.instructions?.shocking || 'Presione el botón parpadeante inmediatamente.',
             color: 'bg-red-600'
         },
         'SHOCK_DELIVERED': {
-            message: 'Descarga realizada. Comience RCP.',
-            instruction: '30 compresiones y 2 insuflaciones.',
+            message: t?.desa?.steps?.shockDelivered || 'Descarga realizada. Comience RCP.',
+            instruction: t?.desa?.instructions?.shockDelivered || '30 compresiones y 2 insuflaciones.',
             color: 'bg-green-600'
         },
         'CPR': {
-            message: 'Realice compresiones al ritmo del metrónomo',
-            instruction: 'Mantenga un ritmo de 100-120 por minuto.',
+            message: t?.desa?.steps?.cpr || 'Realice compresiones al ritmo del metrónomo',
+            instruction: t?.desa?.instructions?.cpr || 'Mantenga un ritmo de 100-120 por minuto.',
             color: 'bg-brand-500'
         }
     };
+
+    // Trigger voice on step change
+    useEffect(() => {
+        if (step !== 'OFF') {
+            speak(steps[step].message);
+        }
+    }, [step, patientMode]);
 
     // Step transitions
     const handlePower = () => {
@@ -76,6 +111,7 @@ const DesaSimulator = ({ onComplete, onBack, playSound, t }) => {
             setStep('OFF');
             setPads({ top: false, bottom: false });
             setCprCount(0);
+            if (synthRef.current) synthRef.current.cancel();
         }
     };
 
@@ -85,7 +121,10 @@ const DesaSimulator = ({ onComplete, onBack, playSound, t }) => {
         const newPads = { ...pads, [position]: true };
         setPads(newPads);
 
-        if (!muted) try { playSound('click'); } catch (e) { }
+        if (!muted) {
+            try { playSound('click'); } catch (e) { }
+            speak(position === 'top' ? (t?.desa?.voice?.pad1 || 'Primer electrodo conectado') : (t?.desa?.voice?.pad2 || 'Segundo electrodo conectado'));
+        }
 
         if (newPads.top && newPads.bottom) {
             setTimeout(() => setStep('ANALYZING'), 1500);
@@ -97,7 +136,7 @@ const DesaSimulator = ({ onComplete, onBack, playSound, t }) => {
             const timeout = setTimeout(() => {
                 setStep('SHOCK_ADVISED');
                 if (!muted) try { playSound('alarm'); } catch (e) { }
-            }, 4000);
+            }, 5000);
             return () => clearTimeout(timeout);
         }
 
@@ -130,6 +169,7 @@ const DesaSimulator = ({ onComplete, onBack, playSound, t }) => {
             if (next === 30) {
                 confetti();
                 if (!muted) try { playSound('fanfare'); } catch (e) { }
+                speak(t?.desa?.voice?.cprDone || "Ciclo completado. Buen trabajo.");
                 setTimeout(() => onComplete && onComplete(), 2000);
             }
             return next;
@@ -147,16 +187,43 @@ const DesaSimulator = ({ onComplete, onBack, playSound, t }) => {
                     </div>
                     <div>
                         <h2 className="text-xl font-black tracking-tight leading-none">SIMULADOR DESA</h2>
-                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">LifeSupport v2.0</p>
+                        <div className="flex items-center gap-2 mt-1">
+                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">LifeSupport v2.5</span>
+                            <span className={`text-[10px] px-1.5 py-0.5 rounded font-black uppercase ${patientMode === 'adult' ? 'bg-slate-700 text-white' : 'bg-yellow-500 text-slate-900'}`}>
+                                {patientMode === 'adult' ? (t?.desa?.adult || 'Adulto') : (t?.desa?.pediatric || 'Pediatría')}
+                            </span>
+                        </div>
                     </div>
                 </div>
 
                 <div className="flex items-center gap-4">
+                    {/* Mode Selector - Only when OFF */}
+                    {step === 'OFF' && (
+                        <div className="flex bg-slate-700 rounded-xl p-1">
+                            <button
+                                onClick={() => setPatientMode('adult')}
+                                className={`px-4 py-2 rounded-lg text-xs font-black transition-all ${patientMode === 'adult' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-400 hover:text-white'}`}
+                            >
+                                {t?.desa?.adultBtn || 'ADULTO'}
+                            </button>
+                            <button
+                                onClick={() => setPatientMode('pediatric')}
+                                className={`px-4 py-2 rounded-lg text-xs font-black transition-all ${patientMode === 'pediatric' ? 'bg-yellow-500 text-slate-900 shadow-sm' : 'text-slate-400 hover:text-white'}`}
+                            >
+                                {t?.desa?.pediatricBtn || 'PEDIÁTRICO'}
+                            </button>
+                        </div>
+                    )}
+
                     <button
-                        onClick={() => setMuted(!muted)}
-                        className="p-3 rounded-xl hover:bg-white/10 transition-colors text-slate-400 hover:text-white"
+                        onClick={() => {
+                            const newMuted = !muted;
+                            setMuted(newMuted);
+                            if (newMuted && synthRef.current) synthRef.current.cancel();
+                        }}
+                        className={`p-3 rounded-xl transition-colors ${muted ? 'bg-red-500/20 text-red-400' : 'hover:bg-white/10 text-slate-400 hover:text-white'}`}
                     >
-                        {muted ? <VolumeX size={24} /> : <Volume2 size={24} />}
+                        {muted ? <VolumeX size={24} /> : <Volume2 size={24} className={isSpeaking ? 'animate-pulse text-brand-400' : ''} />}
                     </button>
                     <button
                         onClick={onBack}
@@ -181,11 +248,11 @@ const DesaSimulator = ({ onComplete, onBack, playSound, t }) => {
                     )}
 
                     {/* Torso Illustration */}
-                    <div className="relative w-72 h-96 md:w-96 md:h-[500px] flex items-center justify-center">
+                    <div className={`relative transition-all duration-700 flex items-center justify-center ${patientMode === 'adult' ? 'w-72 h-96 md:w-96 md:h-[500px]' : 'w-48 h-64 md:w-64 md:h-[350px]'}`}>
                         <User
-                            size={400}
+                            size={patientMode === 'adult' ? 400 : 300}
                             strokeWidth={0.5}
-                            className={`text-slate-700 transition-all duration-700 ${step !== 'OFF' ? 'text-slate-600' : ''}`}
+                            className={`transition-all duration-700 ${step !== 'OFF' ? 'text-slate-600' : 'text-slate-700'} ${patientMode === 'pediatric' ? 'scale-75' : ''}`}
                         />
 
                         {/* Target Zones */}
@@ -194,19 +261,21 @@ const DesaSimulator = ({ onComplete, onBack, playSound, t }) => {
                                 {!pads.top && (
                                     <button
                                         onClick={() => placePad('top')}
-                                        className="absolute top-[20%] right-[15%] w-24 h-32 bg-brand-500/20 border-4 border-dashed border-brand-400 rounded-2xl animate-pulse flex flex-col items-center justify-center text-brand-400 font-bold text-[10px] text-center p-2 hover:bg-brand-500/40 transition-all"
+                                        className={`absolute bg-brand-500/20 border-4 border-dashed border-brand-400 rounded-2xl animate-pulse flex flex-col items-center justify-center text-brand-400 font-bold text-[10px] text-center p-2 hover:bg-brand-500/40 transition-all ${patientMode === 'adult' ? 'top-[20%] right-[15%] w-24 h-32' : 'top-[35%] left-[50%] -translate-x-1/2 w-20 h-24'
+                                            }`}
                                     >
                                         <Info size={20} className="mb-1" />
-                                        Electrodo Superior Derecho
+                                        {patientMode === 'adult' ? (t?.desa?.pads?.topRight || 'Electrodo Superior Derecho') : (t?.desa?.pads?.front || 'Electrodo Pecho (Front)')}
                                     </button>
                                 )}
                                 {!pads.bottom && (
                                     <button
                                         onClick={() => placePad('bottom')}
-                                        className="absolute bottom-[25%] left-[10%] w-24 h-32 bg-brand-500/20 border-4 border-dashed border-brand-400 rounded-2xl animate-pulse flex flex-col items-center justify-center text-brand-400 font-bold text-[10px] text-center p-2 hover:bg-brand-500/40 transition-all"
+                                        className={`absolute bg-brand-500/20 border-4 border-dashed border-brand-400 rounded-2xl animate-pulse flex flex-col items-center justify-center text-brand-400 font-bold text-[10px] text-center p-2 hover:bg-brand-500/40 transition-all ${patientMode === 'adult' ? 'bottom-[25%] left-[10%] w-24 h-32' : 'bottom-[-10%] left-[50%] -translate-x-1/2 w-20 h-24 opacity-60'
+                                            }`}
                                     >
-                                        <Info size={20} className="mb-1" />
-                                        Electrodo Lateral Izquierdo
+                                        <RefreshCw size={20} className="mb-1" />
+                                        {patientMode === 'adult' ? (t?.desa?.pads?.bottomLeft || 'Electrodo Lateral Izquierdo') : (t?.desa?.pads?.back || 'Electrodo Espalda (Back)')}
                                     </button>
                                 )}
                             </>
@@ -214,7 +283,8 @@ const DesaSimulator = ({ onComplete, onBack, playSound, t }) => {
 
                         {/* Placed Pads */}
                         {pads.top && (
-                            <div className="absolute top-[20%] right-[15%] w-24 h-32 bg-white rounded-2xl shadow-xl flex items-center justify-center border-b-8 border-slate-300 animate-in zoom-in rotate-6">
+                            <div className={`absolute bg-white rounded-2xl shadow-xl flex items-center justify-center border-b-8 border-slate-300 animate-in zoom-in ${patientMode === 'adult' ? 'top-[20%] right-[15%] w-24 h-32 rotate-6' : 'top-[35%] left-[50%] -translate-x-1/2 w-20 h-24'
+                                }`}>
                                 <div className="text-slate-800 flex flex-col items-center">
                                     <Zap size={24} className="text-slate-400" />
                                     <span className="text-[8px] font-black uppercase mt-2">PAD 01</span>
@@ -223,7 +293,8 @@ const DesaSimulator = ({ onComplete, onBack, playSound, t }) => {
                             </div>
                         )}
                         {pads.bottom && (
-                            <div className="absolute bottom-[25%] left-[10%] w-24 h-32 bg-white rounded-2xl shadow-xl flex items-center justify-center border-b-8 border-slate-300 animate-in zoom-in -rotate-3">
+                            <div className={`absolute bg-white rounded-2xl shadow-xl flex items-center justify-center border-b-8 border-slate-300 animate-in zoom-in ${patientMode === 'adult' ? 'bottom-[25%] left-[10%] w-24 h-32 -rotate-3' : 'bottom-[-10%] left-[50%] -translate-x-1/2 w-20 h-24'
+                                }`}>
                                 <div className="text-slate-800 flex flex-col items-center">
                                     <Zap size={24} className="text-slate-400" />
                                     <span className="text-[8px] font-black uppercase mt-2">PAD 02</span>
@@ -234,7 +305,7 @@ const DesaSimulator = ({ onComplete, onBack, playSound, t }) => {
 
                         {/* Connection Wires (Simplified) */}
                         {step !== 'OFF' && (
-                            <div className="absolute bottom-[-20px] left-1/2 w-1 h-32 bg-slate-600 pointer-events-none transform -translate-x-1/2 opacity-30"></div>
+                            <div className="absolute bottom-[-40px] left-1/2 w-1 h-32 bg-slate-600 pointer-events-none transform -translate-x-1/2 opacity-30"></div>
                         )}
                     </div>
 
@@ -259,8 +330,9 @@ const DesaSimulator = ({ onComplete, onBack, playSound, t }) => {
                     <div className="flex-1 m-4 rounded-[30px] bg-black border-[12px] border-slate-900 shadow-inner relative flex flex-col p-6 overflow-hidden">
                         {/* Screen Content */}
                         {step === 'OFF' ? (
-                            <div className="h-full flex items-center justify-center opacity-20">
-                                <div className="w-32 h-32 bg-slate-600 rounded-full blur-3xl"></div>
+                            <div className="h-full flex flex-col items-center justify-center opacity-30">
+                                <Power size={48} className="text-slate-600 mb-2" />
+                                <div className="text-[10px] font-black uppercase tracking-widest text-slate-500">Standby Mode</div>
                             </div>
                         ) : (
                             <div className="h-full flex flex-col animate-in fade-in duration-1000">
@@ -268,9 +340,12 @@ const DesaSimulator = ({ onComplete, onBack, playSound, t }) => {
                                 <div className="flex items-center justify-between mb-8 opacity-60">
                                     <div className="flex gap-1">
                                         <div className="w-2 h-2 rounded-full bg-green-500"></div>
-                                        <div className="w-2 h-2 rounded-full bg-emerald-500"></div>
+                                        <div className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_5px_rgba(16,185,129,0.5)]"></div>
                                     </div>
-                                    <div className="text-[10px] font-mono">BATT 98%</div>
+                                    <div className="text-[10px] font-mono flex items-center gap-2">
+                                        {patientMode === 'pediatric' && <span className="bg-yellow-500 text-black px-1 rounded font-black text-[8px]">PEDIATRIC</span>}
+                                        BATT 98%
+                                    </div>
                                 </div>
 
                                 {/* Main Message Area */}
@@ -278,7 +353,7 @@ const DesaSimulator = ({ onComplete, onBack, playSound, t }) => {
                                     {step === 'ANALYZING' && (
                                         <div className="mb-6 flex gap-2">
                                             {[1, 2, 3, 4].map(i => (
-                                                <div key={i} className="w-3 h-12 bg-yellow-500 rounded-full animate-pulse" style={{ animationDelay: `${i * 150}ms` }}></div>
+                                                <div key={i} className="w-3 h-12 bg-yellow-500 rounded-full animate-pulse shadow-[0_0_10px_rgba(234,179,8,0.3)]" style={{ animationDelay: `${i * 150}ms` }}></div>
                                             ))}
                                         </div>
                                     )}
@@ -298,10 +373,10 @@ const DesaSimulator = ({ onComplete, onBack, playSound, t }) => {
                                         </div>
                                     )}
                                     {step === 'SHOCK_DELIVERED' && (
-                                        <CheckCircle2 size={64} className="text-green-500 mb-6 animate-in zoom-in" />
+                                        <CheckCircle2 size={64} className="text-green-500 mb-6 animate-in zoom-in shadow-[0_0_20px_rgba(34,197,94,0.3)]" />
                                     )}
 
-                                    <h3 className={`text-2xl md:text-3xl font-black leading-tight uppercase tracking-tighter ${step === 'SHOCK_ADVISED' || step === 'SHOCKING' ? 'text-orange-500' : 'text-white'
+                                    <h3 className={`text-2xl md:text-3xl font-black leading-tight uppercase tracking-tighter ${step === 'SHOCK_ADVISED' || step === 'SHOCKING' ? 'text-orange-500 drop-shadow-[0_0_10px_rgba(249,115,22,0.5)]' : 'text-white'
                                         }`}>
                                         {steps[step].message}
                                     </h3>
