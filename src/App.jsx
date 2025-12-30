@@ -229,7 +229,10 @@ const App = () => {
   // Track glossary views
   useEffect(() => {
     if (view === 'glossary') {
-      updateDailyStats('glossaryViews', 1);
+      updateProgress({
+        'dailyStats.glossaryViews': (progress.dailyStats?.glossaryViews || 0) + 1,
+        'weeklyStats.glossaryViews': (progress.weeklyStats?.glossaryViews || 0) + 1
+      });
     }
   }, [view]);
 
@@ -524,12 +527,22 @@ const App = () => {
       Object.entries(changes).forEach(([key, value]) => {
         // XP Gain Logic
         let xpGain = 0;
-        if (key === 'examenCompleted' && value === true) xpGain = XP_REWARDS.EXAM_PASS;
-        else if (key.endsWith('Completed') && value === true && !updated[key]) xpGain = XP_REWARDS.MODULE_COMPLETE;
-        else if (typeof value === 'number' && !['xp', 'level', 'currentStreak', 'examAttempts'].includes(key)) xpGain = value;
+        if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
+          // Skip objects for XP gain calculation unless they are specific handled objects
+        } else if (key === 'examenCompleted' && value === true) {
+          xpGain = XP_REWARDS.EXAM_PASS;
+        } else if (key.endsWith('Completed') && value === true && !updated[key]) {
+          xpGain = XP_REWARDS.MODULE_COMPLETE;
+        } else if (key === 'xp') {
+          // If total XP is passed, calculate gain relative to the LATEST state to partial-fix race conditions
+          xpGain = (value - (updated.xp || 0)) / multiplier;
+        } else if (key === 'xpGain' || key === 'additionalXp' || key === 'practiceXpGain' || key === 'surpriseExamXP' || key === 'guardiaXp') {
+          // Explicit relative gains
+          xpGain = value;
+        }
 
         const currentXp = updated.xp || 0;
-        const currentLifetimeXp = updated.lifetimeXp !== undefined ? updated.lifetimeXp : currentXp; // Backfill if missing
+        const currentLifetimeXp = updated.lifetimeXp !== undefined ? updated.lifetimeXp : currentXp;
         const currentWeeklyXP = updated.weeklyXP || 0;
 
         let newXp = currentXp + (xpGain * multiplier);
@@ -543,7 +556,6 @@ const App = () => {
         }
 
         let newLevel = updated.level || 1;
-        // Recalculate level based on Lifetime XP (Rank) - Fair system
         const nextLevelConfig = LEVELS.find(l => l.level === newLevel + 1);
 
         if (nextLevelConfig && newLifetimeXp >= nextLevelConfig.minXp) {
@@ -558,7 +570,7 @@ const App = () => {
         updated = { ...updated, xp: newXp, lifetimeXp: newLifetimeXp, weeklyXP: newWeeklyXP, level: newLevel };
 
         // Track XP gain in daily and weekly stats
-        if (xpGain > 0 || changes.dailyStats) { // Also trigger if other stats changed
+        if (xpGain > 0 || changes.dailyStats) {
           const today = new Date().toDateString();
           const currentStats = updated.dailyStats || {};
           const currentWeeklyStats = updated.weeklyStats || {};
@@ -575,40 +587,26 @@ const App = () => {
               glossaryViews: 0
             };
           }
-          newDailyStats.xpEarned = (newDailyStats.xpEarned || 0) + (xpGain > 0 ? xpGain : 0);
+          const finalGain = (xpGain > 0 ? xpGain * multiplier : 0);
+          newDailyStats.xpEarned = (newDailyStats.xpEarned || 0) + finalGain;
 
-          // Weekly Logic (Accumulate)
+          // Weekly Logic
           let newWeeklyStats = { ...currentWeeklyStats };
-          newWeeklyStats.xpEarned = (newWeeklyStats.xpEarned || 0) + (xpGain > 0 ? xpGain : 0);
+          newWeeklyStats.xpEarned = (newWeeklyStats.xpEarned || 0) + finalGain;
 
-          // Update other counters if passed in changes (hacky but effective)
-          // We need to know WHAT action caused this to increment counters.
-          // The `updateProgress` is generic.
-          // Let's rely on specific keys being passed.
-          // IF `key` matches a stat type.
+          updated.dailyStats = newDailyStats;
+          updated.weeklyStats = newWeeklyStats;
         }
-
-        // BETTER APPROACH:
-        // The callers of updateProgress call it like updateProgress('xp', val).
-        // They also call updateDailyStats separately?
-        // Let's check updateDailyStats. I don't see it in App.jsx.
-        // Wait, I see `updateDailyStats` in `DailyChallenge.jsx` context usage?
-        // Ah, `updateDailyStats` IS defined in App.jsx? I need to search for it.
-        // I see `updateDailyStats` being called in lines 1112 and 1231 in previous view.
-
-        // I need to find the `updateDailyStats` function definition.
-        // It's likely inside `App.jsx`. I didn't see it in the previous `view_file` range (300-400 and 459-600).
-        // Let's search for it.
 
         // Handle nested keys
         if (typeof key === 'string' && key.includes('.')) {
           const parts = key.split('.');
-          let current = updated;
+          let currentObj = updated;
           for (let i = 0; i < parts.length - 1; i++) {
-            current[parts[i]] = current[parts[i]] ? { ...current[parts[i]] } : {};
-            current = current[parts[i]];
+            currentObj[parts[i]] = currentObj[parts[i]] ? { ...currentObj[parts[i]] } : {};
+            currentObj = currentObj[parts[i]];
           }
-          current[parts[parts.length - 1]] = value;
+          currentObj[parts[parts.length - 1]] = value;
         } else {
           updated[key] = value;
         }
@@ -646,7 +644,7 @@ const App = () => {
 
     try {
       const updates = {
-        xp: (progress.xp || 0) - item.price
+        xpGain: -item.price
       };
 
       if (category === 'avatars') {
@@ -694,7 +692,7 @@ const App = () => {
       const finalReward = totalReward + bonusReward;
 
       const updates = {
-        xp: (progress.xp || 0) + finalReward
+        xpGain: finalReward
       };
 
       if (type === 'weekly') {
@@ -714,50 +712,6 @@ const App = () => {
     }
   };
 
-  // Update Daily & Weekly Stats for Quest Tracking
-  const updateDailyStats = async (statKey, increment = 1) => {
-    try {
-      const today = new Date().toDateString();
-      const currentStats = progress.dailyStats || {};
-      const currentWeeklyStats = progress.weeklyStats || {};
-
-      let newDailyStats = { ...currentStats };
-      let newWeeklyStats = { ...currentWeeklyStats };
-
-      // Update Weekly (Accumulate)
-      newWeeklyStats[statKey] = (newWeeklyStats[statKey] || 0) + increment;
-
-      // Update Daily
-      if (currentStats.date !== today) {
-        // Reset daily
-        newDailyStats = {
-          date: today,
-          modulesCompleted: 0,
-          xpEarned: 0,
-          guardiaPlayed: 0,
-          correctAnswers: 0,
-          glossaryViews: 0
-        };
-        newDailyStats[statKey] = increment;
-
-        await updateProgress({
-          dailyStats: newDailyStats,
-          weeklyStats: newWeeklyStats,
-          dailyQuests: null // Reset quests for new day
-        });
-      } else {
-        // Increment daily
-        newDailyStats[statKey] = (newDailyStats[statKey] || 0) + increment;
-
-        await updateProgress({
-          dailyStats: newDailyStats,
-          weeklyStats: newWeeklyStats
-        });
-      }
-    } catch (e) {
-      console.error('Error updating stats:', e);
-    }
-  };
 
   // Backward compatibility wrapper for old avatar component
   const handleBuyAvatar = (avatar) => {
@@ -1107,7 +1061,7 @@ const App = () => {
                     };
 
                     if (success) {
-                      updates.xp = (progress.xp || 0) + 50;
+                      updates.xpGain = 50;
                       addToast(t?.toasts?.dailySuccess || "¡Desafío completado! +50 XP", 'success');
                     }
 
@@ -1209,8 +1163,11 @@ const App = () => {
                 module={activeModule}
                 t={t}
                 onComplete={() => {
-                  updateProgress(`${activeModule.id}Completed`, true);
-                  updateDailyStats('modulesCompleted', 1);
+                  updateProgress({
+                    [`${activeModule.id}Completed`]: true,
+                    'dailyStats.modulesCompleted': (progress.dailyStats?.modulesCompleted || 0) + 1,
+                    'weeklyStats.modulesCompleted': (progress.weeklyStats?.modulesCompleted || 0) + 1
+                  });
                   setView('home');
                 }}
                 onBack={() => setView('home')}
@@ -1226,8 +1183,11 @@ const App = () => {
                 scenario={ROLEPLAY_SCENARIOS[activeModule.id]}
                 t={t}
                 onComplete={() => {
-                  updateProgress(`${activeModule.id}Completed`, true);
-                  updateDailyStats('modulesCompleted', 1);
+                  updateProgress({
+                    [`${activeModule.id}Completed`]: true,
+                    'dailyStats.modulesCompleted': (progress.dailyStats?.modulesCompleted || 0) + 1,
+                    'weeklyStats.modulesCompleted': (progress.weeklyStats?.modulesCompleted || 0) + 1
+                  });
                   setView('home');
                 }}
                 onBack={() => setView('home')}
@@ -1246,8 +1206,7 @@ const App = () => {
                 inventory={progress.inventory || { powerups: {} }}
                 onUsePowerup={(id, cost) => {
                   if (cost > 0) {
-                    const newXp = currentXp - cost;
-                    updateProgress('xp', newXp);
+                    updateProgress('xpGain', -cost);
                   } else {
                     // Consume from inventory
                     const currentCount = progress.inventory?.powerups?.[id] || 0;
@@ -1257,20 +1216,20 @@ const App = () => {
                   }
                 }}
                 onAnswer={(isCorrect) => {
-                  // Track correct answers for daily quests
-                  if (isCorrect) {
-                    updateDailyStats('correctAnswers', 1);
-                  }
-
                   const { newStreak, milestone } = updateStreak(currentStreak, isCorrect);
                   setCurrentStreak(newStreak);
 
-                  const updates = { currentStreak: newStreak };
+                  const updates = {
+                    currentStreak: newStreak,
+                    'dailyStats.correctAnswers': (progress.dailyStats?.correctAnswers || 0) + (isCorrect ? 1 : 0),
+                    'weeklyStats.correctAnswers': (progress.weeklyStats?.correctAnswers || 0) + (isCorrect ? 1 : 0)
+                  };
+
                   if (milestone) {
                     setShowStreakCelebration(milestone.count);
                     playSound('fanfare');
                     if (milestone.xp) {
-                      updates.xp = (progress.xp || 0) + milestone.xp;
+                      updates.xpGain = milestone.xp;
                       addToast(`+${milestone.xp} XP - ${milestone.name}!`, 'success');
                     }
                   }
@@ -1376,9 +1335,10 @@ const App = () => {
                 onComplete={(score) => {
                   const xpEarned = score * 20; // 20 XP per person saved
                   updateProgress({
-                    guardiaXp: xpEarned // Passing the gain will update total XP, lifetime XP, and level automatically
+                    xpGain: xpEarned,
+                    'dailyStats.guardiaPlayed': (progress.dailyStats?.guardiaPlayed || 0) + 1,
+                    'weeklyStats.guardiaPlayed': (progress.weeklyStats?.guardiaPlayed || 0) + 1
                   });
-                  updateDailyStats('guardiaPlayed', 1);
                   addToast(`¡Turno completado! +${xpEarned} XP`, 'success');
                 }}
                 playSound={playSound}
@@ -1432,7 +1392,8 @@ const App = () => {
                 t={t}
                 onComplete={(xp) => {
                   updateProgress({
-                    timeTrialScore: xp,
+                    timeTrialScore: xp, // Persist the score/record
+                    xpGain: xp,         // Also add it as XP gain
                     timeTrialCompleted: true
                   });
                   addToast(t?.game?.timetrial?.completed || "¡Contrarreloj Completado!", 'success');
@@ -1456,7 +1417,7 @@ const App = () => {
                 onBack={() => setView('home')}
                 playSound={playSound}
                 addToast={addToast}
-                updateDailyStats={updateDailyStats}
+
               />
             )
           }
@@ -1471,9 +1432,10 @@ const App = () => {
                 categories={QUESTION_CATEGORIES_ES}
                 glossary={GLOSSARY}
                 onAnswer={(isCorrect, sessionCount, questionData, streakCount) => {
-                  const today = new Date().toDateString();
+                  const updates = {};
                   if (isCorrect) {
-                    updateDailyStats('correctAnswers', 1);
+                    updates['dailyStats.correctAnswers'] = (progress.dailyStats?.correctAnswers || 0) + 1;
+                    updates['weeklyStats.correctAnswers'] = (progress.weeklyStats?.correctAnswers || 0) + 1;
 
                     // Streak multiplier: 1.4x for racha >= 10 (approx +7 XP)
                     const streakMultiplier = streakCount >= 10 ? 1.4 : 1;
@@ -1482,33 +1444,37 @@ const App = () => {
                     const totalMultiplier = streakMultiplier * modeMultiplier;
 
                     if (sessionCount === 20 && practiceMode !== 'survival') {
-                      updateProgress({ practiceXpGain: Math.round(100 * totalMultiplier) });
+                      updates.practiceXpGain = Math.round(100 * totalMultiplier);
                       addToast("¡Meta alcanzada! +100 XP extra desbloqueados", 'success');
                       confetti();
                     } else if (sessionCount > 20 || practiceMode === 'survival') {
-                      updateProgress({ practiceXpGain: Math.round(5 * totalMultiplier) });
+                      updates.practiceXpGain = Math.round(5 * totalMultiplier);
                     }
 
                     // Mastery tracking
                     if (questionData && questionData.q) {
                       const currentMastered = progress.masteredQuestions || [];
                       if (!currentMastered.includes(questionData.q)) {
-                        updateProgress('masteredQuestions', [...currentMastered, questionData.q]);
+                        updates.masteredQuestions = [...currentMastered, questionData.q];
                       }
                       // Remove from failed if corrected
                       const currentFailed = progress.failedQuestions || [];
                       if (currentFailed.includes(questionData.q)) {
-                        updateProgress('failedQuestions', currentFailed.filter(q => q !== questionData.q));
+                        updates.failedQuestions = currentFailed.filter(q => q !== questionData.q);
                       }
                     }
                   } else {
-                    // Update failed questions
+                    // Record failure
                     if (questionData && questionData.q) {
                       const currentFailed = progress.failedQuestions || [];
                       if (!currentFailed.includes(questionData.q)) {
-                        updateProgress('failedQuestions', [...currentFailed, questionData.q]);
+                        updates.failedQuestions = [...currentFailed, questionData.q];
                       }
                     }
+                  }
+
+                  if (Object.keys(updates).length > 0) {
+                    updateProgress(updates);
                   }
                 }}
                 playSound={playSound}
@@ -1516,6 +1482,7 @@ const App = () => {
               />
             )
           }
+
 
           {
             view === 'profile' && (
@@ -1629,7 +1596,6 @@ const App = () => {
               t={t}
               lang={lang}
               currentXp={currentXp}
-              currentXp={currentXp}
               onBack={() => setView('home')}
               onJoinClass={handleJoinClass}
               onEquipAvatar={(id) => { updateProgress('activeAvatar', id); addToast(t?.toasts?.avatarEquipped || "Avatar equipado", 'success'); }}
@@ -1705,8 +1671,7 @@ const App = () => {
               playSound={playSound}
               currentXp={currentXp}
               onUsePowerup={(cost) => {
-                const newXp = currentXp - cost;
-                updateProgress('xp', newXp);
+                updateProgress('xpGain', -cost);
               }}
             />
           </React.Suspense>
@@ -1921,3 +1886,4 @@ const AdminPinModal = ({ isOpen, onClose, onSuccess, t }) => {
 }
 
 export default App;
+
