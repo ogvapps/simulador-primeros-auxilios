@@ -24,6 +24,7 @@ const AdminPanel = ({ onBack, db, firebaseConfigId, playSound, t, modules, addTo
     const [showExportMenu, setShowExportMenu] = useState(false);
     const [viewMode, setViewMode] = useState('list'); // list, analytics, settings, live
     const [selectedIds, setSelectedIds] = useState([]);
+    const [classFilter, setClassFilter] = useState('todos'); // New filter state
     const [confirmModal, setConfirmModal] = useState({ show: false, student: null });
 
     const badgeModules = useMemo(() => {
@@ -71,13 +72,24 @@ const AdminPanel = ({ onBack, db, firebaseConfigId, playSound, t, modules, addTo
         return { totalStudents, avgLevel, avgCompletion, passedExam, totalXp };
     }, [students, badgeModules]);
 
+    const uniqueClasses = useMemo(() => {
+        const classes = students.map(s => s.progress?.className).filter(Boolean);
+        return [...new Set(classes)].sort();
+    }, [students]);
+
+    const uniqueRoles = useMemo(() => {
+        const roles = students.map(s => s.role).filter(Boolean);
+        return [...new Set(roles)].sort();
+    }, [students]);
+
     const filteredStudents = useMemo(() => {
         return students.filter(s => {
             const matchSearch = (s.name || '').toLowerCase().includes(searchTerm.toLowerCase()) || (s.email && s.email.toLowerCase().includes(searchTerm.toLowerCase()));
             const matchRole = roleFilter === 'todos' || s.role === roleFilter;
-            return matchSearch && matchRole;
+            const matchClass = classFilter === 'todos' || classFilter === 'sin_asignar' ? (classFilter === 'sin_asignar' ? !s.progress?.className : true) : s.progress?.className === classFilter;
+            return matchSearch && matchRole && matchClass;
         });
-    }, [students, searchTerm, roleFilter]);
+    }, [students, searchTerm, roleFilter, classFilter]);
 
 
     // --- ACTIONS ---
@@ -585,24 +597,24 @@ const AdminPanel = ({ onBack, db, firebaseConfigId, playSound, t, modules, addTo
             </div>
 
             {/* Navigation Tabs */}
-            <div className="flex gap-4 mb-6 border-b border-slate-200 overflow-x-auto">
+            <div className="flex gap-4 mb-6 border-b border-slate-200 overflow-x-auto pb-1">
                 <button onClick={() => setViewMode('list')} className={`pb-2 px-4 font-bold border-b-2 transition-all flex items-center gap-2 whitespace-nowrap ${viewMode === 'list' ? 'border-brand-500 text-brand-600' : 'border-transparent text-slate-400'}`}>
-                    <Users size={18} /> {t?.admin?.listTab || "List"}
+                    <Users size={18} /> {t?.admin?.listTab || "Listado"}
                 </button>
                 <button onClick={() => setViewMode('analytics')} className={`pb-2 px-4 font-bold border-b-2 transition-all flex items-center gap-2 whitespace-nowrap ${viewMode === 'analytics' ? 'border-brand-500 text-brand-600' : 'border-transparent text-slate-400'}`}>
-                    <BarChart3 size={18} /> {t?.admin?.analyticsTab || "Analytics"}
-                </button>
-                <button onClick={() => setViewMode('settings')} className={`pb-2 px-4 font-bold border-b-2 transition-all flex items-center gap-2 whitespace-nowrap ${viewMode === 'settings' ? 'border-brand-500 text-brand-600' : 'border-transparent text-slate-400'}`}>
-                    <SettingsIcon size={18} /> {t?.settings?.title || "Settings"}
+                    <BarChart3 size={18} /> {t?.admin?.analyticsTab || "Analíticas"}
                 </button>
                 <button onClick={() => setViewMode('leaderboard')} className={`pb-2 px-4 font-bold border-b-2 transition-all flex items-center gap-2 whitespace-nowrap ${viewMode === 'leaderboard' ? 'border-brand-500 text-brand-600' : 'border-transparent text-slate-400'}`}>
                     <Award size={18} /> {t?.admin?.leaderboardTab || "Clasificación"}
                 </button>
-                <button onClick={() => setViewMode('classrooms')} className={`pb-2 px-4 font-bold border-b-2 transition-all flex items-center gap-2 whitespace-nowrap ${viewMode === 'classrooms' ? 'border-brand-500 text-brand-600' : 'border-transparent text-slate-400'}`}>
-                    <Users size={18} /> {t?.admin?.classroomsTab || "Aulas"}
-                </button>
                 <button onClick={() => setViewMode('benchmark')} className={`pb-2 px-4 font-bold border-b-2 transition-all flex items-center gap-2 whitespace-nowrap ${viewMode === 'benchmark' ? 'border-brand-500 text-brand-600' : 'border-transparent text-slate-400'}`}>
                     <Trophy size={18} /> Benchmark
+                </button>
+                <button onClick={() => setViewMode('classrooms')} className={`pb-2 px-4 font-bold border-b-2 transition-all flex items-center gap-2 whitespace-nowrap ${viewMode === 'classrooms' ? 'border-brand-500 text-brand-600' : 'border-transparent text-slate-400'}`}>
+                    <GraduationCap size={18} /> {t?.admin?.classroomsTab || "Aulas"}
+                </button>
+                <button onClick={() => setViewMode('settings')} className={`pb-2 px-4 font-bold border-b-2 transition-all flex items-center gap-2 whitespace-nowrap ${viewMode === 'settings' ? 'border-brand-500 text-brand-600' : 'border-transparent text-slate-400'}`}>
+                    <SettingsIcon size={18} /> {t?.settings?.title || "Configuración"}
                 </button>
             </div>
 
@@ -665,16 +677,46 @@ const AdminPanel = ({ onBack, db, firebaseConfigId, playSound, t, modules, addTo
                     )}
 
                     {/* Controls */}
-                    <div className="flex flex-col sm:flex-row gap-4 mb-6">
+                    <div className="flex flex-col xl:flex-row gap-4 mb-6">
                         <div className="relative flex-1">
                             <Search className="absolute left-3 top-3 text-slate-400" size={20} />
-                            <input type="text" placeholder={t?.admin?.searchPlaceholder || "Search..."} value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-brand-500 outline-none" />
+                            <input type="text" placeholder={t?.admin?.searchPlaceholder || "Buscar estudiante..."} value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-brand-500 outline-none font-medium" />
                         </div>
-                        <div className="flex gap-2">
-                            <button onClick={exportToCSV} className="px-4 py-2 border rounded-lg font-bold bg-white text-green-700 border-green-200 hover:bg-green-50 flex items-center gap-2 transition-colors whitespace-nowrap" title={t?.admin?.exportExcel || "Exportar Notas a Excel"}>
+
+                        <div className="flex gap-2 overflow-x-auto pb-1">
+                            {/* Class Filter */}
+                            <div className="relative min-w-[150px]">
+                                <select
+                                    value={classFilter}
+                                    onChange={(e) => setClassFilter(e.target.value)}
+                                    className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl appearance-none font-bold text-slate-600 focus:ring-2 focus:ring-brand-500 outline-none cursor-pointer hover:bg-slate-100"
+                                >
+                                    <option value="todos">Todas las clases</option>
+                                    <option value="sin_asignar">Sin asignar</option>
+                                    {uniqueClasses.map(c => <option key={c} value={c}>{c}</option>)}
+                                </select>
+                                <GraduationCap className="absolute left-3 top-3 text-slate-400 pointer-events-none" size={18} />
+                            </div>
+
+                            {/* Role Filter */}
+                            <div className="relative min-w-[140px]">
+                                <select
+                                    value={roleFilter}
+                                    onChange={(e) => setRoleFilter(e.target.value)}
+                                    className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl appearance-none font-bold text-slate-600 focus:ring-2 focus:ring-brand-500 outline-none cursor-pointer hover:bg-slate-100"
+                                >
+                                    <option value="todos">Todos los roles</option>
+                                    {uniqueRoles.map(r => <option key={r} value={r}>{r}</option>)}
+                                </select>
+                                <Users className="absolute left-3 top-3 text-slate-400 pointer-events-none" size={18} />
+                            </div>
+
+                            <div className="w-px bg-slate-200 mx-1"></div>
+
+                            <button onClick={exportToCSV} className="px-4 py-2 border rounded-xl font-bold bg-white text-green-700 border-green-200 hover:bg-green-50 flex items-center gap-2 transition-colors whitespace-nowrap shadow-sm" title={t?.admin?.exportExcel || "Exportar Notas a Excel"}>
                                 <FileSpreadsheet size={20} /> <span className="hidden md:inline">Excel</span>
                             </button>
-                            <button onClick={() => setPresentationMode(!presentationMode)} className={`px-4 py-2 border rounded-lg font-bold transition-colors ${presentationMode ? 'bg-slate-800 text-white' : 'bg-white text-slate-700 hover:bg-slate-50'}`} title={presentationMode ? "Modo Presentación (Ocultar Nombres)" : "Modo Normal"}>
+                            <button onClick={() => setPresentationMode(!presentationMode)} className={`px-4 py-2 border rounded-xl font-bold transition-colors shadow-sm ${presentationMode ? 'bg-slate-800 text-white border-slate-800' : 'bg-white text-slate-700 hover:bg-slate-50 border-slate-200'}`} title={presentationMode ? "Modo Presentación (Ocultar Nombres)" : "Modo Normal"}>
                                 {presentationMode ? <EyeOff size={20} /> : <Eye size={20} />}
                             </button>
                         </div>
