@@ -2,14 +2,14 @@ import React, { useState, useEffect } from 'react';
 import { ArrowLeft, ArrowRight, MessageSquare, Activity, XCircle, CheckCircle2, ThumbsUp, ThumbsDown, Volume2, User, Play, RefreshCcw } from 'lucide-react';
 
 const RoleplayGame = ({ scenarioId, scenario, t, onComplete, onBack, playSound }) => {
-    if (!scenario) return <div className="p-8 text-center text-red-500 font-bold">Scenario not found: {scenarioId}</div>;
-
-    const [currentNodeId, setCurrentNodeId] = useState(scenario.startNode);
+    const [currentNodeId, setCurrentNodeId] = useState(scenario?.startNode);
     const [history, setHistory] = useState([]);
     const [fade, setFade] = useState(false); // For transition effect
 
+    if (!scenario) return <div className="p-8 text-center text-red-500 font-bold">Scenario not found: {scenarioId}</div>;
+
     // Derived state
-    const currentNode = scenario.nodes[currentNodeId];
+    const currentNode = scenario.nodes[currentNodeId] || scenario.nodes[scenario.startNode];
 
     // Transition handler
     const transitionTo = (nextId) => {
@@ -93,7 +93,15 @@ const RoleplayGame = ({ scenarioId, scenario, t, onComplete, onBack, playSound }
 
                             <div className="flex justify-center">
                                 <button
-                                    onClick={() => { if (playSound) playSound('click'); window.speechSynthesis.speak(new SpeechSynthesisUtterance(currentNode.text)); }}
+                                    onClick={() => {
+                                        if (playSound) playSound('click');
+                                        if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+                                            window.speechSynthesis.cancel();
+                                            const u = new SpeechSynthesisUtterance(currentNode.text);
+                                            u.lang = 'es-ES';
+                                            window.speechSynthesis.speak(u);
+                                        }
+                                    }}
                                     className="flex items-center text-xs font-bold text-violet-600 bg-violet-50 px-4 py-2 rounded-full hover:bg-violet-100 transition-colors border border-violet-100 uppercase tracking-wider"
                                 >
                                     <Volume2 size={14} className="mr-2" /> {t?.game?.roleplay?.listen || "Escuchar Narración"}

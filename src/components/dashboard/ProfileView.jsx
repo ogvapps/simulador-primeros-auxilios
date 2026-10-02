@@ -226,7 +226,7 @@ const ProfileView = ({ progress, profile, onEquipAvatar, onEquipTheme, onBack, o
                         </div>
                         <div className="bg-gradient-to-br from-orange-500 to-orange-600 p-4 rounded-2xl shadow-lg text-white text-center transform hover:scale-105 transition-transform">
                             <span className="text-orange-200 text-xs font-bold uppercase tracking-widest">{t?.profile?.exams || "Exams"}</span>
-                            <div className="text-4xl font-black mt-1">{progress.examAttempts?.length || 0}</div>
+                            <div className="text-4xl font-black mt-1">{Array.isArray(progress.examAttempts) ? progress.examAttempts.length : (progress.examAttempts || 0)}</div>
                         </div>
                     </div>
 
@@ -263,7 +263,7 @@ const ProfileView = ({ progress, profile, onEquipAvatar, onEquipTheme, onBack, o
                         <h3 className="text-xl font-black text-slate-800 mb-6 flex items-center gap-2">
                             <Zap className="text-yellow-500" /> {t?.profile?.examPerformance || "Exam Performance"}
                         </h3>
-                        {(!progress.examAttempts || progress.examAttempts.length === 0) ? (
+                        {(!progress.examAttempts || !Array.isArray(progress.examAttempts) || progress.examAttempts.length === 0) ? (
                             <div className="text-center py-10 text-slate-400 italic">
                                 {t?.profile?.noExams || "You haven't taken any exams yet."}
                             </div>

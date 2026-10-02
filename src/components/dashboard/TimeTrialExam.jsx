@@ -51,10 +51,7 @@ const TimeTrialExam = ({ questions, t, onComplete, onBack, playSound }) => {
         setSelectedAnswer(optionIndex);
 
         const currentQ = localQuestions[currentIndex];
-        // Fix for 'a' (string) vs 'correct' (index)
-        const isCorrect = currentQ.a
-            ? currentQ.opts[optionIndex] === currentQ.a
-            : optionIndex === currentQ.correct;
+        const isCorrect = optionIndex === currentQ.a;
 
         if (isCorrect) {
             try { if (playSound) playSound('success'); } catch (e) { }
@@ -86,11 +83,6 @@ const TimeTrialExam = ({ questions, t, onComplete, onBack, playSound }) => {
     }
 
     // --- RENDER HELPERS ---
-
-    useEffect(() => {
-        // AGGRESSIVE DEBUGGING
-        alert(`DEBUG v1.6 LOADED`);
-    }, []);
 
     if (gameState === 'intro') {
         return (

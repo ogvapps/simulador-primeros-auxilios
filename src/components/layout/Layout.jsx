@@ -1,12 +1,15 @@
 import React, { useState } from 'react';
 import { HeartPulse, Volume2, VolumeX, User, Lock, Menu, X, LogOut, Flame, Moon, Sun, HelpCircle, Cloud, CloudOff, RefreshCw, Check } from 'lucide-react';
 import HelpTutorial from '../dashboard/HelpTutorial';
-import PrivacyPolicy from '../common/PrivacyPolicy';
+
+const PrivacyPolicy = React.lazy(() => import('../common/PrivacyPolicy'));
+const LegalDisclaimer = React.lazy(() => import('../common/LegalDisclaimer'));
 
 const Layout = ({ children, view, setView, profile, currentLevel, currentXp, muted, toggleMute, onAdminClick, onLogout, onDeleteAccount, streak, darkMode, toggleDarkMode, lang, toggleLang, t, onProfileClick, isSaving }) => {
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const [showHelp, setShowHelp] = useState(false);
     const [showPrivacy, setShowPrivacy] = useState(false);
+    const [showTerms, setShowTerms] = useState(false);
 
     return (
         <div className={`min-h-screen transition-colors duration-300 ${darkMode ? 'dark bg-slate-950 text-slate-100' : 'bg-slate-50 text-slate-900'} font-sans selection:bg-brand-200 selection:text-brand-900 flex flex-col`}>
@@ -75,6 +78,9 @@ const Layout = ({ children, view, setView, profile, currentLevel, currentXp, mut
                         )}
 
                         {/* Admin */}
+
+
+                        {/* Admin */}
                         <button onClick={onAdminClick} className="p-2 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors ml-1" title={t?.nav?.admin || "Acceso Docente"}>
                             <Lock size={20} />
                         </button>
@@ -140,7 +146,7 @@ const Layout = ({ children, view, setView, profile, currentLevel, currentXp, mut
                     <span>•</span>
                     <button onClick={() => setShowPrivacy(true)} className="hover:text-brand-600 transition-colors">{t?.nav?.privacy || "Privacidad"}</button>
                     <span>•</span>
-                    <a href="#" className="hover:text-brand-600 transition-colors">{t?.nav?.terms || "Términos"}</a>
+                    <button onClick={() => setShowTerms(true)} className="hover:text-brand-600 transition-colors">{t?.nav?.terms || "Términos"}</button>
                     <span>•</span>
                     <button onClick={onDeleteAccount} className="hover:text-red-500 transition-colors">{t?.nav?.deleteAccount || "Baja"}</button>
                 </div>
@@ -156,7 +162,10 @@ const Layout = ({ children, view, setView, profile, currentLevel, currentXp, mut
 
             {/* Modals */}
             <HelpTutorial isOpen={showHelp} onClose={() => setShowHelp(false)} t={t} />
-            {showPrivacy && <PrivacyPolicy onClose={() => setShowPrivacy(false)} t={t} />}
+            <React.Suspense fallback={null}>
+                {showPrivacy && <PrivacyPolicy onClose={() => setShowPrivacy(false)} t={t} />}
+                {showTerms && <LegalDisclaimer isOpen={showTerms} onClose={() => setShowTerms(false)} t={t} />}
+            </React.Suspense>
         </div>
     );
 };

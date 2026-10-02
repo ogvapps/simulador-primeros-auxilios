@@ -147,7 +147,6 @@ const GuardiaGame = memo(({ onComplete, onExit, playSound = defaultPlaySound }) 
           <div className="grid grid-cols-2 gap-4">
             <button
               onClick={() => {
-                if (onComplete && score > 0) onComplete(score);
                 onExit();
               }}
               className="bg-slate-800 text-slate-300 hover:bg-slate-700 hover:text-white py-4 rounded-xl font-bold transition-all"

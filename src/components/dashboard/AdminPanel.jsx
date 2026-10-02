@@ -8,7 +8,6 @@ import SettingsTab from './SettingsTab';
 import Leaderboard from './Leaderboard';
 import ClassroomManager from './ClassroomManager';
 import LiveClassroom from './LiveClassroom';
-import BenchmarkCard from './BenchmarkCard';
 import { generateMentorInsight } from '../../utils/mentorAI';
 import { LEVELS, EXAM_QUESTIONS } from '../../data/constants';
 import { generateStudentProgressPDF } from '../../utils/studentProgressPDF';
@@ -77,15 +76,17 @@ const AdminPanel = ({ onBack, db, firebaseConfigId, playSound, t, modules, addTo
         return [...new Set(classes)].sort();
     }, [students]);
 
+    const normalizeRole = (r) => r ? r.replace(/\s+de\s+/gi, ' ').trim() : '';
+
     const uniqueRoles = useMemo(() => {
-        const roles = students.map(s => s.role).filter(Boolean);
+        const roles = students.map(s => normalizeRole(s.role)).filter(Boolean);
         return [...new Set(roles)].sort();
     }, [students]);
 
     const filteredStudents = useMemo(() => {
         return students.filter(s => {
             const matchSearch = (s.name || '').toLowerCase().includes(searchTerm.toLowerCase()) || (s.email && s.email.toLowerCase().includes(searchTerm.toLowerCase()));
-            const matchRole = roleFilter === 'todos' || s.role === roleFilter;
+            const matchRole = roleFilter === 'todos' || normalizeRole(s.role) === roleFilter;
             const matchClass = classFilter === 'todos' || classFilter === 'sin_asignar' ? (classFilter === 'sin_asignar' ? !s.progress?.className : true) : s.progress?.className === classFilter;
             return matchSearch && matchRole && matchClass;
         });
@@ -97,18 +98,32 @@ const AdminPanel = ({ onBack, db, firebaseConfigId, playSound, t, modules, addTo
     const handleDelete = async (student) => {
         const msg = t?.admin?.confirmDelete?.replace('{name}', student.name) || `Are you sure you want to delete ${student.name}?`;
         if (!confirm(msg)) return;
+
+        const uid = student.userId;
+        if (!uid) return;
+
+        // Best-effort deletion sequence
+        let errorCount = 0;
+
         try {
-            const uid = student.userId;
-            if (!uid) return;
-            await deleteDoc(doc(db, 'artifacts', firebaseConfigId, 'users', uid, 'progress', 'main'));
-            await deleteDoc(doc(db, 'artifacts', firebaseConfigId, 'users', uid, 'profile', 'main'));
             await deleteDoc(doc(db, 'artifacts', firebaseConfigId, 'public', 'data', 'user_summaries', uid));
+        } catch (e) { console.warn("Failed to delete summary", e); errorCount++; }
+
+        try {
+            await deleteDoc(doc(db, 'artifacts', firebaseConfigId, 'users', uid, 'progress', 'main'));
+        } catch (e) { console.warn("Failed to delete progress", e); errorCount++; }
+
+        try {
+            await deleteDoc(doc(db, 'artifacts', firebaseConfigId, 'users', uid, 'profile', 'main'));
+        } catch (e) { console.warn("Failed to delete profile", e); errorCount++; }
+
+        if (errorCount < 3) {
             if (playSound) playSound('success');
             setStudents(prev => prev.filter(s => s.userId !== uid));
-        } catch (error) {
-            console.error("Error deleting user:", error);
+            addToast(t?.admin?.deleteSuccess || "Usuario eliminado", 'success');
+        } else {
             if (playSound) playSound('error');
-            addToast(t?.admin?.errorDelete || "Error deleting user.", 'error');
+            addToast(t?.admin?.errorDelete || "No se pudo eliminar el usuario (Permisos)", 'error');
         }
     };
 
@@ -172,51 +187,77 @@ const AdminPanel = ({ onBack, db, firebaseConfigId, playSound, t, modules, addTo
         else setSelectedIds(filteredStudents.map(s => s.userId));
     };
 
-    const exportToCSV = () => {
-        if (!students.length) return;
+    const handleResetAllExams = async () => {
+        if (!confirm("⚠ PELIGRO: ¿Estás seguro de que quieres BORRAR el historial de exámenes de TODOS los estudiantes?\n\nEsta acción no se puede deshacer.")) return;
+        if (!confirm("Confirmación final: Pulsa Aceptar para proceder con el borrado masivo.")) return;
 
-        // BOM for Excel to help with UTF-8
-        const BOM = "\uFEFF";
-        const headers = ["Nombre", "Rol", "Aula", "Último Acceso", "XP Total", "XP Semanal", "Nivel", "Nota Examen", "Estado"];
-        const rows = students.map(s => [
-            `"${s.name || 'Anónimo'}"`,
-            s.role || 'N/A',
-            s.progress?.className || 'General',
-            s.lastLogin ? new Date(s.lastLogin).toLocaleDateString() : 'Nunca',
-            s.progress?.lifetimeXp || s.progress?.xp || 0,
-            s.progress?.weeklyXP || 0,
-            s.progress?.level || 1,
-            s.progress?.examenPassed ? 'APROBADO' : (s.progress?.examAttempts?.length > 0 ? `${s.progress.examAttempts[s.progress.examAttempts.length - 1].score}/10` : 'PENDIENTE'),
-            s.blocked ? 'BLOQUEADO' : 'ACTIVO'
-        ]);
+        setLoading(true);
+        try {
+            let count = 0;
+            // Iterate all loaded students
+            for (const s of students) {
+                if (!s.userId) continue;
 
-        const csvContent = BOM + headers.join(",") + "\n" + rows.map(e => e.join(",")).join("\n");
-        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-        const url = URL.createObjectURL(blob);
+                // Only reset if they have exam data
+                if ((s.progress?.examAttempts && Array.isArray(s.progress.examAttempts) && s.progress.examAttempts.length > 0) || s.progress?.examenPassed) {
+                    const publicRef = doc(db, 'artifacts', firebaseConfigId, 'public', 'data', 'user_summaries', s.userId);
+                    const privateRef = doc(db, 'artifacts', firebaseConfigId, 'users', s.userId, 'progress', 'main');
 
-        const link = document.createElement("a");
-        link.href = url;
-        link.setAttribute("download", `notas_simulador_${new Date().toISOString().slice(0, 10)}.csv`);
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
+                    const updates = {
+                        examenPassed: false,
+                        examenScore: null,
+                        examAttempts: [],
+                        examAnswers: {},
+                        examenCompleted: false
+                    };
 
-        addToast && addToast(t?.admin?.toast?.exported || "Excel exportado correctamente", "success");
+                    // Update both Public Summary and Private Progress
+                    await updateDoc(publicRef, { progress: { ...s.progress, ...updates }, lastUpdate: new Date().toISOString() });
+                    await setDoc(privateRef, updates, { merge: true });
+                    count++;
+                }
+            }
+
+            if (playSound) playSound('success');
+            addToast(`Se han reiniciado los exámenes de ${count} estudiantes.`, 'success');
+            fetchStudents(); // Refresh data
+        } catch (error) {
+            console.error("Error resetting all exams:", error);
+            addToast("Error al reiniciar exámenes", 'error');
+            if (playSound) playSound('error');
+        } finally {
+            setLoading(false);
+        }
     };
+
+
 
     const handleBulkDelete = async () => {
         if (!confirm((t?.bulk?.confirmDelete || "Delete {n} users?").replace('{n}', selectedIds.length))) return;
-        let count = 0;
+
+        let successCount = 0;
+
         for (const uid of selectedIds) {
-            try {
-                await deleteDoc(doc(db, 'artifacts', firebaseConfigId, 'users', uid, 'progress', 'main'));
-                await deleteDoc(doc(db, 'artifacts', firebaseConfigId, 'users', uid, 'profile', 'main'));
-                await deleteDoc(doc(db, 'artifacts', firebaseConfigId, 'public', 'data', 'user_summaries', uid));
-                count++;
-            } catch (e) { console.error(e); }
+            let errorCount = 0;
+            // Try delete summary
+            try { await deleteDoc(doc(db, 'artifacts', firebaseConfigId, 'public', 'data', 'user_summaries', uid)); } catch (e) { errorCount++; }
+            // Try delete progress
+            try { await deleteDoc(doc(db, 'artifacts', firebaseConfigId, 'users', uid, 'progress', 'main')); } catch (e) { errorCount++; }
+            // Try delete profile
+            try { await deleteDoc(doc(db, 'artifacts', firebaseConfigId, 'users', uid, 'profile', 'main')); } catch (e) { errorCount++; }
+
+            if (errorCount < 3) successCount++;
         }
-        addToast(`${count} users deleted`, 'success');
-        setSelectedIds([]);
+
+        if (successCount > 0) {
+            addToast(`${successCount} users deleted`, 'success');
+            setStudents(prev => prev.filter(s => !selectedIds.includes(s.userId))); // Optimistic update
+            setSelectedIds([]);
+        } else {
+            addToast("Error deleting users (Permission denied)", 'error');
+        }
+
+        // Refresh to be sure
         fetchStudents();
     };
 
@@ -360,6 +401,9 @@ const AdminPanel = ({ onBack, db, firebaseConfigId, playSound, t, modules, addTo
         }, 100);
     };
 
+    // Old CSV export removed in favor of Premium ExcelJS version
+    // If you need CSV fallback, re-add exportToCSV here.
+
     const handleExportExcel = async () => {
         if (!students.length) return;
         addToast(t?.admin?.generating || "Generating Premium Excel...", 'info');
@@ -419,7 +463,8 @@ const AdminPanel = ({ onBack, db, firebaseConfigId, playSound, t, modules, addTo
                 t?.admin?.table?.level || 'Level',
                 'XP Total',
                 t?.admin?.table?.finalExam || 'Exam',
-                '% Progress'
+                '% Progress',
+                'Historial de Intentos' // NEW HEADER
             ];
             badgeModules.forEach(m => headers.push(m.title));
             headers.push(t?.admin?.table?.connection || 'Last Activity');
@@ -439,15 +484,35 @@ const AdminPanel = ({ onBack, db, firebaseConfigId, playSound, t, modules, addTo
                 const completedCount = badgeModules.filter(m => s.progress?.[`${m.id}Completed`]).length;
                 const progressPct = (completedCount / badgeModules.length);
 
+                // Detailed History String - FILTER ONLY NORMAL EXAMS
+                const allAttempts = Array.isArray(s.progress?.examAttempts) ? s.progress.examAttempts : [];
+                const attempts = allAttempts.filter(a => !a.type || a.type === 'normal');
+                const historyString = attempts.map((att, i) => {
+                    const g = att.grade !== undefined ? Number(att.grade).toFixed(2) : att.score;
+                    const r = att.passed || g >= 5 ? 'APROBADO' : 'SUSPENSO';
+                    const d = att.date ? new Date(att.date).toLocaleDateString() : 'Fecha desc.';
+                    return `[${i + 1}] ${d}: ${g} (${r})`;
+                }).join("  |  ");
+
+                // Exam Status logic
+                const last = attempts.length > 0 ? attempts[attempts.length - 1] : null;
+                const grade = last ? (last.grade !== undefined ? Number(last.grade).toFixed(2) : last.score) : null;
+
+                let statusLabel = t?.admin?.table?.pending || 'PENDING';
+                if (attempts.length > 0) {
+                    statusLabel = s.progress?.examenPassed ? (t?.admin?.table?.approved || 'PASSED') : 'SUSPENSO';
+                }
+
+                const finalStatus = (grade && attempts.length > 0) ? `${statusLabel} (${grade})` : statusLabel;
+
                 const rowData = [
                     s.name,
                     s.role,
                     s.progress?.level || 1,
                     s.progress?.xp || 0,
-                    s.progress?.level || 1,
-                    s.progress?.xp || 0,
-                    s.progress?.examenPassed ? (t?.admin?.table?.approved || 'PASSED') : (t?.admin?.table?.pending || 'PENDING'),
-                    progressPct
+                    finalStatus,
+                    progressPct,
+                    historyString // NEW DATA
                 ];
 
                 badgeModules.forEach(m => rowData.push(s.progress?.[`${m.id}Completed`] ? 'YES' : 'NO'));
@@ -457,8 +522,10 @@ const AdminPanel = ({ onBack, db, firebaseConfigId, playSound, t, modules, addTo
 
                 // Style Exam cell based on status
                 const examCell = newRow.getCell(5);
-                if (examCell.value === (t?.admin?.table?.approved || 'PASSED')) {
+                if (s.progress?.examenPassed) {
                     examCell.font = { color: { argb: 'FF15803D' }, bold: true };
+                } else if (last) {
+                    examCell.font = { color: { argb: 'FFDC2626' }, bold: true }; // Red for failed
                 } else {
                     examCell.font = { color: { argb: 'FF94A3B8' } };
                 }
@@ -475,7 +542,7 @@ const AdminPanel = ({ onBack, db, firebaseConfigId, playSound, t, modules, addTo
                     const len = cell.value ? cell.value.toString().length : 0;
                     if (len > maxLen) maxLen = len;
                 });
-                column.width = Math.min(Math.max(12, maxLen + 2), 40);
+                column.width = Math.min(Math.max(12, maxLen + 2), 60); // Allow wider columns
             });
 
             const buffer = await workbook.xlsx.writeBuffer();
@@ -518,12 +585,18 @@ const AdminPanel = ({ onBack, db, firebaseConfigId, playSound, t, modules, addTo
             const tableData = filteredStudents.map(s => {
                 const comp = badgeModules.filter(m => s.progress?.[`${m.id}Completed`]).length;
                 const pct = Math.round((comp / badgeModules.length) * 100);
+
+                // Filter for Final Exams only
+                const allAttempts = Array.isArray(s.progress?.examAttempts) ? s.progress.examAttempts : [];
+                const attempts = allAttempts.filter(a => !a.type || a.type === 'normal');
+                const examStatus = s.progress?.examenPassed ? 'APROBADO' : (attempts.length > 0 ? 'SUSPENSO' : 'PENDIENTE');
+
                 return [
                     s.name,
                     s.role,
                     s.progress?.level || 1,
                     s.progress?.xp || 0,
-                    s.progress?.examenPassed ? 'APROBADO' : 'PENDIENTE',
+                    examStatus,
                     `${pct}%`
                 ];
             });
@@ -579,6 +652,13 @@ const AdminPanel = ({ onBack, db, firebaseConfigId, playSound, t, modules, addTo
                     <h2 className="text-3xl font-black text-slate-800 tracking-tight">{t?.admin?.panelTitle || "Teacher Panel"}</h2>
                 </div>
                 <div className="flex gap-2">
+                    <button
+                        onClick={handleResetAllExams}
+                        className="flex items-center gap-2 px-3 py-2 bg-red-100 text-red-700 hover:bg-red-200 font-bold rounded-lg transition-colors border border-red-200"
+                        title="¡Peligro! Borrar historial"
+                    >
+                        <Trash2 size={18} /> <span className="hidden xl:inline">Reiniciar</span>
+                    </button>
                     <button onClick={() => setViewMode('live')} className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-red-500 to-orange-500 text-white font-bold rounded-lg shadow-md hover:shadow-lg transition-all animate-pulse">
                         <Zap size={20} /> {t?.live?.launch || "LIVE MODE"}
                     </button>
@@ -586,7 +666,7 @@ const AdminPanel = ({ onBack, db, firebaseConfigId, playSound, t, modules, addTo
                         <button onClick={() => setShowExportMenu(!showExportMenu)} className="px-4 py-2 bg-slate-800 text-white rounded-lg flex items-center gap-2 font-bold"><Download size={20} /> {t?.admin?.export || "Export"}</button>
                         {showExportMenu && (
                             <div className="absolute right-0 top-full mt-2 w-56 bg-white rounded-xl shadow-xl border border-slate-100 z-50 overflow-hidden">
-                                <button onClick={() => { handleExportExcel(); setShowExportMenu(false); }} className="w-full text-left px-4 py-3 hover:bg-slate-50 flex items-center gap-3 text-slate-700 font-medium border-b border-slate-50"><FileSpreadsheet size={16} className="text-green-600" /> Excel</button>
+                                <button onClick={() => { handleExportExcel(); setShowExportMenu(false); }} className="w-full text-left px-4 py-3 hover:bg-slate-50 flex items-center gap-3 text-slate-700 font-medium border-b border-slate-50"><FileSpreadsheet size={16} className="text-green-600" /> Excel / CSV</button>
                                 <button onClick={() => { handleExportPDFBulletin(); setShowExportMenu(false); }} className="w-full text-left px-4 py-3 hover:bg-slate-50 flex items-center gap-3 text-slate-700 font-medium border-b border-slate-50"><FileText size={16} className="text-red-500" /> PDF Report</button>
                                 <button onClick={() => { handleExportDiplomas(); setShowExportMenu(false); }} className="w-full text-left px-4 py-3 hover:bg-slate-50 flex items-center gap-3 text-slate-700 font-medium border-b border-slate-50"><GraduationCap size={16} className="text-yellow-600" /> All Diplomas</button>
                                 <button onClick={() => { handleExportJSON(); setShowExportMenu(false); }} className="w-full text-left px-4 py-3 hover:bg-slate-50 flex items-center gap-3 text-slate-700 font-medium"><FileJson size={16} className="text-orange-500" /> Backup JSON</button>
@@ -606,9 +686,6 @@ const AdminPanel = ({ onBack, db, firebaseConfigId, playSound, t, modules, addTo
                 </button>
                 <button onClick={() => setViewMode('leaderboard')} className={`pb-2 px-4 font-bold border-b-2 transition-all flex items-center gap-2 whitespace-nowrap ${viewMode === 'leaderboard' ? 'border-brand-500 text-brand-600' : 'border-transparent text-slate-400'}`}>
                     <Award size={18} /> {t?.admin?.leaderboardTab || "Clasificación"}
-                </button>
-                <button onClick={() => setViewMode('benchmark')} className={`pb-2 px-4 font-bold border-b-2 transition-all flex items-center gap-2 whitespace-nowrap ${viewMode === 'benchmark' ? 'border-brand-500 text-brand-600' : 'border-transparent text-slate-400'}`}>
-                    <Trophy size={18} /> Benchmark
                 </button>
                 <button onClick={() => setViewMode('classrooms')} className={`pb-2 px-4 font-bold border-b-2 transition-all flex items-center gap-2 whitespace-nowrap ${viewMode === 'classrooms' ? 'border-brand-500 text-brand-600' : 'border-transparent text-slate-400'}`}>
                     <GraduationCap size={18} /> {t?.admin?.classroomsTab || "Aulas"}
@@ -640,16 +717,6 @@ const AdminPanel = ({ onBack, db, firebaseConfigId, playSound, t, modules, addTo
                     t={t}
                     addToast={addToast}
                 />
-            )}
-            {viewMode === 'benchmark' && (
-                <div className="space-y-6">
-                    <h3 className="text-2xl font-black text-slate-800">Student Performance Benchmarks</h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        {students.map(s => (
-                            <BenchmarkCard key={s.userId} student={s} db={db} firebaseConfigId={firebaseConfigId} t={t} />
-                        ))}
-                    </div>
-                </div>
             )}
 
             {viewMode === 'list' && (
@@ -713,7 +780,7 @@ const AdminPanel = ({ onBack, db, firebaseConfigId, playSound, t, modules, addTo
 
                             <div className="w-px bg-slate-200 mx-1"></div>
 
-                            <button onClick={exportToCSV} className="px-4 py-2 border rounded-xl font-bold bg-white text-green-700 border-green-200 hover:bg-green-50 flex items-center gap-2 transition-colors whitespace-nowrap shadow-sm" title={t?.admin?.exportExcel || "Exportar Notas a Excel"}>
+                            <button onClick={handleExportExcel} className="px-4 py-2 border rounded-xl font-bold bg-white text-green-700 border-green-200 hover:bg-green-50 flex items-center gap-2 transition-colors whitespace-nowrap shadow-sm" title={t?.admin?.exportExcel || "Exportar Notas a Excel"}>
                                 <FileSpreadsheet size={20} /> <span className="hidden md:inline">Excel</span>
                             </button>
                             <button onClick={() => setPresentationMode(!presentationMode)} className={`px-4 py-2 border rounded-xl font-bold transition-colors shadow-sm ${presentationMode ? 'bg-slate-800 text-white border-slate-800' : 'bg-white text-slate-700 hover:bg-slate-50 border-slate-200'}`} title={presentationMode ? "Modo Presentación (Ocultar Nombres)" : "Modo Normal"}>
@@ -789,13 +856,40 @@ const AdminPanel = ({ onBack, db, firebaseConfigId, playSound, t, modules, addTo
                                                         </div>
                                                     </td>
                                                     <td className="p-5 text-center hidden sm:table-cell">
-                                                        {examPassed
-                                                            ? <div className="inline-flex flex-col items-center justify-center bg-green-50 px-3 py-2 rounded-lg border-2 border-green-200 min-w-[60px]">
-                                                                <span className="text-[10px] font-bold text-green-600 uppercase tracking-wide">{t?.admin?.table?.approved || "PASSED"}</span>
-                                                                {lastExamScore && <span className="text-2xl font-black text-green-700">{lastExamScore}</span>}
-                                                            </div>
-                                                            : <span className="text-slate-300 font-bold text-2xl">-</span>
-                                                        }
+                                                        {(() => {
+                                                            const allAttempts = Array.isArray(s.progress?.examAttempts) ? s.progress.examAttempts : [];
+                                                            // Filter for Final Exams only (exclude surprise exams)
+                                                            const attempts = allAttempts.filter(a => !a.type || a.type === 'normal');
+
+                                                            // If NO attempts, strictly PENDING
+                                                            if (attempts.length === 0) {
+                                                                return (
+                                                                    <div className="inline-flex flex-col items-center justify-center bg-slate-50 px-3 py-2 rounded-lg border-2 border-slate-100 min-w-[80px] opacity-70">
+                                                                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">{t?.admin?.table?.pending || "PENDIENTE"}</span>
+                                                                        <span className="text-xl font-black text-slate-400">-</span>
+                                                                    </div>
+                                                                );
+                                                            }
+
+                                                            const lastAttempt = attempts[attempts.length - 1];
+                                                            const displayScore = lastAttempt ? (lastAttempt.grade !== undefined ? Number(lastAttempt.grade).toFixed(1) : lastAttempt.score) : '0';
+
+                                                            if (examPassed) {
+                                                                return (
+                                                                    <div className="inline-flex flex-col items-center justify-center bg-green-50 px-3 py-2 rounded-lg border-2 border-green-200 min-w-[80px]">
+                                                                        <span className="text-[10px] font-bold text-green-600 uppercase tracking-wide">{t?.admin?.table?.approved || "APROBADO"}</span>
+                                                                        <span className="text-xl font-black text-green-700">{s.progress?.examenScore || displayScore}</span>
+                                                                    </div>
+                                                                );
+                                                            } else {
+                                                                return (
+                                                                    <div className="inline-flex flex-col items-center justify-center bg-red-50 px-3 py-2 rounded-lg border-2 border-red-200 min-w-[80px]">
+                                                                        <span className="text-[10px] font-bold text-red-600 uppercase tracking-wide">{t?.admin?.table?.failed || "SUSPENSO"}</span>
+                                                                        <span className="text-xl font-black text-red-700">{displayScore}</span>
+                                                                    </div>
+                                                                );
+                                                            }
+                                                        })()}
                                                     </td>
                                                     <td className="p-5 text-center text-xs text-slate-400 hidden lg:table-cell">
                                                         {s.lastUpdate ? new Date(s.lastUpdate).toLocaleDateString() : '-'}
@@ -883,7 +977,7 @@ const AdminPanel = ({ onBack, db, firebaseConfigId, playSound, t, modules, addTo
                                 <h4 className="font-bold text-slate-700 mb-4 flex items-center gap-2">
                                     <TrendingUp size={20} className="text-brand-500" /> {t?.admin?.detail?.examEvol || "Exam Evolution"}
                                 </h4>
-                                {selectedStudent.progress?.examAttempts && selectedStudent.progress.examAttempts.length > 0 ? (
+                                {selectedStudent.progress?.examAttempts && Array.isArray(selectedStudent.progress.examAttempts) && selectedStudent.progress.examAttempts.length > 0 ? (
                                     <div className="h-48 w-full">
                                         <ResponsiveContainer width="100%" height="100%">
                                             <AreaChart data={selectedStudent.progress.examAttempts.map((a, i) => ({

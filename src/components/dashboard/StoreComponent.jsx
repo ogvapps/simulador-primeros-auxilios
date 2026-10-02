@@ -13,7 +13,6 @@ const StoreComponent = ({ currentXp, inventory = {}, onPurchase, onBack, t, lang
     const canAfford = (price) => currentXp >= price;
     const isOwned = (category, id) => {
         if (category === 'avatars') return ownedAvatars.includes(id);
-        if (category === 'powerups') return (ownedPowerups[id] || 0) > 0;
         if (category === 'themes') return ownedThemes.includes(id);
         if (category === 'titles') return ownedTitles.includes(id);
         return false;
@@ -26,16 +25,16 @@ const StoreComponent = ({ currentXp, inventory = {}, onPurchase, onBack, t, lang
 
     const handlePurchase = (category, item) => {
         if (!canAfford(item.price)) {
-            alert(t?.store?.notEnough || 'Not enough XP!');
             return;
         }
         onPurchase(category, item);
     };
 
     const ItemCard = ({ item, category }) => {
-        const owned = isOwned(category, item.id);
+        const isPowerup = category === 'powerups';
+        const owned = !isPowerup && isOwned(category, item.id);
         const affordable = canAfford(item.price);
-        const count = category === 'powerups' ? (ownedPowerups[item.id] || 0) : null;
+        const count = isPowerup ? (ownedPowerups[item.id] || 0) : null;
         const name = getLocalizedText(item, 'name');
         const description = getLocalizedText(item, 'description');
 
@@ -53,20 +52,28 @@ const StoreComponent = ({ currentXp, inventory = {}, onPurchase, onBack, t, lang
                         {item.price}
                     </div>
 
-                    {owned ? (
-                        <div className="flex items-center gap-1 text-green-600 text-xs font-bold">
-                            <Check size={16} />
-                            {count !== null ? `x${count}` : (t?.store?.owned || 'Owned')}
-                        </div>
-                    ) : (
-                        <button
-                            onClick={() => handlePurchase(category, item)}
-                            disabled={!affordable}
-                            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${affordable ? 'bg-purple-600 text-white hover:bg-purple-700' : 'bg-slate-200 text-slate-400 cursor-not-allowed'}`}
-                        >
-                            {affordable ? (t?.store?.buy || 'Buy') : <Lock size={14} />}
-                        </button>
-                    )}
+                    <div className="flex items-center gap-2">
+                        {count !== null && count > 0 && (
+                            <span className="text-xs font-bold px-2 py-0.5 bg-purple-100 text-purple-700 rounded-full">
+                                x{count}
+                            </span>
+                        )}
+
+                        {owned ? (
+                            <div className="flex items-center gap-1 text-green-600 text-xs font-bold">
+                                <Check size={16} />
+                                {t?.store?.owned || 'Adquirido'}
+                            </div>
+                        ) : (
+                            <button
+                                onClick={() => handlePurchase(category, item)}
+                                disabled={!affordable}
+                                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${affordable ? 'bg-purple-600 text-white hover:bg-purple-700' : 'bg-slate-200 text-slate-400 cursor-not-allowed'}`}
+                            >
+                                {affordable ? (isPowerup && count > 0 ? '+ Más' : (t?.store?.buy || 'Comprar')) : <Lock size={14} />}
+                            </button>
+                        )}
+                    </div>
                 </div>
             </div>
         );

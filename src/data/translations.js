@@ -216,7 +216,6 @@ export const TRANSLATIONS = {
                 excellent: "Excelente",
                 good: "Bueno",
                 average: "Promedio",
-                average: "Promedio",
                 below: "Por Debajo"
             },
             needData: "Necesitamos más compañeros para comparar",

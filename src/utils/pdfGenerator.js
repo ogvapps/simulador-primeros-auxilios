@@ -1,5 +1,7 @@
 import { jsPDF } from 'jspdf';
+import QRCode from 'qrcode';
 import { MODULES_ES as MODULES } from '../data/constants';
+import { generateCertificateHash } from './cryptoVerify';
 
 export const generateCheatSheet = () => {
     const doc = new jsPDF();
@@ -294,28 +296,21 @@ export const generateDiplomaPDF = async (userName = "ALUMNO", dateLabel = "", t,
         doc.setFont("times", "normal");
         doc.text("Profesor de Educación Física", 75, sigTextY + 5, { align: 'center' });
 
-        // Center QR Code (Real dynamic QR)
-        const verifyUrl = `${window.location.origin}${window.location.pathname}?verify=true&n=${encodeURIComponent(btoa(unescape(encodeURIComponent(safeName))))}&d=${encodeURIComponent(btoa(dateLabel || new Date().toLocaleDateString()))}`;
+        // Center QR Code (Real dynamic QR offline)
+        const dateStr = dateLabel || new Date().toLocaleDateString('es-ES');
+        const hash = await generateCertificateHash(safeName, dateStr);
+        const encodedName = btoa(encodeURIComponent(safeName));
+        const encodedDate = btoa(encodeURIComponent(dateStr));
+        const verifyUrl = `${window.location.origin}${window.location.pathname}?verify=true&n=${encodeURIComponent(encodedName)}&d=${encodeURIComponent(encodedDate)}&h=${encodeURIComponent(hash)}`;
         const qrSize = 25;
         const qrX = (pageWidth - qrSize) / 2;
         const qrY = 162;
 
-        // Using a reliable public QR API
-        const qrApiUrl = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(verifyUrl)}`;
-
-        // HELPER TO LOAD IMAGE from URL
-        const loadImage = (url) => new Promise((resolve, reject) => {
-            const img = new Image();
-            img.crossOrigin = "anonymous";
-            img.onload = () => resolve(img);
-            img.onerror = reject;
-            img.src = url;
-        });
-
         try {
-            const qrImg = await loadImage(qrApiUrl);
-            doc.addImage(qrImg, 'PNG', qrX, qrY, qrSize, qrSize);
+            const qrDataUrl = await QRCode.toDataURL(verifyUrl, { margin: 1, width: 250, errorCorrectionLevel: 'M' });
+            doc.addImage(qrDataUrl, 'PNG', qrX, qrY, qrSize, qrSize);
         } catch (e) {
+            console.error("Local QR generation error:", e);
             doc.setDrawColor(...colorNavy);
             doc.rect(qrX, qrY, qrSize, qrSize, 'D');
         }

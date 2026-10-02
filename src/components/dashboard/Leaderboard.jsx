@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { collection, getDocs } from 'firebase/firestore';
 import { Trophy, Medal, Crown, ArrowLeft, Loader2, Users, Filter } from 'lucide-react';
 import { AVATARS, LEAGUES } from '../../data/constants';
+import { STORE_ITEMS } from '../../data/storeCatalog';
 
 const Leaderboard = ({ db, firebaseConfigId, onBack, currentUserId, currentUserRole, t }) => {
     const [leaders, setLeaders] = useState([]);
@@ -27,7 +28,7 @@ const Leaderboard = ({ db, firebaseConfigId, onBack, currentUserId, currentUserR
                             lifetimeXp: d.progress.lifetimeXp !== undefined ? d.progress.lifetimeXp : (d.progress.xp || 0),
                             weeklyXP: d.progress.weeklyXP || 0,
                             level: d.progress.level || 1,
-                            avatar: d.avatarId || 'default'
+                            avatar: d.progress?.activeAvatar || d.avatarId || 'default'
                         });
                     }
                 });
@@ -43,9 +44,11 @@ const Leaderboard = ({ db, firebaseConfigId, onBack, currentUserId, currentUserR
         if (db && firebaseConfigId) fetchLeaders();
     }, [db, firebaseConfigId]);
 
+    const normalizeRole = (r) => r ? r.replace(/\s+de\s+/gi, ' ').trim() : '';
+
     const uniqueRoles = useMemo(() => {
         if (!leaders.length) return [];
-        const roles = [...new Set(leaders.map(u => u.role))].filter(Boolean);
+        const roles = [...new Set(leaders.map(u => normalizeRole(u.role)))].filter(Boolean);
         return roles.sort();
     }, [leaders]);
 
@@ -55,7 +58,7 @@ const Leaderboard = ({ db, firebaseConfigId, onBack, currentUserId, currentUserR
         // 1. Filter
         if (filter === 'class') {
             if (currentUserRole === 'admin' && selectedRole) {
-                sorted = sorted.filter(u => u.role === selectedRole);
+                sorted = sorted.filter(u => normalizeRole(u.role) === selectedRole);
             } else if (currentUserRole !== 'admin') {
                 sorted = sorted.filter(u => u.role === currentUserRole);
             }
@@ -171,7 +174,7 @@ const Leaderboard = ({ db, firebaseConfigId, onBack, currentUserId, currentUserR
                             <div className="divide-y divide-slate-100">
                                 {displayedLeaders.map((user, idx) => {
                                     const isMe = user.id === currentUserId;
-                                    const avatarDef = AVATARS.find(a => a.id === user.avatar) || AVATARS[0];
+                                    const avatarDef = STORE_ITEMS.avatars.find(a => a.id === user.avatar) || AVATARS.find(a => a.id === user.avatar) || AVATARS[0];
 
                                     const league = LEAGUES.find(l => idx >= l.minRank && idx <= l.maxRank) || LEAGUES[LEAGUES.length - 1];
                                     const prevLeague = idx > 0 ? (LEAGUES.find(l => (idx - 1) >= l.minRank && (idx - 1) <= l.maxRank) || LEAGUES[LEAGUES.length - 1]) : null;

@@ -12,8 +12,6 @@ const DailyChallenge = ({ scenarios, t, onComplete, onClose, playSound }) => {
             // Pick a random scenario (True Random as requested)
             const index = Math.floor(Math.random() * scenarios.length);
 
-            console.log("Pool:", scenarios.length, "Index:", index);
-
             setScenario(scenarios[index]);
         }
     }, [scenarios]);

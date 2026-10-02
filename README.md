@@ -1,39 +1,35 @@
-<<<<<<< HEAD
 <div align="center">
 <img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
 </div>
 
-# Run and deploy your AI Studio app
+# Simulador P.A.S. — Primeros Auxilios para Educación
 
-This contains everything you need to run your app locally.
+Entrenamiento interactivo de Primeros Auxilios y Soporte Vital Básico para centros educativos (Educación Primaria y Secundaria) con gamificación, simulaciones interactivas, casos prácticos y diplomas verificables con código QR offline.
 
-View your app in AI Studio: https://ai.studio/apps/drive/13Yj4MTacvo2bk-4LPbbXskqUsFuEeH6s
+## 🚀 Requisitos e Instalación
 
-## Run Locally
+**Requisitos:** Node.js (v18+)
 
-**Prerequisites:**  Node.js
+1. Instalar dependencias:
+   ```bash
+   npm install
+   ```
 
+2. Ejecutar en modo desarrollo:
+   ```bash
+   npm run dev
+   ```
 
-1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`
-=======
-# React + Vite
+3. Construir para producción:
+   ```bash
+   npm run build
+   ```
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+4. Verificación de código:
+   ```bash
+   npm run lint
+   ```
 
-Currently, two official plugins are available:
+## 🛡️ Privacidad y Seguridad
+Cumple con el RGPD (UE 2016/679), la LOPDGDD 3/2018 y las directrices de la LOE/LOMLOE para el tratamiento de datos de menores en el ámbito docente.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
-
-## React Compiler
-
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
->>>>>>> 4781289 (Despliegue Final: Sistema Premium Completo)

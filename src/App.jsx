@@ -1,26 +1,30 @@
-import React, { useState, useEffect, Suspense, useRef } from 'react';
+import React, { useState, useEffect, useCallback, Suspense } from 'react';
 import { initializeApp } from 'firebase/app';
-import { getAuth, onAuthStateChanged, signInWithCustomToken, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut } from 'firebase/auth';
-import { getFirestore, doc, onSnapshot, setDoc, getDoc, updateDoc, increment, collection, query, where, getDocs } from 'firebase/firestore';
-import { Activity, HeartPulse, Sparkles, BookOpen, AlertTriangle, Play, Star, Printer, BadgeCheck, XCircle, Award, ShoppingBag, Trophy, Flame, FileText, Download, Moon, Sun, CheckCircle2, ArrowLeft, User, UserCheck, GraduationCap, Zap } from 'lucide-react';
+import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut } from 'firebase/auth';import { getFirestore, initializeFirestore, persistentLocalCache, persistentMultipleTabManager, doc, setDoc, getDoc, updateDoc } from 'firebase/firestore';
+import { Activity, HeartPulse, Sparkles, Play, Star, BadgeCheck, XCircle, Award, ShoppingBag, Trophy, FileText, Download, CheckCircle2, ArrowLeft, User, UserCheck, GraduationCap, Zap, AlertTriangle } from 'lucide-react';
 import confetti from 'canvas-confetti';
-import { jsPDF } from 'jspdf';
 import { generateCheatSheet, generateDiplomaPDF } from './utils/pdfGenerator';
-import { selectRandomQuestions } from './utils/examRandomizer';
-import { getExamSizeForRole } from './utils/roleExamConfig';
-import { updateStreak } from './utils/streakSystem';
 import { STORE_ITEMS } from './data/storeCatalog';
-import { generateDailyQuests, checkQuestProgress } from './data/dailyQuests';
+import { useToast } from './hooks/useToast';
+import { useTheme } from './hooks/useTheme';
+import { useFirebaseAuth } from './hooks/useFirebaseAuth';
+import { useXPProgression } from './hooks/useXPProgression';
+import { useSchoolActions } from './hooks/useSchoolActions';
+import { useExamCompletion } from './hooks/useExamCompletion';
+import { usePracticeSession } from './hooks/usePracticeSession';
+import { useStore } from './hooks/useStore';
+import { useQuests } from './hooks/useQuests';
+import { useClassAssignments } from './hooks/useClassAssignments';
+import { useExamSetup } from './hooks/useExamSetup';
+import { useKeyboard } from './hooks/useKeyboard';
+import { useOnlineStatus } from './hooks/useOnlineStatus';
 
 // Components
 import Layout from './components/layout/Layout';
 import LearningModule from './components/dashboard/LearningModule';
-import ModuleCard from './components/dashboard/ModuleCard';
-import InsigniasPanel from './components/dashboard/InsigniasPanel';
-import AvatarShop from './components/dashboard/AvatarShop';
-import DailyChallenge from './components/dashboard/DailyChallenge';
-import DailyQuestsPanel from './components/dashboard/DailyQuestsPanel';
 import ToastContainer from './components/common/Toast';
+import OfflineBanner from './components/ui/OfflineBanner';
+import HelpTutorial from './components/dashboard/HelpTutorial';
 
 // Lazy Components
 const ExamComponent = React.lazy(() => import('./components/dashboard/ExamComponent'));
@@ -30,7 +34,13 @@ const GuardiaGame = React.lazy(() => import('./components/games/GuardiaGame'));
 const Leaderboard = React.lazy(() => import('./components/dashboard/Leaderboard'));
 const TimeTrialExam = React.lazy(() => import('./components/dashboard/TimeTrialExam'));
 const LegalDisclaimer = React.lazy(() => import('./components/common/LegalDisclaimer'));
+const PrivacyPolicy = React.lazy(() => import('./components/common/PrivacyPolicy'));
 const NotFound = React.lazy(() => import('./components/pages/NotFound'));
+const DeleteAccountPage = React.lazy(() => import('./components/pages/DeleteAccountPage'));
+const CertificatePage = React.lazy(() => import('./components/pages/CertificatePage'));
+const VerifyCertificatePage = React.lazy(() => import('./components/pages/VerifyCertificatePage'));
+const ProfilePage = React.lazy(() => import('./components/pages/ProfilePage'));
+const HomePage = React.lazy(() => import('./components/pages/HomePage'));
 const SurpriseExamModal = React.lazy(() => import('./components/common/SurpriseExamModal'));
 const StreakCounter = React.lazy(() => import('./components/common/StreakCounter'));
 const StreakMilestoneCelebration = React.lazy(() => import('./components/common/StreakMilestoneCelebration'));
@@ -86,7 +96,9 @@ try {
 }
 
 const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
+const db = initializeFirestore(app, {
+  localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() })
+});
 const auth = getAuth(app);
 
 
@@ -96,6 +108,7 @@ const playSound = (type) => {
   try {
     if (!audioCtx || audioCtx.state === 'closed') return;
     if (localStorage.getItem('app_muted') === 'true') return;
+    try { if (navigator.vibrate) navigator.vibrate(type === 'error' ? 30 : 10); } catch (e) { }
 
     if (audioCtx.state === 'suspended') {
       audioCtx.resume().catch(() => { });
@@ -142,6 +155,10 @@ const playSound = (type) => {
       o.type = 'sawtooth'; o.frequency.setValueAtTime(440, now); o.frequency.linearRampToValueAtTime(110, now + 0.5);
       g.gain.setValueAtTime(0.1, now); g.gain.linearRampToValueAtTime(0, now + 0.5);
       o.start(now); o.stop(now + 0.5);
+    } else if (type === 'notification') {
+      osc.type = 'sine'; osc.frequency.setValueAtTime(880, now); osc.frequency.setValueAtTime(1100, now + 0.1);
+      gain.gain.setValueAtTime(0.08, now); gain.gain.exponentialRampToValueAtTime(0.01, now + 0.2);
+      osc.start(now); osc.stop(now + 0.2);
     }
   } catch (e) {
     console.warn("Audio error:", e);
@@ -151,50 +168,46 @@ const playSound = (type) => {
 
 // --- APP ENTRY ---
 const App = () => {
-  const [user, setUser] = useState(null);
-  const [isBlocked, setIsBlocked] = useState(false);
-  const [profile, setProfile] = useState(null);
-  const [progress, setProgress] = useState({
-    xp: 0,
-    level: 1,
-    examAttempts: [],
-    inventory: { avatars: ['default'], themes: [], powerups: {}, titles: ['novice'] },
-    activeAvatar: 'default',
-    activeTheme: 'default',
-    activeTitle: 'novice',
-    dailyStats: {
-      date: new Date().toDateString(),
-      modulesCompleted: 0,
-      xpEarned: 0,
-      guardiaPlayed: 0,
-      correctAnswers: 0,
-      glossaryViews: 0
-    },
-    dailyQuests: null,
-    failedQuestions: [],
-    masteredQuestions: []
-  });
-  const progressRef = React.useRef(progress);
+  const { toasts, addToast, removeToast } = useToast(playSound);
 
-  React.useEffect(() => {
-    progressRef.current = progress;
-  }, [progress]);
+  const { user, profile, setProfile, progress, setProgress, progressRef, loading, isBlocked, currentStreak, setCurrentStreak, handleAuth: fbHandleAuth, handleLogout: fbHandleLogout } = useFirebaseAuth(db, auth, firebaseConfig.appId, addToast, confetti);
 
+  const handleAuth = fbHandleAuth;
+  const handleLogout = async () => { await fbHandleLogout(); setView('home'); };
   const [view, setView] = useState('home');
   const [activeModule, setActiveModule] = useState(null);
-  const [loading, setLoading] = useState(true);
   const [showAdminModal, setShowAdminModal] = useState(false);
   const [showDesa, setShowDesa] = useState(false);
   const [muted, setMuted] = useState(false);
-  const [currentXp, setCurrentXp] = useState(0);
-  const [currentLevel, setCurrentLevel] = useState(1);
-  const [showLevelUp, setShowLevelUp] = useState(false);
-  const [darkMode, setDarkMode] = useState(() => localStorage.getItem('app_dark') === 'true');
+  const { darkMode, toggleDarkMode } = useTheme(progress, STORE_ITEMS);
   const [showDailyChallenge, setShowDailyChallenge] = useState(false);
   const [showSignatureModal, setShowSignatureModal] = useState(false);
   const [signature, setSignature] = useState(() => localStorage.getItem('teacher_signature'));
   const [lang, setLang] = useState('es'); // 'es' or 'en'
   const [verificationData, setVerificationData] = useState(null);
+  const [showTutorial, setShowTutorial] = useState(false);
+  const { isOnline, wasOffline } = useOnlineStatus();
+
+  useKeyboard({
+    Escape: () => {
+      const currentView = document.querySelector('[data-view-active]')?.getAttribute('data-view-active') || view;
+      if (showAdminModal) setShowAdminModal(false);
+      else if (showDesa) setShowDesa(false);
+      else if (showDailyChallenge) setShowDailyChallenge(false);
+      else if (showSignatureModal) setShowSignatureModal(false);
+      else if (showTutorial) setShowTutorial(false);
+      else if (view !== 'home' && view !== 'admin') setView('home');
+    }
+  });
+
+  // Auto-show tutorial on first login
+  useEffect(() => {
+    if (user && !localStorage.getItem('tutorial_seen')) {
+      setShowTutorial(true);
+      localStorage.setItem('tutorial_seen', 'true');
+    }
+  }, [user]);
+
   const t = TRANSLATIONS[lang];
   // Data Selection based on Language
   const MODULES = lang === 'es' ? MODULES_ES : MODULES_EN;
@@ -210,9 +223,12 @@ const App = () => {
     const params = new URLSearchParams(window.location.search);
     if (params.get('verify') === 'true') {
       try {
-        const name = decodeURIComponent(escape(atob(params.get('n'))));
-        const date = atob(params.get('d'));
-        setVerificationData({ name, date });
+        const rawName = params.get('n');
+        const rawDate = params.get('d');
+        const hash = params.get('h');
+        const name = rawName ? decodeURIComponent(atob(rawName)) : '';
+        const date = rawDate ? decodeURIComponent(atob(rawDate)) : '';
+        setVerificationData({ name, date, hash });
         setView('verify');
       } catch (e) {
         console.error('Verification decoding error:', e);
@@ -220,31 +236,24 @@ const App = () => {
     }
   }, []);
 
-  const [toasts, setToasts] = useState([]);
-  const [isSaving, setIsSaving] = useState(false);
-  const [examConfig, setExamConfig] = useState({ examSize: 40 }); // Default 40 questions
-  const [randomizedExamQuestions, setRandomizedExamQuestions] = useState(null);
-  const [surpriseExam, setSurpriseExam] = useState(null);
-  const [currentStreak, setCurrentStreak] = useState(0);
+  // Scroll to top + update page title on view change
+  useEffect(() => { window.scrollTo(0, 0); }, [view]);
+  useEffect(() => {
+    const titles = { home: 'Inicio', exam: 'Examen', module: 'Módulo', practice: 'Práctica', profile: 'Perfil', glossary: 'Glosario', leaderboard: 'Clasificación', store: 'Tienda', timeTrial: 'Contrarreloj', admin: 'Panel Admin', certificate: 'Certificado', verify: 'Verificar', deleteAccount: 'Baja' };
+    document.title = `${titles[view] || 'Simulador'} — P.A.S.`;
+  }, [view]);
+
   const [showStreakCelebration, setShowStreakCelebration] = useState(null);
   const [practiceMode, setPracticeMode] = useState('normal'); // 'normal', 'survival', 'errorLab', 'category'
   const [activeCategory, setActiveCategory] = useState(null);
-  const [classAssignments, setClassAssignments] = useState(null);
 
+  const { classAssignments, setClassAssignments } = useClassAssignments(
+    db, firebaseConfig.appId, profile, progress, addToast, playSound
+  );
 
-
-  const addToast = (message, type = 'info') => {
-    const id = Date.now();
-    setToasts(prev => [...prev, { id, message, type }]);
-    // Sound effect for toast
-    if (type === 'success') playSound('success');
-    else if (type === 'error') playSound('error');
-    else playSound('click');
-  };
-
-  const removeToast = (id) => {
-    setToasts(prev => prev.filter(t => t.id !== id));
-  };
+  const { examConfig, setExamConfig, randomizedExamQuestions, setRandomizedExamQuestions, surpriseExam, setSurpriseExam } = useExamSetup(
+    db, firebaseConfig.appId, user, profile, progress, view, EXAM_QUESTIONS
+  );
 
   // Track glossary views
   useEffect(() => {
@@ -255,8 +264,6 @@ const App = () => {
       });
     }
   }, [view]);
-
-
 
   // Combine Daily Scenarios with Exam Questions for variety
   const dailyPool = React.useMemo(() => {
@@ -270,467 +277,44 @@ const App = () => {
     return [...DAILY_SCENARIOS, ...examMapped];
   }, [EXAM_QUESTIONS, DAILY_SCENARIOS]);
 
-  // Theme Selection & Application
-  useEffect(() => {
-    if (darkMode) document.documentElement.classList.add('dark');
-    else document.documentElement.classList.remove('dark');
-    localStorage.setItem('app_dark', darkMode);
-  }, [darkMode]);
-
-  useEffect(() => {
-    const activeThemeId = progress.activeTheme || 'default';
-    const theme = STORE_ITEMS.themes.find(t => t.id === activeThemeId);
-
-    if (theme && theme.colors) {
-      // Set primary and secondary
-      document.documentElement.style.setProperty('--brand-500', theme.colors.primary);
-      document.documentElement.style.setProperty('--brand-600', theme.colors.primary);
-      document.documentElement.style.setProperty('--brand-700', theme.colors.secondary);
-
-      // Also derive a very light version for 50/100 if possible, or just use primary with opacity
-      // For now, let's just ensure the main ones are active
-    } else {
-      // Default Purple Theme (matches original tailwind config defaults)
-      document.documentElement.style.setProperty('--brand-50', '#f5f3ff');
-      document.documentElement.style.setProperty('--brand-500', '#8b5cf6');
-      document.documentElement.style.setProperty('--brand-600', '#7c3aed');
-      document.documentElement.style.setProperty('--brand-700', '#6d28d9');
-    }
-  }, [progress.activeTheme]);
-
-  // Listen for Class Assignments
-  // Listen for Class Assignments
-  useEffect(() => {
-    const clsId = profile?.classId || progress?.classId;
-    if (!clsId) return;
-
-    try {
-      const unsubClass = onSnapshot(doc(db, 'artifacts', firebaseConfig.appId, 'public', 'data', 'classes', clsId), (snap) => {
-        if (snap.exists()) {
-          const clsData = snap.data();
-          setClassAssignments(clsData.activeAssignment || null);
-          if (clsData.activeAssignment && !classAssignments) {
-            addToast("¡Tienes una nueva tarea asignada!", "info");
-            try { playSound('notification'); } catch (e) { }
-          }
-        }
-      }, (err) => console.log("Class sync error", err));
-
-      return () => unsubClass();
-    } catch (e) {
-      console.log("Setup class sync error", e);
-    }
-  }, [profile?.classId, progress?.classId]);
-
-  // Auth & Data
-  // Auth & Data
-  useEffect(() => {
-    // Check if user is already logged in
-    const unsubAuth = onAuthStateChanged(auth, (u) => {
-      if (u) {
-        // Enforce No Anonymous
-        if (u.isAnonymous) {
-          signOut(auth);
-          return;
-        }
-        // Optimistically set user
-        setUser(u);
-        const unsubProfile = onSnapshot(doc(db, 'artifacts', firebaseConfig.appId, 'users', u.uid, 'profile', 'main'), (snap) => {
-          if (snap.exists()) {
-            const profileData = snap.data();
-
-            // Sync to Public Summary for Admin Panel (Fix empty admin panel)
-            setDoc(doc(db, 'artifacts', firebaseConfig.appId, 'public', 'data', 'user_summaries', u.uid), {
-              userId: u.uid,
-              name: profileData.name || u.displayName || 'Estudiante',
-              email: u.email,
-              lastUpdate: new Date().toISOString()
-            }, { merge: true }).catch(err => console.log("Sync warning", err));
-
-            // CHECK BLOCK STATUS
-            if (profileData.blocked) {
-              setIsBlocked(true);
-            } else {
-              setIsBlocked(false);
-            }
-
-            setProfile(profileData);
-          } else {
-            setProfile(null);
-          }
-        });
-        const unsubProgress = onSnapshot(doc(db, 'artifacts', firebaseConfig.appId, 'users', u.uid, 'progress', 'main'), (snap) => {
-          if (snap.exists()) {
-            const data = snap.data();
-            setProgress(data);
-            setCurrentXp(data.xp || 0);
-            setCurrentLevel(data.level || 1);
-            setCurrentStreak(data.currentStreak || 0); // Load streak
-
-            // Check Streak (Once per day)
-            const today = new Date().toISOString().slice(0, 10);
-            if (data.lastLoginDate !== today) {
-              const yesterday = new Date();
-              yesterday.setDate(yesterday.getDate() - 1);
-              const yesterdayStr = yesterday.toISOString().slice(0, 10);
-
-              let newStreak = 1;
-              let streakSaved = false;
-              let updates = { lastLoginDate: today };
-
-              if (data.lastLoginDate === yesterdayStr) {
-                newStreak = (data.streak || 0) + 1;
-              } else {
-                // Streak Broken? Check for Freeze
-                const freezeCount = data.inventory?.powerups?.streak_freeze || 0;
-                if ((data.streak || 0) > 0 && freezeCount > 0) {
-                  newStreak = (data.streak || 0);
-                  streakSaved = true;
-                  updates['inventory.powerups.streak_freeze'] = freezeCount - 1;
-                }
-              }
-
-              // Weekly XP Reset Logic (If Monday)
-              const todayDate = new Date();
-              const lastDate = data.lastLoginDate ? new Date(data.lastLoginDate) : new Date(0);
-              // Simply check if it's Monday AND we haven't logged in today yet (which we haven't, inside this if)
-              // Or better: check if the Week Number has changed. 
-              // Simple approach: If today is Monday.
-              if (todayDate.getDay() === 1) {
-                // Reset Weekly XP
-                updates.weeklyXP = 0;
-                if (data.weeklyXP > 0) updates.lastWeekXP = data.weeklyXP;
-                updates.weeklyStats = null;
-                updates.weeklyQuests = null;
-              }
-
-              updates.streak = newStreak;
-
-              // Check Badges
-              const currentBadges = data.badges || [];
-              const newBadges = [...currentBadges];
-              if (newStreak >= 3 && !newBadges.includes('streak_3')) {
-                newBadges.push('streak_3');
-                addToast(t?.badges?.unlocked || "¡Insignia Desbloqueada!", 'success');
-                confetti();
-              }
-              if (newStreak >= 7 && !newBadges.includes('streak_7')) {
-                newBadges.push('streak_7');
-                addToast(t?.badges?.unlocked || "¡Insignia Desbloqueada!", 'success');
-                confetti();
-              }
-              updates.badges = newBadges;
-
-              setDoc(doc(db, 'artifacts', firebaseConfig.appId, 'users', u.uid, 'progress', 'main'), updates, { merge: true });
-
-              if (streakSaved) {
-                addToast(t?.store?.streakFrozen || "¡Racha salvada por el Hielo!", 'info');
-              }
-            }
-
-          } else {
-            setProgress({});
-          }
-          setLoading(false);
-        });
-        return () => { unsubProfile(); unsubProgress(); };
-      } else {
-        setUser(null);
-        setProfile(null);
-        setProgress({});
-        setLoading(false);
-      }
-    });
-    return () => unsubAuth();
-  }, []);
-
-  // Load Exam Configuration
-  useEffect(() => {
-    const loadExamConfig = async () => {
-      try {
-        const configDoc = await getDoc(doc(db, 'artifacts', firebaseConfig.appId, 'public', 'config'));
-        if (configDoc.exists()) {
-          const config = configDoc.data();
-          setExamConfig({
-            examSize: config.examSize || 40,
-            passingScore: config.passingScore || 7
-          });
-        }
-      } catch (e) {
-        console.error('Error loading exam config:', e);
-      }
-    };
-    loadExamConfig();
-  }, []);
-
-  // Generate random questions when view changes to exam
-  useEffect(() => {
-    if (view === 'exam' && EXAM_QUESTIONS && profile) {
-      // Determine exam size based on user role
-      const roleBasedSize = getExamSizeForRole(profile.role);
-      const finalExamSize = examConfig.examSize || roleBasedSize;
-
-      const randomQuestions = selectRandomQuestions(EXAM_QUESTIONS, finalExamSize);
-      setRandomizedExamQuestions(randomQuestions);
-    }
-  }, [view, examConfig.examSize, profile]);
-
-  // Listen for Surprise Exam activation
-  useEffect(() => {
-    if (!user) return;
-
-    const unsubscribe = onSnapshot(
-      doc(db, 'artifacts', firebaseConfig.appId, 'public', 'active_surprise_exam'),
-      (snap) => {
-        if (snap.exists() && snap.data().active) {
-          setSurpriseExam(snap.data());
-        } else {
-          setSurpriseExam(null);
-        }
-      }
-    );
-    return () => unsubscribe();
-  }, [user]);
-
-  // Auto-dismiss Surprise Exam if already completed (prevents reload re-trigger)
-  useEffect(() => {
-    if (surpriseExam && progress?.examAttempts) {
-      const alreadyDone = Array.isArray(progress.examAttempts) &&
-        progress.examAttempts.some(att => att.type === 'surprise' && new Date(att.date) >= new Date(surpriseExam.startedAt));
-      if (alreadyDone) setSurpriseExam(null);
-    }
-  }, [surpriseExam, progress?.examAttempts]);
+  // useClassAssignments and useExamSetup provide their own effects internally
 
   const toggleMute = () => {
     setMuted(!muted);
     localStorage.setItem('app_muted', !muted);
   };
 
-  const toggleDarkMode = () => setDarkMode(!darkMode);
+  const { updateProgress, isSaving, setIsSaving, currentXp, currentLevel, showLevelUp } = useXPProgression(
+    db, firebaseConfig.appId, user, profile, progressRef, setProgress, progress,
+    LEVELS, XP_REWARDS, addToast, playSound, confetti, t
+  );
 
-  const handleAuth = async (formData, isRegister) => {
-    if (isRegister) {
-      // Register
-      const userCredential = await createUserWithEmailAndPassword(auth, formData.email, formData.password);
-      const u = userCredential.user;
-      const data = { name: formData.name, role: formData.role, email: formData.email };
+  const { handleSelectAvatar, handleJoinClass, handleAccountDeletion } = useSchoolActions(
+    db, firebaseConfig.appId, user, setProfile, setProgress, addToast, playSound, confetti, setIsSaving
+  );
 
-      // Create Profile
-      await setDoc(doc(db, 'artifacts', firebaseConfig.appId, 'users', u.uid, 'profile', 'main'), data);
+  const { handleExamAnswer, handleExamComplete, handleSurpriseExamComplete } = useExamCompletion(
+    progress, updateProgress, addToast, playSound, confetti, t, XP_REWARDS, setShowStreakCelebration, setCurrentStreak
+  );
 
-      // Init Progress
-      const initProgress = { xp: 0, level: 1 };
-      await setDoc(doc(db, 'artifacts', firebaseConfig.appId, 'users', u.uid, 'progress', 'main'), initProgress, { merge: true });
+  const { handlePracticeAnswer } = usePracticeSession(
+    progress, updateProgress, practiceMode, addToast, confetti
+  );
 
-      // Create Public Summary
-      await setDoc(doc(db, 'artifacts', firebaseConfig.appId, 'public', 'data', 'user_summaries', u.uid), { userId: u.uid, ...data, lastUpdate: new Date().toISOString(), progress: initProgress });
+  const { handleStorePurchase, handleBuyAvatar } = useStore(
+    progress, updateProgress, addToast, playSound, lang
+  );
 
-    } else {
-      // Login
-      await signInWithEmailAndPassword(auth, formData.email, formData.password);
-    }
-  };
+  const { handleClaimQuestReward } = useQuests(
+    updateProgress, addToast, confetti, playSound
+  );
 
-  const handleLogout = async () => {
-    await signOut(auth);
-    setView('home');
-  };
-
-  const updateProgress = async (keyOrChanges, val, multiplier = 1) => {
-    setIsSaving(true);
-    try {
-      const changes = typeof keyOrChanges === 'object' ? keyOrChanges : { [keyOrChanges]: val };
-
-      // Calculate everything based on the LATEST progress Ref to avoid race conditions
-      let updated = { ...progressRef.current };
-
-      Object.entries(changes).forEach(([key, value]) => {
-        // XP Gain Logic
-        let xpGain = 0;
-        if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
-          // Skip objects for XP gain calculation unless they are specific handled objects
-        } else if (key === 'examenCompleted' && value === true) {
-          xpGain = XP_REWARDS.EXAM_PASS;
-        } else if (key.endsWith('Completed') && value === true && !updated[key]) {
-          xpGain = XP_REWARDS.MODULE_COMPLETE;
-        } else if (key === 'xp') {
-          // If total XP is passed, calculate gain relative to the LATEST state to partial-fix race conditions
-          xpGain = (value - (updated.xp || 0)) / multiplier;
-        } else if (key === 'xpGain' || key === 'additionalXp' || key === 'practiceXpGain' || key === 'surpriseExamXP' || key === 'guardiaXp') {
-          // Explicit relative gains
-          xpGain = value;
-        }
-
-        const currentXp = updated.xp || 0;
-        const currentLifetimeXp = updated.lifetimeXp !== undefined ? updated.lifetimeXp : currentXp;
-        const currentWeeklyXP = updated.weeklyXP || 0;
-
-        let newXp = currentXp + (xpGain * multiplier);
-        let newLifetimeXp = currentLifetimeXp;
-        let newWeeklyXP = currentWeeklyXP;
-
-        // Only positive gains contribute to Lifetime XP (Rank)
-        if (xpGain > 0) {
-          newLifetimeXp += (xpGain * multiplier);
-          newWeeklyXP += (xpGain * multiplier);
-        }
-
-        let newLevel = updated.level || 1;
-        const nextLevelConfig = LEVELS.find(l => l.level === newLevel + 1);
-
-        if (nextLevelConfig && newLifetimeXp >= nextLevelConfig.minXp) {
-          newLevel++;
-          setShowLevelUp(true);
-          playSound('levelup');
-          addToast(t?.toasts?.levelUp || `¡Nivel ${newLevel} Desbloqueado!`, 'success');
-          confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 }, colors: ['#FFD700', '#FFA500', '#EF4444'], zIndex: 9999 });
-          setTimeout(() => setShowLevelUp(false), 4000);
-        }
-
-        updated = { ...updated, xp: newXp, lifetimeXp: newLifetimeXp, weeklyXP: newWeeklyXP, level: newLevel };
-
-        // Track XP gain in daily and weekly stats
-        if (xpGain > 0 || changes.dailyStats) {
-          const today = new Date().toDateString();
-          const currentStats = updated.dailyStats || {};
-          const currentWeeklyStats = updated.weeklyStats || {};
-
-          // Daily Logic
-          let newDailyStats = { ...currentStats };
-          if (currentStats.date !== today) {
-            newDailyStats = {
-              date: today,
-              modulesCompleted: 0,
-              xpEarned: 0,
-              guardiaPlayed: 0,
-              correctAnswers: 0,
-              glossaryViews: 0
-            };
-          }
-          const finalGain = (xpGain > 0 ? xpGain * multiplier : 0);
-          newDailyStats.xpEarned = (newDailyStats.xpEarned || 0) + finalGain;
-
-          // Weekly Logic
-          let newWeeklyStats = { ...currentWeeklyStats };
-          newWeeklyStats.xpEarned = (newWeeklyStats.xpEarned || 0) + finalGain;
-
-          updated.dailyStats = newDailyStats;
-          updated.weeklyStats = newWeeklyStats;
-        }
-
-        // Handle nested keys
-        if (typeof key === 'string' && key.includes('.')) {
-          const parts = key.split('.');
-          let currentObj = updated;
-          for (let i = 0; i < parts.length - 1; i++) {
-            currentObj[parts[i]] = currentObj[parts[i]] ? { ...currentObj[parts[i]] } : {};
-            currentObj = currentObj[parts[i]];
-          }
-          currentObj[parts[parts.length - 1]] = value;
-        } else {
-          updated[key] = value;
-        }
-      });
-
-      // Update state
-      setProgress(updated);
-      setCurrentXp(updated.xp);
-      setCurrentLevel(updated.level);
-
-      // Persist
-      await setDoc(doc(db, 'artifacts', firebaseConfig.appId, 'users', user.uid, 'progress', 'main'), updated, { merge: true });
-      // Sync to Public Summary for Admin Panel
-      const summaryRef = doc(db, 'artifacts', firebaseConfig.appId, 'public', 'data', 'user_summaries', user.uid);
-      await setDoc(summaryRef, {
-        progress: updated,
-        lastUpdate: new Date().toISOString(),
-        name: profile?.name || user.displayName || 'Estudiante',
-        email: user.email
-      }, { merge: true });
-
-    } catch (error) {
-      console.error("Error updating progress:", error);
-      addToast('Error saving progress', 'error');
-    } finally {
-      setIsSaving(false);
-    }
-  };
-
-  const handleStorePurchase = async (category, item) => {
-    if (currentXp < item.price) {
-      addToast(lang === 'en' ? 'Not enough XP!' : '¡No tienes suficiente XP!', 'error');
-      return;
-    }
-
-    try {
-      const updates = {
-        xpGain: -item.price
-      };
-
-      if (category === 'avatars') {
-        const currentAvatars = progress.inventory?.avatars || ['default'];
-        if (!currentAvatars.includes(item.id)) {
-          updates['inventory.avatars'] = [...currentAvatars, item.id];
-        } else {
-          addToast(lang === 'en' ? 'Already owned!' : '¡Ya tienes este objeto!', 'info');
-          return;
-        }
-      } else if (category === 'themes') {
-        const currentThemes = progress.inventory?.themes || [];
-        if (!currentThemes.includes(item.id)) {
-          updates['inventory.themes'] = [...currentThemes, item.id];
-        } else {
-          addToast(lang === 'en' ? 'Already owned!' : '¡Ya tienes este objeto!', 'info');
-          return;
-        }
-      } else if (category === 'titles') {
-        const currentTitles = progress.inventory?.titles || ['novice'];
-        if (!currentTitles.includes(item.id)) {
-          updates['inventory.titles'] = [...currentTitles, item.id];
-        } else {
-          addToast(lang === 'en' ? 'Already owned!' : '¡Ya tienes este título!', 'info');
-          return;
-        }
-      } else if (category === 'powerups') {
-        const currentCount = progress.inventory?.powerups?.[item.id] || 0;
-        updates[`inventory.powerups.${item.id}`] = currentCount + 1;
-      }
-
-      await updateProgress(updates);
-      addToast(lang === 'en' ? 'Purchase successful!' : '¡Compra realizada con éxito!', 'success');
-      playSound('success');
-    } catch (e) {
-      console.error('Purchase error:', e);
-      addToast(lang === 'en' ? 'Purchase failed' : 'Error en la compra', 'error');
-    }
-  };
+  const updateDailyStats = useCallback((key, value) => {
+    updateProgress(`dailyStats.${key}`, value);
+  }, [updateProgress]);
 
   // Daily & Weekly Quests Handler
-  const handleClaimQuestReward = async (totalReward, type = 'daily') => {
-    try {
-      const bonusReward = type === 'weekly' ? 100 : 50; // Higher bonus for weekly
-      const finalReward = totalReward + bonusReward;
-
-      const updates = {
-        xpGain: finalReward
-      };
-
-      if (type === 'weekly') {
-        updates['weeklyQuests.claimed'] = true;
-        addToast(`¡Misiones Semanales completadas! +${finalReward} XP`, 'success');
-      } else {
-        updates['dailyQuests.claimed'] = true;
-        addToast(`¡Misiones Diarias completadas! +${finalReward} XP`, 'success');
-      }
-
-      await updateProgress(updates);
-      confetti();
-      playSound('success');
-    } catch (e) {
-      console.error('Quest reward error:', e);
-      addToast('Error al reclamar recompensa', 'error');
-    }
-  };
+  // handleClaimQuestReward provided by useQuests
 
   const handleDesaComplete = () => {
     updateProgress({
@@ -747,7 +331,7 @@ const App = () => {
       return;
     }
 
-    generateDiplomaPDF(profile.name, new Date().toLocaleDateString(), t, signature);
+    generateDiplomaPDF(profile?.name || 'Estudiante', new Date().toLocaleDateString(), t, signature);
     updateProgress({
       certificadoCompleted: true,
       xpGain: 50
@@ -760,7 +344,7 @@ const App = () => {
     localStorage.setItem('teacher_signature', sigData);
     setShowSignatureModal(false);
     // After saving, trigger download automatically
-    generateDiplomaPDF(profile.name, new Date().toLocaleDateString(), t, sigData);
+    generateDiplomaPDF(profile?.name || 'Estudiante', new Date().toLocaleDateString(), t, sigData);
     updateProgress({
       certificadoCompleted: true,
       xpGain: 50
@@ -769,77 +353,26 @@ const App = () => {
   };
 
 
-  // Backward compatibility wrapper for old avatar component
-  const handleBuyAvatar = (avatar) => {
-    handleStorePurchase('avatars', avatar);
-  };
+  // handleSelectAvatar, handleAccountDeletion, handleJoinClass provided by useSchoolActions
+  // handleStorePurchase, handleBuyAvatar provided by useStore
 
-  const handleSelectAvatar = async (avatarId) => {
-    setIsSaving(true);
-    try {
-      setProfile(prev => ({ ...prev, avatarId }));
-      await updateDoc(doc(db, 'artifacts', firebaseConfig.appId, 'users', user.uid, 'profile', 'main'), { avatarId });
-      await updateDoc(doc(db, 'artifacts', firebaseConfig.appId, 'public', 'data', 'user_summaries', user.uid), { avatarId });
-    } finally {
-      setIsSaving(false);
-    }
-  };
-
-  const handleJoinClass = async (code) => {
-    try {
-      setIsSaving(true);
-      // Find class by code
-      const classQuery = query(collection(db, 'artifacts', firebaseConfig.appId, 'public', 'data', 'classes'), where('code', '==', code));
-      const snap = await getDocs(classQuery);
-
-      if (snap.empty) {
-        addToast("Código de clase inválido", "error");
-        return false;
-      }
-
-      const classDoc = snap.docs[0];
-      const classData = classDoc.data();
-
-      // Update User Progress
-      const newRole = classData.name; // Use class name as role for filtering
-
-      // Update local progress/profile immediately for UI
-      setProfile(prev => ({ ...prev, role: newRole, classId: classDoc.id }));
-      setProgress(prev => ({ ...prev, role: newRole, classId: classDoc.id, className: classData.name }));
-
-      // Persist updates
-      // 1. User Profile
-      await updateDoc(doc(db, 'artifacts', firebaseConfig.appId, 'users', user.uid, 'profile', 'main'), {
-        role: newRole,
-        classId: classDoc.id
-      });
-
-      // 2. User Summary (for Leaderboard)
-      await updateDoc(doc(db, 'artifacts', firebaseConfig.appId, 'public', 'data', 'user_summaries', user.uid), {
-        role: newRole,
-        classId: classDoc.id
-      });
-
-      // 3. Increment Class Count
-      await updateDoc(doc(db, 'artifacts', firebaseConfig.appId, 'public', 'data', 'classes', classDoc.id), {
-        studentCount: increment(1)
-      });
-
-      addToast(`¡Te has unido a: ${classData.name}!`, "success");
-      playSound('success');
-      confetti();
-      return true;
-    } catch (e) {
-      console.error(e);
-      addToast("Error al unirse a la clase", "error");
-      return false;
-    } finally {
-      setIsSaving(false);
-    }
-  };
+  // --- SECURITY & ACCESS LOGIC ---
+  const allModulesDone = MODULES.map(m => m.id).filter(id => id !== 'examen' && id !== 'desa' && id !== 'glosario' && id !== 'certificado' && id !== 'timeTrial' && !id.startsWith('sim_')).every(id => progress && progress[`${id}Completed`]);
+  const examPassed = progress && progress.examenPassed;
 
   const handleModuleClick = (mod) => {
     try { playSound('click'); } catch (e) { }
+
+    // Security Checks
+    if (mod.type === 'exam' && !allModulesDone) {
+      addToast(t?.errors?.modulesIncomplete || "Debes completar todos los módulos teóricos primero.", "error");
+      return;
+    }
+    if ((mod.type === 'certificate' || mod.type === 'desa') && !examPassed) {
+      addToast(t?.errors?.examNotPassed || "Debes aprobar el examen final primero.", "error");
+      return;
+    }
+
     if (mod.type === 'desa') setShowDesa(true);
     else if (mod.type === 'exam') setView('exam');
     else if (mod.type === 'glossary') setView('glossary');
@@ -847,6 +380,11 @@ const App = () => {
     else if (mod.type === 'timeTrial') setView('timeTrial');
     else if (mod.type === 'roleplay') { setActiveModule(mod); setView('roleplay'); }
     else { setActiveModule(mod); setView('module'); }
+  };
+
+  const handleAdminAuth = () => {
+    setShowAdminModal(false);
+    setView('admin');
   };
 
 
@@ -869,7 +407,12 @@ const App = () => {
     </Layout>
   );
 
-  if (!user) return <UserEntryForm onSubmit={handleAuth} playSound={playSound} />;
+  if (!user && view !== 'admin') return (
+    <>
+      <AdminPinModal isOpen={showAdminModal} onClose={() => setShowAdminModal(false)} onSuccess={handleAdminAuth} t={t} />
+      <UserEntryForm onSubmit={handleAuth} playSound={playSound} onAdminClick={() => setShowAdminModal(true)} t={t} />
+    </>
+  );
 
   if (user && isBlocked) {
     return (
@@ -904,9 +447,9 @@ const App = () => {
     );
   }
 
-  // Logic for locking modules
-  const allModulesDone = MODULES.map(m => m.id).filter(id => id !== 'examen' && id !== 'desa' && id !== 'glosario' && id !== 'certificado' && id !== 'timeTrial' && !id.startsWith('sim_')).every(id => progress[`${id}Completed`]);
-  const examPassed = progress.examenPassed;
+  // Logic for locking modules - MOVED UP
+  // const allModulesDone = ... 
+  // const examPassed = ...
 
   // Compute Avatar Icon
   const activeAvatarId = progress.activeAvatar || 'default';
@@ -935,6 +478,8 @@ const App = () => {
         isSaving={isSaving}
         classAssignments={classAssignments}
       >
+        <OfflineBanner isOnline={isOnline} wasOffline={wasOffline} />
+        <HelpTutorial isOpen={showTutorial} onClose={() => setShowTutorial(false)} t={t} />
         <ToastContainer toasts={toasts} removeToast={removeToast} />
         <Suspense fallback={<DashboardSkeleton />}>
           <LegalDisclaimer t={t} />
@@ -956,260 +501,39 @@ const App = () => {
 
           {/* VIEW ROUTER */}
           {view === 'home' && (
-            <div className="space-y-8 pb-20">
-              {/* Dashboard Header / Hero */}
-
-              {/* MOBILE USER HEADER */}
-              <div className="md:hidden w-full bg-white dark:bg-slate-800 p-4 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-700 mb-6 flex items-center justify-between animate-in slide-in-from-top-2">
-                <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 bg-brand-100 dark:bg-brand-900/50 rounded-full flex items-center justify-center text-2xl border-2 border-white dark:border-slate-600 shadow-sm">
-                    {profile?.activeAvatarIcon || '👤'}
-                  </div>
-                  <div>
-                    <h2 className="font-black text-slate-800 dark:text-white text-lg leading-tight">{profile?.name || 'Agente'}</h2>
-                    <div className="flex items-center gap-2 text-xs font-bold text-slate-500 dark:text-slate-400">
-                      <span className="bg-slate-100 dark:bg-slate-700 px-2 py-0.5 rounded-md">Lvl {currentLevel}</span>
-                      <span className="text-brand-600 dark:text-brand-400">{currentXp} XP</span>
-                    </div>
-                  </div>
-                </div>
-                <div className="bg-brand-50 dark:bg-brand-900/30 p-2 rounded-xl text-brand-600 dark:text-brand-400" onClick={() => setView('profile')}>
-                  <UserCheck size={20} />
-                </div>
-              </div>
-
-              <div className="flex flex-col md:flex-row items-end justify-between gap-4 mb-6 animate-in slide-in-from-top-4">
-                <div>
-                  <h1 className="text-3xl md:text-4xl font-black text-slate-900 dark:text-white mb-2">
-                    {t?.home?.welcome || "Tu Entrenamiento"}
-                  </h1>
-                  <p className="text-slate-500 dark:text-slate-400 font-medium max-w-xl">
-                    {t?.home?.subtitle || "Completa todos los módulos teóricos para desbloquear el examen final y obtener tu certificado."}
-                  </p>
-                </div>
-
-                <button
-                  onClick={() => {
-                    generateCheatSheet();
-                    playSound('success');
-                  }}
-
-
-                  className="flex items-center gap-2 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 px-4 py-3 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 hover:border-brand-300 hover:text-brand-600 dark:hover:text-brand-400 font-bold transition-all text-sm mb-2 md:mb-0"
-                >
-                  <FileText size={18} />
-                  <span className="hidden md:inline">{t?.home?.cheatSheet || "Ficha Resumen"}</span>
-                  <span className="md:hidden">PDF</span>
-                  <Download size={14} className="opacity-50" />
-                </button>
-
-
-
-
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => setView('shop')}
-                    className="flex flex-col items-center justify-center w-16 h-16 bg-white dark:bg-slate-800 rounded-2xl border-2 border-slate-100 dark:border-slate-700 shadow-sm hover:border-yellow-400 hover:scale-105 transition-all group"
-                    title={t?.home?.shop}
-                  >
-                    <div className="bg-yellow-100 dark:bg-yellow-900/30 text-yellow-600 dark:text-yellow-400 p-2 rounded-lg mb-1 group-hover:bg-yellow-400 group-hover:text-yellow-900 transition-colors">
-                      <ShoppingBag size={20} className="stroke-[3]" />
-                    </div>
-                    <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase">{t?.home?.shop}</span>
-                  </button>
-                  <button
-                    onClick={() => setView('profile')}
-                    className="flex flex-col items-center justify-center w-16 h-16 bg-white dark:bg-slate-800 rounded-2xl border-2 border-slate-100 dark:border-slate-700 shadow-sm hover:border-orange-400 hover:scale-105 transition-all group"
-                    title={t?.profile?.backpack_btn || "Mochila"}
-                  >
-                    <div className="bg-orange-50 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400 p-2 rounded-lg mb-1 group-hover:bg-orange-500 group-hover:text-white transition-colors">
-                      <User size={20} className="stroke-[3]" />
-                    </div>
-                    <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase">P.A.S.</span>
-                  </button>
-                  <button
-                    onClick={() => setView('leaderboard')}
-                    className="flex flex-col items-center justify-center w-16 h-16 bg-white dark:bg-slate-800 rounded-2xl border-2 border-slate-100 dark:border-slate-700 shadow-sm hover:border-brand-400 hover:scale-105 transition-all group"
-                    title={t?.home?.rank}
-                  >
-                    <div className="bg-brand-50 dark:bg-brand-900/30 text-brand-600 dark:text-brand-400 p-2 rounded-lg mb-1 group-hover:bg-brand-500 group-hover:text-white transition-colors">
-                      <Trophy size={20} className="stroke-[3]" />
-                    </div>
-                    <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase">Rank</span>
-                  </button>
-                </div>
-
-              </div>
-
-              {/* Daily Challenge Card */}
-              {(() => {
-                const today = new Date().toDateString();
-                const lastPlayed = progress.lastDailyChallenge ? new Date(progress.lastDailyChallenge).toDateString() : null;
-                const canPlay = today !== lastPlayed;
-
-                return (
-                  <div className="bg-gradient-to-r from-violet-600 to-indigo-600 rounded-3xl p-1 shadow-lg shadow-indigo-200 mt-4 mb-8">
-                    <div className="bg-white/10 backdrop-blur-sm rounded-[22px] p-6 sm:p-8 flex flex-col md:flex-row items-center justify-between gap-6">
-                      <div className="flex-1 text-white">
-                        <div className="flex items-center gap-2 text-indigo-200 font-bold uppercase tracking-wider text-xs mb-2">
-                          <Sparkles size={16} className="text-yellow-300" /> {t?.home?.dailyChallenge?.new}
-                        </div>
-                        <h2 className="text-3xl font-black mb-2">{t?.home?.dailyChallenge?.title}</h2>
-                        <p className="text-indigo-100 font-medium">{t?.home?.dailyChallenge?.desc}</p>
-                      </div>
-                      {canPlay ? (
-                        <button
-                          onClick={() => setShowDailyChallenge(true)}
-                          className="bg-white text-indigo-600 font-black py-3 px-8 rounded-xl shadow-xl hover:scale-105 active:scale-95 transition-all flex items-center gap-2"
-                        >
-                          <Play fill="currentColor" size={20} /> {t?.home?.dailyChallenge?.play}
-                        </button>
-                      ) : (
-                        <button disabled className="bg-indigo-800/50 text-indigo-300 font-bold py-3 px-8 rounded-xl cursor-not-allowed flex items-center gap-2">
-                          <CheckCircle2 size={20} /> {t?.home?.dailyChallenge?.completed}
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                );
-              })()}
-
-              {/* Daily Quests Panel */}
-              <DailyQuestsPanel
-                progress={progress}
-                dailyStats={progress.dailyStats}
-                onClaimReward={handleClaimQuestReward}
-                t={t}
-                lang={lang}
-              />
-
-              {/* Practice Mode Card */}
-              <div
-                onClick={() => setView('practice')}
-                className="group relative bg-white dark:bg-slate-800 border-2 border-brand-100 dark:border-slate-700 rounded-3xl p-6 md:p-8 shadow-md hover:shadow-xl hover:border-brand-500 transition-all cursor-pointer overflow-hidden mt-6 mb-8"
-              >
-                <div className="absolute top-0 right-0 p-12 bg-brand-50 rounded-full -mr-6 -mt-6 group-hover:bg-brand-100 transition-colors"></div>
-                <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-6">
-                  <div className="flex-1 text-center md:text-left">
-                    <div className="inline-flex items-center gap-2 px-3 py-1 bg-brand-100 text-brand-700 rounded-full text-xs font-black uppercase tracking-widest mb-4">
-                      <Zap size={14} /> Entrena tu mente
-                    </div>
-                    <h2 className="text-3xl font-black text-slate-800 dark:text-white mb-2">Modo Práctica</h2>
-                    <p className="text-slate-600 dark:text-slate-400 font-medium max-w-lg">
-                      Practica con cientos de preguntas reales de primeros auxilios. Gana XP por cada respuesta correcta y completa tus misiones diarias.
-                    </p>
-                  </div>
-                  <div className="bg-brand-600 text-white p-6 rounded-2xl shadow-lg group-hover:scale-110 transition-transform">
-                    <FileText size={40} />
-                  </div>
-                </div>
-              </div>
-
-              {/* Daily Challenge Modal */}
-              {showDailyChallenge && (
-                <DailyChallenge
-                  scenarios={dailyPool}
-                  t={t}
-                  onComplete={(success) => {
-                    setShowDailyChallenge(false);
-                    const updates = {
-                      lastDailyChallenge: new Date().toISOString()
-                    };
-
-                    if (success) {
-                      updates.xpGain = 50;
-                      addToast(t?.toasts?.dailySuccess || "¡Desafío completado! +50 XP", 'success');
-                    }
-
-                    updateProgress(updates);
-                  }}
-                  onClose={() => setShowDailyChallenge(false)}
-                  playSound={playSound}
-                />
-              )}
-
-              {/* Hero Banner for Guardia Mode */}
-              {currentLevel >= 3 ? (
-                <div className="bg-slate-900 text-white rounded-3xl shadow-xl overflow-hidden relative group cursor-pointer border-2 border-slate-700 hover:border-red-500 transition-colors" onClick={() => setView('guardia')}>
-                  <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-30"></div>
-                  <div className="absolute top-0 right-0 p-32 bg-red-600 rounded-full blur-[100px] opacity-20 group-hover:opacity-40 transition-opacity"></div>
-
-                  <div className="relative p-8 md:p-10 flex flex-col md:flex-row justify-between items-center gap-6">
-                    <div className="flex-1">
-                      <div className="inline-flex items-center gap-2 bg-red-500/20 text-red-400 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider mb-3 border border-red-500/30">
-                        <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse"></span> Acceso Restringido
-                      </div>
-                      <h2 className="text-3xl md:text-5xl font-black mb-2 italic tracking-tighter">
-                        MODO GUARDIA
-                      </h2>
-                      <p className="text-slate-400 text-lg font-medium max-w-lg">
-                        Pon a prueba tus reflejos en situaciones de emergencia real. Contrarreloj.
-                      </p>
-                    </div>
-                    <button className="bg-red-600 hover:bg-red-500 text-white font-bold py-4 px-8 rounded-2xl shadow-lg shadow-red-900/50 transform group-hover:scale-105 transition-all flex items-center gap-3 text-lg">
-                      <Play fill="currentColor" /> INICIAR TURNO
-                    </button>
-                  </div>
-                </div>
-              ) : (
-                <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm flex items-center gap-6">
-                  <div className="w-16 h-16 rounded-2xl bg-slate-100 dark:bg-slate-900 flex items-center justify-center text-slate-400">
-                    <AlertTriangle size={32} />
-                  </div>
-                  <div>
-                    <h3 className="font-bold text-slate-800 dark:text-white text-lg">Modo Guardia Bloqueado</h3>
-                    <p className="text-slate-500 dark:text-slate-400 text-sm">Alcanza el <span className="font-bold text-brand-600 dark:text-brand-400">Nivel 3 ({LEVELS[2].name})</span> para desbloquear el simulador de guardia.</p>
-                    <div className="w-full bg-slate-100 dark:bg-slate-900 h-2 rounded-full mt-3 overflow-hidden">
-                      <div className="h-full bg-slate-300 dark:bg-slate-600" style={{ width: `${(currentXp / 400) * 100}%` }}></div>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Module Grid */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-                {MODULES.map(m => {
-                  let isLocked = false;
-                  if (m.type === 'exam') isLocked = !allModulesDone;
-                  else if (m.type === 'certificate' || m.type === 'desa') isLocked = !examPassed;
-
-                  return (
-                    <ModuleCard
-                      key={m.id}
-                      module={m}
-                      progress={progress}
-                      onClick={() => handleModuleClick(m)}
-                      isLocked={isLocked}
-                      t={t}
-                      isRecommended={classAssignments?.moduleId === m.id}
-                    />
-                  );
-                })}
-              </div>
-            </div>
-          )
-          }
+            <HomePage
+              profile={profile}
+              currentLevel={currentLevel}
+              currentXp={currentXp}
+              progress={progress}
+              activeAvatarIcon={activeAvatarIcon}
+              showDailyChallenge={showDailyChallenge}
+              dailyPool={dailyPool}
+              classAssignments={classAssignments}
+              lang={lang}
+              t={t}
+              allModulesDone={allModulesDone}
+              examPassed={examPassed}
+              MODULES={MODULES}
+              LEVELS={LEVELS}
+              setView={setView}
+              handleModuleClick={handleModuleClick}
+              updateProgress={updateProgress}
+              playSound={playSound}
+              generateCheatSheet={generateCheatSheet}
+              addToast={addToast}
+              setShowDailyChallenge={setShowDailyChallenge}
+              handleClaimQuestReward={handleClaimQuestReward}
+            />
+          )}
 
           {
             view === 'deleteAccount' && (
-              <div className="flex flex-col items-center justify-center min-h-[60vh] text-center p-6 animate-in fade-in zoom-in">
-                <div className="bg-red-50 p-6 rounded-full mb-6 text-red-600 animate-pulse border-4 border-red-100">
-                  <AlertTriangle size={64} />
-                </div>
-                <h2 className="text-4xl font-black text-slate-800 mb-4 tracking-tight">¿Estás seguro?</h2>
-                <p className="text-slate-500 max-w-lg mb-8 text-lg font-medium leading-relaxed">
-                  Esta acción es <strong>irreversible</strong>. Borraremos todo tu progreso, nivel, medallas y certificados obtenidos.
-                </p>
-                <div className="flex flex-col sm:flex-row gap-4 w-full max-w-md">
-                  <button onClick={handleAccountDeletion} className="flex-1 bg-red-600 hover:bg-red-700 text-white font-bold py-4 px-8 rounded-2xl shadow-xl shadow-red-200 transition-all flex items-center justify-center gap-2">
-                    <XCircle size={20} />
-                    Sí, Borrar Todo
-                  </button>
-                  <button onClick={() => setView('home')} className="flex-1 bg-white hover:bg-slate-50 text-slate-700 border-2 border-slate-200 font-bold py-4 px-8 rounded-2xl transition-all flex items-center justify-center gap-2">
-                    Cancelar
-                  </button>
-                </div>
-              </div>
+              <DeleteAccountPage
+                onDelete={async () => { await handleAccountDeletion(); setView('home'); }}
+                onBack={() => setView('home')}
+                t={t}
+              />
             )
           }
 
@@ -1217,6 +541,7 @@ const App = () => {
             view === 'module' && activeModule && (
               <LearningModule
                 module={activeModule}
+                questions={EXAM_QUESTIONS.filter(q => q.category === activeModule.id)}
                 t={t}
                 onComplete={() => {
                   updateProgress({
@@ -1271,113 +596,10 @@ const App = () => {
                     }
                   }
                 }}
-                onAnswer={(isCorrect) => {
-                  const { newStreak, milestone } = updateStreak(currentStreak, isCorrect);
-                  setCurrentStreak(newStreak);
-
-                  const updates = {
-                    currentStreak: newStreak,
-                    'dailyStats.correctAnswers': (progress.dailyStats?.correctAnswers || 0) + (isCorrect ? 1 : 0),
-                    'weeklyStats.correctAnswers': (progress.weeklyStats?.correctAnswers || 0) + (isCorrect ? 1 : 0)
-                  };
-
-                  if (milestone) {
-                    setShowStreakCelebration(milestone.count);
-                    playSound('fanfare');
-                    if (milestone.xp) {
-                      updates.xpGain = milestone.xp;
-                      addToast(`+${milestone.xp} XP - ${milestone.name}!`, 'success');
-                    }
-                  }
-                  updateProgress(updates);
-                }}
-                onComplete={(rawScore, passed, answers, insuranceUsed, xpMultiplier = 1) => {
-                  // 1. Calculate base grade (0-10) using actual question count
-                  const qCount = randomizedExamQuestions ? randomizedExamQuestions.length : 40;
-                  const baseGrade = (rawScore / qCount) * 10;
-
-                  // 2. Determine max possible grade based on previous attempts
-                  const currentAttemptsData = progress.examAttempts || 0;
-                  const attemptCount = Array.isArray(currentAttemptsData) ? currentAttemptsData.length : (Number(currentAttemptsData) || 0);
-                  const maxGradeAllowed = Math.max(5, 10 - attemptCount);
-
-                  // 3. Apply Cap
-                  let finalGrade = Math.min(baseGrade, maxGradeAllowed);
-                  finalGrade = Math.max(0, finalGrade);
-
-                  // 4. Determine Pass (>= 5)
-                  const isApproved = finalGrade >= 5;
-
-                  // 5. Update Progress History
-                  const oldAttempts = Array.isArray(progress.examAttempts) ? progress.examAttempts : [];
-                  let newAttempts = [...oldAttempts];
-
-                  if (!(!isApproved && insuranceUsed)) {
-                    newAttempts.push({
-                      score: rawScore,
-                      grade: finalGrade,
-                      passed: isApproved,
-                      answers,
-                      date: new Date().toISOString(),
-                      type: 'normal'
-                    });
-                  } else {
-                    playSound('powerup');
-                  }
-
-                  if (isApproved) {
-                    const updates = {
-                      examenPassed: true,
-                      examenCompleted: true,
-                      examAttempts: newAttempts,
-                      examenScore: finalGrade.toFixed(2)
-                    };
-                    // Remap answers to global indices for Heatmap
-                    if (answers && randomizedExamQuestions) {
-                      const globalAnswers = {};
-                      Object.entries(answers).forEach(([localIdx, ans]) => {
-                        const q = randomizedExamQuestions[localIdx];
-                        if (q && q._originalIndex !== undefined) {
-                          globalAnswers[q._originalIndex] = ans;
-                        }
-                      });
-                      updates.examAnswers = globalAnswers;
-                      // Also update the attempt entry itself if needed by heatmap (heatmap uses examAttempts)
-                      newAttempts[newAttempts.length - 1].answers = globalAnswers;
-                    } else if (answers) {
-                      updates.examAnswers = answers; // Fallback
-                    }
-
-                    updateProgress(updates, null, xpMultiplier);
-                    if (xpMultiplier > 1) addToast("¡XP DOBLE ACTIVADO!", 'success');
-                    playSound('success');
-                    confetti();
-                  } else {
-                    const updates = {
-                      examAttempts: newAttempts,
-                      examenScore: finalGrade.toFixed(2)
-                    };
-
-                    // Remap answers to global indices for Heatmap
-                    if (answers && randomizedExamQuestions) {
-                      const globalAnswers = {};
-                      Object.entries(answers).forEach(([localIdx, ans]) => {
-                        const q = randomizedExamQuestions[localIdx];
-                        if (q && q._originalIndex !== undefined) {
-                          globalAnswers[q._originalIndex] = ans;
-                        }
-                      });
-                      updates.examAnswers = globalAnswers;
-                      newAttempts[newAttempts.length - 1].answers = globalAnswers;
-                    } else if (answers) {
-                      updates.examAnswers = answers;
-                    }
-
-                    updateProgress(updates);
-                  }
-
-                  setView('home');
-                }}
+                onAnswer={(isCorrect) => handleExamAnswer(currentStreak, isCorrect)}
+                onComplete={(rawScore, passed, answers, insuranceUsed, xpMultiplier = 1) =>
+                  handleExamComplete(randomizedExamQuestions, rawScore, passed, answers, insuranceUsed, xpMultiplier)
+                }
                 onBack={() => setView('home')}
                 playSound={playSound}
               />
@@ -1412,6 +634,7 @@ const App = () => {
                 t={t}
                 modules={MODULES}
                 addToast={addToast}
+                user={user}
               />
             )
           }
@@ -1473,7 +696,7 @@ const App = () => {
                 onBack={() => setView('home')}
                 playSound={playSound}
                 addToast={addToast}
-
+                updateDailyStats={updateDailyStats}
               />
             )
           }
@@ -1487,52 +710,9 @@ const App = () => {
                 masteredQuestions={progress.masteredQuestions || []}
                 categories={QUESTION_CATEGORIES_ES}
                 glossary={GLOSSARY}
-                onAnswer={(isCorrect, sessionCount, questionData, streakCount) => {
-                  const updates = {};
-                  if (isCorrect) {
-                    updates['dailyStats.correctAnswers'] = (progress.dailyStats?.correctAnswers || 0) + 1;
-                    updates['weeklyStats.correctAnswers'] = (progress.weeklyStats?.correctAnswers || 0) + 1;
-
-                    // Streak multiplier: 1.4x for racha >= 10 (approx +7 XP)
-                    const streakMultiplier = streakCount >= 10 ? 1.4 : 1;
-                    // Survival multiplier: 2x
-                    const modeMultiplier = practiceMode === 'survival' ? 2 : 1;
-                    const totalMultiplier = streakMultiplier * modeMultiplier;
-
-                    if (sessionCount === 20 && practiceMode !== 'survival') {
-                      updates.practiceXpGain = Math.round(100 * totalMultiplier);
-                      addToast("¡Meta alcanzada! +100 XP extra desbloqueados", 'success');
-                      confetti();
-                    } else if (sessionCount > 20 || practiceMode === 'survival') {
-                      updates.practiceXpGain = Math.round(5 * totalMultiplier);
-                    }
-
-                    // Mastery tracking
-                    if (questionData && questionData.q) {
-                      const currentMastered = progress.masteredQuestions || [];
-                      if (!currentMastered.includes(questionData.q)) {
-                        updates.masteredQuestions = [...currentMastered, questionData.q];
-                      }
-                      // Remove from failed if corrected
-                      const currentFailed = progress.failedQuestions || [];
-                      if (currentFailed.includes(questionData.q)) {
-                        updates.failedQuestions = currentFailed.filter(q => q !== questionData.q);
-                      }
-                    }
-                  } else {
-                    // Record failure
-                    if (questionData && questionData.q) {
-                      const currentFailed = progress.failedQuestions || [];
-                      if (!currentFailed.includes(questionData.q)) {
-                        updates.failedQuestions = [...currentFailed, questionData.q];
-                      }
-                    }
-                  }
-
-                  if (Object.keys(updates).length > 0) {
-                    updateProgress(updates);
-                  }
-                }}
+                onAnswer={(isCorrect, sessionCount, questionData, streakCount) =>
+                  handlePracticeAnswer(isCorrect, sessionCount, questionData, streakCount)
+                }
                 playSound={playSound}
                 addToast={addToast}
               />
@@ -1541,146 +721,21 @@ const App = () => {
 
 
           {
-            view === 'profile' && (
-              <div className="max-w-5xl mx-auto space-y-8 animate-in slide-in-from-bottom-4 fade-in duration-500 pb-20">
-                {/* Header with Back Button */}
-                <div className="flex items-center gap-4">
-                  <button onClick={() => setView('home')} className="bg-white p-3 rounded-xl shadow-sm hover:shadow-md transition-all text-slate-500 hover:text-brand-600">
-                    <ArrowLeft />
-                  </button>
-                  <h1 className="text-3xl font-black text-slate-900">Tu Perfil de Agente</h1>
-                </div>
-
-                <InsigniasPanel
-                  progress={progress}
-                  currentLevel={currentLevel}
-                  currentXp={currentXp}
-                  t={t}
-                  modules={MODULES}
-                  hiddenBadges={HIDDEN_BADGES}
-                />
-              </div>
-            )
-          }
-
-          {
             view === 'certificate' && profile && (
-              <div className="min-h-screen bg-slate-200 flex items-center justify-center p-4 overflow-x-hidden print:p-0 print:bg-white">
-                {/* Force Landscape Printing */}
-                <style>{`
-            @media print {
-              @page { size: landscape; margin: 0; }
-              body { -webkit-print-color-adjust: exact; }
-            }
-          `}</style>
-
-                <div className="w-full max-w-4xl mx-auto px-2 sm:px-4">
-                  <div className="bg-white p-6 sm:p-8 md:p-12 rounded-lg shadow-2xl w-full aspect-[1.414] flex flex-col justify-center text-center border-[6px] sm:border-[10px] md:border-[20px] border-double border-yellow-600 relative overflow-hidden print:absolute print:top-0 print:left-0 print:w-full print:h-screen print:border-0 print:shadow-none print:z-[100]">
-                    {/* Watermark */}
-                    <div className="absolute inset-0 flex items-center justify-center opacity-5 pointer-events-none">
-                      <BadgeCheck className="w-1/2 h-1/2" />
-                    </div>
-
-                    <div className="relative z-10 flex flex-col items-center justify-between h-full py-4 sm:py-8">
-                      {/* Header */}
-                      <div className="flex flex-col items-center">
-                        <div className="mb-2 sm:mb-4 md:mb-8">
-                          <Award className="w-10 h-10 sm:w-16 sm:h-16 md:w-20 md:h-20 text-yellow-500 fill-yellow-100" />
-                        </div>
-                        <h1 className="text-xl sm:text-3xl md:text-5xl lg:text-6xl font-serif font-black text-slate-900 mb-1 sm:mb-2 md:mb-4 uppercase tracking-widest">Certificado de Honor</h1>
-                        <div className="w-16 sm:w-24 md:w-32 h-0.5 sm:h-1 bg-yellow-500 mx-auto mb-3 sm:mb-6 md:mb-10"></div>
-                      </div>
-
-                      {/* Content */}
-                      <div className="flex-1 flex flex-col justify-center w-full">
-                        <p className="text-xs sm:text-lg md:text-xl text-slate-500 font-serif italic mb-2 sm:mb-4 md:mb-8">Se otorga el presente reconocimiento a</p>
-
-                        <h2 className="text-2xl sm:text-4xl md:text-5xl lg:text-6xl font-black text-brand-700 mb-4 sm:mb-6 md:mb-10 font-serif border-b-2 sm:border-b-4 border-slate-200 inline-block px-4 sm:px-12 pb-2 sm:pb-4 mx-auto max-w-[90%] break-words">
-                          {profile.name}
-                        </h2>
-
-                        <p className="text-xs sm:text-base md:text-lg lg:text-xl text-slate-600 font-serif leading-relaxed max-w-4xl mx-auto px-4">
-                          ha demostrado excelencia y dominio teórico-práctico en el programa de<br />
-                          <strong className="text-slate-900 text-sm sm:text-xl md:text-2xl lg:text-3xl mt-2 block uppercase tracking-tight">PRIMEROS AUXILIOS - SOPORTE VITAL BÁSICO (P.A.S.) - DESA</strong>
-                        </p>
-                      </div>
-
-                      {/* Footer */}
-                      <div className="flex justify-between w-full max-w-5xl mx-auto px-4 sm:px-12 mt-4 sm:mt-auto pt-4 sm:pt-10 items-end">
-                        <div className="text-center w-1/3">
-                          <div className="w-full border-b sm:border-b-2 border-slate-800 mb-1 sm:mb-3 mx-auto"></div>
-                          <p className="text-[8px] sm:text-xs md:text-sm uppercase tracking-wider font-black text-slate-900 leading-tight">Orestes González V.</p>
-                          <p className="text-[6px] sm:text-[10px] md:text-xs uppercase tracking-widest font-bold text-slate-400 mt-1 leading-tight">Profesor EF</p>
-                        </div>
-
-                        {/* QR Placeholder for Screen */}
-                        <div className="hidden sm:flex flex-col items-center justify-end pb-2 opacity-50">
-                          <div className="border border-slate-200 p-1 bg-white">
-                            <div className="w-10 h-10 sm:w-16 sm:h-16 bg-slate-900 pattern-grid-lg"></div>
-                          </div>
-                        </div>
-
-                        <div className="text-center w-1/3">
-                          <div className="w-full border-b sm:border-b-2 border-slate-800 mb-1 sm:mb-3 mx-auto"></div>
-                          <p className="text-[8px] sm:text-xs md:text-sm uppercase tracking-wider font-black text-slate-900 leading-tight">Fecha</p>
-                          <p className="text-[8px] sm:text-sm md:text-base font-serif text-slate-700 mt-1 leading-tight">{new Date().toLocaleDateString()}</p>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="absolute top-2 right-2 sm:top-4 sm:right-4 md:top-8 md:right-8 print:hidden flex gap-2">
-                      <button onClick={handleDownloadDiploma} className="bg-brand-600 text-white p-2 sm:p-3 rounded-full hover:bg-brand-700 shadow-lg hover:scale-110 transition-transform z-50 relative" title="Descargar como PDF">
-                        <Download size={20} className="sm:w-6 sm:h-6" />
-                      </button>
-                      <button onClick={() => setView('home')} className="bg-slate-200 text-slate-500 p-2 sm:p-3 rounded-full hover:bg-slate-300 hover:scale-110 transition-transform z-50 relative" title="Cerrar">
-                        <XCircle size={20} className="sm:w-6 sm:h-6" />
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </div>
+              <CertificatePage
+                profile={profile}
+                t={t}
+                onDownload={handleDownloadDiploma}
+                onSaveSignature={handleSaveSignature}
+                onBack={() => setView('home')}
+              />
             )
           }
 
           {/* Verification View */}
           {
             view === 'verify' && verificationData && (
-              <div className="fixed inset-0 z-[100] bg-slate-900 flex flex-col items-center justify-center p-6 text-center">
-                <div className="bg-white rounded-[40px] p-12 max-w-md w-full shadow-2xl animate-in zoom-in duration-500">
-                  <div className="w-24 h-24 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-8 border-4 border-emerald-500">
-                    <CheckCircle2 size={48} className="text-emerald-500 animate-bounce" />
-                  </div>
-
-                  <h2 className="text-3xl font-black text-slate-900 mb-4 leading-none">DIPLOMA VÁLIDO</h2>
-                  <p className="text-slate-500 mb-8 font-medium italic">Sistema de Verificación del Departamento de Educación Física</p>
-
-                  <div className="bg-slate-50 rounded-3xl p-6 mb-8 border border-slate-100 space-y-4">
-                    <div>
-                      <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Nombre del Alumno</p>
-                      <p className="text-xl font-bold text-slate-800">{verificationData.name}</p>
-                    </div>
-                    <div>
-                      <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Fecha de Certificación</p>
-                      <p className="text-xl font-bold text-slate-800">{verificationData.date}</p>
-                    </div>
-                  </div>
-
-                  <p className="text-xs text-emerald-600 font-bold bg-emerald-50 py-3 px-6 rounded-full inline-block mb-10 ring-1 ring-emerald-200">
-                    Este documento ha sido verificado criptográficamente por la plataforma.
-                  </p>
-
-                  <button
-                    onClick={() => {
-                      window.history.replaceState({}, '', window.location.pathname);
-                      setView('home');
-                      setVerificationData(null);
-                    }}
-                    className="w-full bg-slate-900 text-white font-black py-4 rounded-2xl hover:bg-slate-800 transition-all active:scale-95"
-                  >
-                    CERRAR VERIFICACIÓN
-                  </button>
-                </div>
-              </div>
+              <VerifyCertificatePage verificationData={verificationData} onBack={() => setView('home')} />
             )
           }
 
@@ -1698,7 +753,6 @@ const App = () => {
           </Suspense>
 
           {/* Admin Modal */}
-          <AdminPinModal isOpen={showAdminModal} onClose={() => setShowAdminModal(false)} onSuccess={() => { setShowAdminModal(false); setView('admin'); }} t={t} />
 
           {/* DESA Modal */}
           {
@@ -1723,12 +777,15 @@ const App = () => {
 
           {/* Profile / Inventory View */}
           {view === 'profile' && (
-            <ProfileView
+            <ProfilePage
               progress={progress}
+              currentLevel={currentLevel}
+              currentXp={currentXp}
               profile={profile}
               t={t}
               lang={lang}
-              currentXp={currentXp}
+              modules={MODULES}
+              hiddenBadges={HIDDEN_BADGES}
               onBack={() => setView('home')}
               onJoinClass={handleJoinClass}
               onEquipAvatar={(id) => { updateProgress('activeAvatar', id); addToast(t?.toasts?.avatarEquipped || "Avatar equipado", 'success'); }}
@@ -1758,47 +815,9 @@ const App = () => {
           <React.Suspense fallback={null}>
             <SurpriseExamModal
               questions={surpriseExam.questions || []}
-              onComplete={(rawScore, passed, answers) => {
-                // 1. Prepare Updates
-                const xpMultiplier = surpriseExam.xpMultiplier || 1;
-                const xpGain = passed ? XP_REWARDS.EXAM_PASS : 50;
-
-                // Remap answers to global indices
-                let globalAnswers = answers;
-                if (answers && surpriseExam.questions) {
-                  globalAnswers = {};
-                  Object.entries(answers).forEach(([localIdx, ans]) => {
-                    const q = surpriseExam.questions[localIdx];
-                    if (q && q._originalIndex !== undefined) {
-                      globalAnswers[q._originalIndex] = ans;
-                    }
-                  });
+              onComplete={(rawScore, passed, answers) =>
+                  handleSurpriseExamComplete(surpriseExam, rawScore, passed, answers)
                 }
-
-                const qCount = surpriseExam.questions?.length || 20;
-                const grade = (rawScore / qCount) * 10;
-                const oldAttempts = Array.isArray(progress.examAttempts) ? progress.examAttempts : [];
-                const newAttempts = [...oldAttempts, {
-                  score: rawScore,
-                  grade: grade,
-                  passed,
-                  answers: globalAnswers,
-                  type: 'surprise',
-                  date: new Date().toISOString()
-                }];
-
-                // 2. Perform ATOMIC update
-                updateProgress({
-                  surpriseExamXP: xpGain,
-                  examAttempts: newAttempts
-                }, null, xpMultiplier);
-
-                // 3. Feedback
-                const displayXp = passed ? (XP_REWARDS.EXAM_PASS * xpMultiplier) : 50;
-                addToast(passed ? (t?.exam?.passed || '¡Examen Sorpresa Aprobado! +' + displayXp + ' XP') : (t?.exam?.completed || 'Examen Sorpresa Completado +' + 50 + ' XP'), passed ? 'success' : 'info');
-
-                // Note: We don't setSurpriseExam(null) here so user can see the result screen in ExamComponent
-              }}
               onClose={() => setSurpriseExam(null)}
               t={t}
               playSound={playSound}
@@ -1810,23 +829,44 @@ const App = () => {
           </React.Suspense>
         )
       }
+      {/* Admin Auth Modal (Available Globally) */}
+      <AdminPinModal isOpen={showAdminModal} onClose={() => setShowAdminModal(false)} onSuccess={async () => {
+        setView('admin');
+        await handleAdminAuth();
+      }} t={t} />
+
     </>
   );
 };
 
 // --- AUTH COMPONENT (Internal) ---
 // --- AUTH COMPONENT (Internal) ---
-const UserEntryForm = ({ onSubmit, playSound }) => {
+const UserEntryForm = ({ onSubmit, playSound, onAdminClick, t }) => {
   const [isRegister, setIsRegister] = useState(true);
   const [formData, setFormData] = useState({ name: '', role: 'Alumno 5º Primaria', email: '', password: '' });
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [showPrivacy, setShowPrivacy] = useState(false);
+  const [showTerms, setShowTerms] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
 
-    if (isRegister && !formData.name.trim()) return;
+    if (isRegister) {
+      if (!formData.name.trim()) return;
+      if (formData.password !== confirmPassword) {
+        setError('Las contraseñas no coinciden. Por favor, asegúrate de escribir la misma contraseña en ambos campos.');
+        if (playSound) playSound('error');
+        return;
+      }
+      if (formData.password.length < 6) {
+        setError('La contraseña debe tener al menos 6 caracteres.');
+        if (playSound) playSound('error');
+        return;
+      }
+    }
     if (!formData.email.trim() || !formData.password.trim()) return;
 
     setLoading(true);
@@ -1867,14 +907,14 @@ const UserEntryForm = ({ onSubmit, playSound }) => {
         <div className="relative z-10 flex bg-slate-100 p-1 rounded-xl mb-6">
           <button
             type="button"
-            onClick={() => { setIsRegister(true); setError(''); }}
+            onClick={() => { setIsRegister(true); setError(''); setConfirmPassword(''); }}
             className={`flex-1 py-2 text-sm font-bold rounded-lg transition-all ${isRegister ? 'bg-white text-brand-700 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
           >
             Crear Cuenta
           </button>
           <button
             type="button"
-            onClick={() => { setIsRegister(false); setError(''); }}
+            onClick={() => { setIsRegister(false); setError(''); setConfirmPassword(''); }}
             className={`flex-1 py-2 text-sm font-bold rounded-lg transition-all ${!isRegister ? 'bg-white text-brand-700 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
           >
             Iniciar Sesión
@@ -1924,9 +964,37 @@ const UserEntryForm = ({ onSubmit, playSound }) => {
               className="w-full bg-slate-50 border-2 border-slate-100 rounded-xl px-4 py-3 font-bold text-slate-800 outline-none focus:border-brand-500 focus:bg-white transition-all"
               placeholder="••••••••"
               value={formData.password}
-              onChange={e => setFormData({ ...formData, password: e.target.value })}
+              onChange={e => {
+                setFormData({ ...formData, password: e.target.value });
+                if (error) setError('');
+              }}
             />
           </div>
+
+          {isRegister && (
+            <div className="animate-in slide-in-from-left-4 fade-in duration-300">
+              <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 ml-1">Repetir Contraseña</label>
+              <input
+                required={isRegister}
+                type="password"
+                autoComplete="new-password"
+                className={`w-full bg-slate-50 border-2 rounded-xl px-4 py-3 font-bold text-slate-800 outline-none transition-all ${
+                  confirmPassword && confirmPassword !== formData.password
+                    ? 'border-red-400 focus:border-red-500 focus:bg-white'
+                    : 'border-slate-100 focus:border-brand-500 focus:bg-white'
+                }`}
+                placeholder="••••••••"
+                value={confirmPassword}
+                onChange={e => {
+                  setConfirmPassword(e.target.value);
+                  if (error) setError('');
+                }}
+              />
+              {confirmPassword && confirmPassword !== formData.password && (
+                <p className="text-xs text-red-500 font-bold mt-1 ml-1 animate-in fade-in">Las contraseñas no coinciden</p>
+              )}
+            </div>
+          )}
 
           {isRegister && (
             <div className="animate-in slide-in-from-left-4 fade-in duration-300">
@@ -1950,6 +1018,12 @@ const UserEntryForm = ({ onSubmit, playSound }) => {
             </div>
           )}
 
+          {isRegister && (
+            <div className="text-[11px] text-slate-500 bg-slate-50 border border-slate-100 p-2.5 rounded-xl leading-relaxed animate-in fade-in">
+              🔒 <strong>Protección de Datos:</strong> Uso escolar docente bajo el <strong>RGPD</strong> y la <strong>LOMLOE</strong>. No cedemos datos a terceros ni usamos rastreadores publicitarios.
+            </div>
+          )}
+
           <button
             type="submit"
             disabled={loading}
@@ -1958,24 +1032,44 @@ const UserEntryForm = ({ onSubmit, playSound }) => {
             {loading ? (isRegister ? 'Registrando...' : 'Iniciando...') : (isRegister ? 'Registrarse Gratis' : 'Entrar')}
           </button>
 
-          {/* Header Controls */}
+          {/* Links for Privacy and Terms */}
+          <div className="flex items-center justify-center gap-3 pt-1 text-[11px] font-semibold text-slate-400">
+            <button
+              type="button"
+              onClick={() => setShowPrivacy(true)}
+              className="hover:text-brand-600 underline underline-offset-2 transition-colors"
+            >
+              Privacidad y RGPD
+            </button>
+            <span>•</span>
+            <button
+              type="button"
+              onClick={() => setShowTerms(true)}
+              className="hover:text-brand-600 underline underline-offset-2 transition-colors"
+            >
+              Aviso Legal
+            </button>
+          </div>
+
           {/* Header Controls */}
           <div className="flex items-center gap-2 mt-4 justify-center">
             <span className="text-[10px] bg-red-500 text-white px-1 rounded font-bold">v1.7</span>
-            {!isRegister && (
-              <button
-                onClick={() => {
-                  setIsRegister(true);
-                  setFormData({ name: 'Profe Admin', role: 'Profesorado', email: 'admin@edu.es', password: 'adminpassword' });
-                  setError('Haz clic en "Registrarse Gratis" para crear esta cuenta.');
-                }}
-                className="text-xs font-bold text-slate-400 hover:text-brand-600 uppercase tracking-widest transition-colors flex items-center justify-center gap-1 mx-auto"
-              >
-                <GraduationCap size={14} /> Acceso Docente / Admin
-              </button>
-            )}
+            <button
+              onClick={(e) => {
+                e.preventDefault();
+                onAdminClick();
+              }}
+              className="text-xs font-bold text-slate-400 hover:text-brand-600 uppercase tracking-widest transition-colors flex items-center justify-center gap-1 mx-auto"
+            >
+              <GraduationCap size={14} /> Acceso Docente / Admin
+            </button>
           </div>
         </form>
+
+        <Suspense fallback={null}>
+          {showPrivacy && <PrivacyPolicy onClose={() => setShowPrivacy(false)} t={t} />}
+          {showTerms && <LegalDisclaimer isOpen={showTerms} onClose={() => setShowTerms(false)} t={t} />}
+        </Suspense>
       </div>
     </div>
   )

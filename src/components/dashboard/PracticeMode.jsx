@@ -72,7 +72,7 @@ const PracticeMode = ({
         setIsAnswered(true);
         setHistory(prev => [...prev, currentQuestion.q]);
 
-        const isCorrect = currentQuestion.opts[idx] === currentQuestion.a;
+        const isCorrect = idx === currentQuestion.a;
 
         if (isCorrect) {
             const newCount = stats.correct + 1;
@@ -197,7 +197,7 @@ const PracticeMode = ({
 
                         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                             {categories.map(cat => {
-                                const catQuestions = questions.filter(q => q.cat === cat.id);
+                                const catQuestions = questions.filter(q => q.category === cat.id);
                                 const catMasteredCount = catQuestions.filter(q => masteredQuestions.includes(q.q)).length;
                                 const isFullyMastered = catQuestions.length > 0 && catMasteredCount === catQuestions.length;
 

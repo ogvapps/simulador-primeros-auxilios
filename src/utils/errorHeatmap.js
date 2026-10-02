@@ -12,7 +12,7 @@ export const generateErrorHeatmap = (students, questionBank) => {
     // Initialize counters for each question
     const questionStats = questionBank.map((q, idx) => ({
         questionIndex: idx,
-        question: q.question,
+        question: q.q || q.question || `Pregunta ${idx + 1}`,
         totalAttempts: 0,
         wrongAnswers: 0,
         errorRate: 0,

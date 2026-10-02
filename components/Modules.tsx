@@ -1,1 +1,0 @@
-// This file is deprecated. Components have been moved to components/views/

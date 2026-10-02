@@ -24,21 +24,22 @@ const ExamComponent = ({
     const maxGradeAllowed = Math.max(5, 10 - attempts); // 10, 9, 8, 7, 6, 5...
     const attemptsLeft = Math.max(0, 5 - attempts);
 
-    if (!questions || questions.length === 0) return <div>{t?.common?.loading || "Cargando..."}</div>;
-
     useEffect(() => {
         if (forceFinish && !finished) {
             finish();
         }
     }, [forceFinish]);
 
+    if (!questions || questions.length === 0) return <div>{t?.common?.loading || "Cargando..."}</div>;
+
     const handleSelect = (opt) => {
         if (playSound) playSound('click');
-        setAnswers(prev => ({ ...prev, [qIndex]: opt }));
+        const options = questions[qIndex].opts || questions[qIndex].options;
+        const optIdx = options.indexOf(opt);
+        setAnswers(prev => ({ ...prev, [qIndex]: optIdx }));
 
-        // Real-time streak reporting
-        if (onAnswer && !answers[qIndex]) {
-            const isCorrect = opt === questions[qIndex].a;
+        if (onAnswer && answers[qIndex] === undefined) {
+            const isCorrect = optIdx === questions[qIndex].a;
             onAnswer(isCorrect);
         }
     };
@@ -54,11 +55,9 @@ const ExamComponent = ({
         } else return;
 
         if (playSound) playSound('powerup');
-        const currentQ = questions[qIndex];
-        const options = currentQ.opts || currentQ.options;
-        const correctOpt = currentQ.a;
-        const correctIndex = options.findIndex(o => o === correctOpt);
-        const wrongOpts = options.map((_, i) => i).filter(i => i !== correctIndex);
+        const options = questions[qIndex].opts || questions[qIndex].options;
+        const correctIdx = questions[qIndex].a;
+        const wrongOpts = options.map((_, i) => i).filter(i => i !== correctIdx);
         const shuffled = wrongOpts.sort(() => 0.5 - Math.random());
         setHiddenOptions(prev => ({ ...prev, [qIndex]: shuffled.slice(0, 2) }));
     };
@@ -103,14 +102,14 @@ const ExamComponent = ({
 
         if (playSound) playSound('powerup');
         setSkippedQuestions(prev => new Set(prev).add(qIndex));
-        setAnswers(prev => ({ ...prev, [qIndex]: questions[qIndex].a })); // Auto-correct
+        setAnswers(prev => ({ ...prev, [qIndex]: questions[qIndex].a })); // Auto-correct (a is index)
         if (onAnswer) onAnswer(true); // Don't break streak
     };
 
     const finish = () => {
         let s = 0;
         const fullExam = questions;
-        fullExam.forEach((q, i) => { if (answers[i] === q.a) s++; });
+        fullExam.forEach((q, i) => { if (answers[i] === q.a) s++; }); // answers[i] is now index
 
         setRawScore(s);
 
@@ -192,9 +191,9 @@ const ExamComponent = ({
                                         </div>
                                         <div className="text-sm pl-4 border-l-2 border-slate-100 ml-1">
                                             <p className={`mb-1 font-medium ${isCorrect ? 'text-green-700' : 'text-red-600 line-through opacity-70'}`}>
-                                                {t?.exam?.yourAnswer || "Tu respuesta"}: {answers[i]}
+                                                {t?.exam?.yourAnswer || "Tu respuesta"}: {q.opts?.[answers[i]] ?? answers[i]}
                                             </p>
-                                            {!isCorrect && (<p className="text-green-700 font-bold mb-2">{t?.exam?.correctAnswer || "Correcta"}: {q.a}</p>)}
+                                            {!isCorrect && (<p className="text-green-700 font-bold mb-2">{t?.exam?.correctAnswer || "Correcta"}: {q.opts?.[q.a] ?? q.a}</p>)}
                                             <p className="text-slate-500 text-xs italic mt-2 bg-slate-50 p-2 rounded-lg">💡 {q.expl}</p>
                                         </div>
                                     </div>
@@ -219,6 +218,22 @@ const ExamComponent = ({
     }
 
     const question = questions[qIndex];
+
+    // Safety check for out of bounds
+    if (!question) {
+        return (
+            <div className="min-h-[80vh] flex items-center justify-center p-4">
+                <div className="bg-white p-8 rounded-3xl shadow-xl text-center">
+                    <h2 className="text-xl font-bold text-red-600 mb-4">Error de Sincronización</h2>
+                    <p className="text-slate-500 mb-6">Ha ocurrido un error al cargar la pregunta. Por favor, reinicia el examen.</p>
+                    <button onClick={onBack} className="bg-slate-800 text-white px-6 py-3 rounded-xl font-bold">
+                        Volver al Inicio
+                    </button>
+                </div>
+            </div>
+        );
+    }
+
     const isLast = qIndex === questions.length - 1;
     const progress = ((qIndex + 1) / questions.length) * 100;
     const options = question.opts || question.options;
@@ -273,8 +288,27 @@ const ExamComponent = ({
                 </div>
 
                 {/* Progress Bar */}
-                <div className="h-3 bg-slate-100 rounded-full mb-8 overflow-hidden">
+                <div className="h-3 bg-slate-100 rounded-full mb-3 overflow-hidden">
                     <div className="h-full bg-brand-600 rounded-full transition-all duration-500 ease-out" style={{ width: `${progress}%` }} />
+                </div>
+
+                {/* Question Progress Dots */}
+                <div className="flex gap-1 flex-wrap mb-6">
+                    {questions.map((_, i) => {
+                        const answered = answers[i] !== undefined;
+                        const isCurrent = i === qIndex;
+                        const skipped = skippedQuestions.has(i);
+                        return (
+                            <button
+                                key={i}
+                                onClick={() => setQIndex(i)}
+                                className={`w-5 h-5 rounded-full text-[8px] font-bold transition-all duration-200 ${isCurrent ? 'ring-2 ring-brand-500 ring-offset-1 scale-125' : ''} ${skipped ? 'bg-yellow-300' : answered ? 'bg-brand-600 text-white' : 'bg-slate-200 text-slate-400'}`}
+                                title={`Pregunta ${i + 1}${answered ? ' (respondida)' : ''}`}
+                            >
+                                {i + 1}
+                            </button>
+                        );
+                    })}
                 </div>
 
                 {/* Question */}
