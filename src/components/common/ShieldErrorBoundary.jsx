@@ -49,7 +49,7 @@ class ShieldErrorBoundary extends Component {
                                 Reiniciar Aplicación
                             </button>
 
-                            {process.env.NODE_ENV === 'development' && (
+                            {import.meta.env?.DEV && (
                                 <div className="mt-8 p-4 bg-slate-100 rounded-xl text-left overflow-auto max-h-40 text-xs font-mono text-slate-600 border border-slate-200">
                                     {this.state.error && this.state.error.toString()}
                                 </div>
