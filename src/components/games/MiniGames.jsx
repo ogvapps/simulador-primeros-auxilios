@@ -69,7 +69,7 @@ export const Chat112Game = memo(({ onComplete, playSound }) => {
   };
 
   return (
-    <div className="mx-auto border-[10px] border-slate-900 rounded-[3rem] overflow-hidden bg-white w-[360px] h-[720px] shadow-2xl flex flex-col relative ring-8 ring-slate-900/10 transform hover:scale-[1.01] transition-transform duration-500">
+    <div className="mx-auto border-4 sm:border-[10px] border-slate-900 rounded-3xl sm:rounded-[3rem] overflow-hidden bg-white w-full max-w-[360px] h-[85vh] sm:h-[720px] max-h-[720px] shadow-2xl flex flex-col relative ring-4 sm:ring-8 ring-slate-900/10 transform hover:scale-[1.01] transition-transform duration-500">
       {/* Notch & Status Bar */}
       <div className="bg-slate-900 text-white pt-3 pb-2 px-6 flex justify-between items-end text-[10px] font-medium z-20">
         <span>11:22</span>
@@ -242,7 +242,7 @@ export const RcpGame = memo(({ onComplete, playSound }) => {
   };
 
   return (
-    <div className="relative overflow-hidden bg-gradient-to-br from-slate-50 to-red-50 p-8 rounded-[2rem] text-center border border-red-100 shadow-2xl">
+    <div className="relative overflow-hidden bg-gradient-to-br from-slate-50 to-red-50 p-4 sm:p-8 rounded-2xl sm:rounded-[2rem] text-center border border-red-100 shadow-2xl">
       {/* Background decoration */}
       <div className="absolute top-0 right-0 w-64 h-64 bg-red-200/20 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
       <div className="absolute bottom-0 left-0 w-64 h-64 bg-rose-200/20 rounded-full blur-3xl translate-y-1/2 -translate-x-1/2" />
@@ -254,9 +254,9 @@ export const RcpGame = memo(({ onComplete, playSound }) => {
         {!active && !result && (
           <button onClick={start} className="group relative">
             <div className="absolute inset-0 bg-red-400 rounded-2xl blur opacity-40 group-hover:opacity-60 transition-opacity animate-pulse"></div>
-            <div className="relative bg-gradient-to-br from-red-500 to-rose-600 text-white w-48 h-48 rounded-2xl flex flex-col items-center justify-center shadow-xl hover:scale-105 transition-transform">
-              <HeartPulse size={64} className="mb-2" />
-              <span className="font-bold text-lg">INICIAR</span>
+            <div className="relative bg-gradient-to-br from-red-500 to-rose-600 text-white w-40 h-40 sm:w-48 sm:h-48 rounded-2xl flex flex-col items-center justify-center shadow-xl hover:scale-105 transition-transform">
+              <HeartPulse size={56} className="mb-2" />
+              <span className="font-bold text-base sm:text-lg">INICIAR</span>
               <span className="text-xs opacity-80">(10 segundos)</span>
             </div>
           </button>
@@ -267,17 +267,17 @@ export const RcpGame = memo(({ onComplete, playSound }) => {
             {/* Visual Metronome Hint (optional, or just feedback) */}
             <button
               onClick={handleClick}
-              className={`w-64 h-64 rounded-full bg-white shadow-[0_10px_40px_-10px_rgba(0,0,0,0.1)] flex flex-col items-center justify-center border-8 transition-all duration-100 active:scale-95 touch-manipulation cursor-pointer select-none ${instantRate > 0 && (instantRate < 100 || instantRate > 130) ? 'border-yellow-400' : 'border-red-100 hover:border-red-200'
+              className={`w-48 h-48 sm:w-64 sm:h-64 rounded-full bg-white shadow-[0_10px_40px_-10px_rgba(0,0,0,0.1)] flex flex-col items-center justify-center border-4 sm:border-8 transition-all duration-100 active:scale-95 touch-manipulation cursor-pointer select-none ${instantRate > 0 && (instantRate < 100 || instantRate > 130) ? 'border-yellow-400' : 'border-red-100 hover:border-red-200'
                 }`}
             >
               <HeartPulse
-                size={100}
-                className={`transition-all duration-150 ${getHeartStatus()}`}
+                size={68}
+                className={`transition-all duration-150 sm:scale-125 ${getHeartStatus()}`}
                 fill="currentColor"
                 fillOpacity={0.2}
               />
-              <span className="text-4xl font-black text-slate-900 mt-2 font-mono">{clicks}</span>
-              <span className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-1">Compresiones</span>
+              <span className="text-3xl sm:text-4xl font-black text-slate-900 mt-2 font-mono">{clicks}</span>
+              <span className="text-[10px] sm:text-xs font-bold text-slate-400 uppercase tracking-widest mt-1">Compresiones</span>
             </button>
 
             {/* Feedback Label */}
@@ -347,14 +347,14 @@ export const HeimlichGame = memo(({ onComplete, playSound }) => {
   };
 
   return (
-    <div className="bg-white rounded-[2.5rem] p-8 shadow-2xl border border-slate-100 max-w-md mx-auto text-center relative overflow-hidden">
+    <div className="bg-white rounded-2xl sm:rounded-[2.5rem] p-4 sm:p-8 shadow-2xl border border-slate-100 max-w-md mx-auto text-center relative overflow-hidden">
       {/* Decorative blobs */}
       <div className="absolute -top-10 -right-10 w-40 h-40 bg-blue-50 rounded-full blur-2xl"></div>
       <div className="absolute top-20 -left-10 w-24 h-24 bg-yellow-50 rounded-full blur-xl"></div>
 
       <div className="relative z-10">
-        <h3 className="font-bold text-2xl text-slate-800 mb-2">Maniobra de Heimlich</h3>
-        <p className="text-slate-500 text-sm mb-6">Indica el punto exacto donde aplicar la compresión abdominal.</p>
+        <h3 className="font-bold text-xl sm:text-2xl text-slate-800 mb-2">Maniobra de Heimlich</h3>
+        <p className="text-slate-500 text-xs sm:text-sm mb-6">Indica el punto exacto donde aplicar la compresión abdominal.</p>
 
         <div className="relative group mx-auto w-64 h-80 my-4 select-none">
           {/* Silhouette SVG */}
@@ -494,8 +494,8 @@ export const BotiquinGame = memo(({ onComplete, playSound }) => {
   };
 
   return (
-    <div className="bg-slate-50 p-6 rounded-[2rem] border border-slate-200 shadow-xl max-w-lg mx-auto">
-      <div className="flex justify-between items-center mb-6">
+    <div className="bg-slate-50 p-4 sm:p-6 rounded-2xl sm:rounded-[2rem] border border-slate-200 shadow-xl max-w-lg mx-auto">
+      <div className="flex justify-between items-center mb-4 sm:mb-6">
         <div>
           <h3 className="font-bold text-slate-800 text-lg">Monta tu Botiquín</h3>
           <p className="text-xs text-slate-500">Selecciona los 5 esenciales.</p>
@@ -583,14 +583,14 @@ export const SequenceGame = memo(({ onComplete, playSound }) => {
   };
 
   return (
-    <div className="bg-white p-8 rounded-[2rem] shadow-2xl border border-slate-100 text-center max-w-md mx-auto">
-      <h3 className="font-bold text-2xl text-slate-800 mb-2">Protocolo P.A.S.</h3>
-      <p className="text-slate-500 mb-8">Pulsa en el orden correcto de actuación.</p>
+    <div className="bg-white p-4 sm:p-8 rounded-2xl sm:rounded-[2rem] shadow-2xl border border-slate-100 text-center max-w-md mx-auto">
+      <h3 className="font-bold text-xl sm:text-2xl text-slate-800 mb-2">Protocolo P.A.S.</h3>
+      <p className="text-slate-500 text-xs sm:text-sm mb-6 sm:mb-8">Pulsa en el orden correcto de actuación.</p>
 
       {/* Slots */}
-      <div className="flex justify-center gap-3 mb-8">
+      <div className="flex justify-center gap-2.5 sm:gap-3 mb-6 sm:mb-8">
         {[0, 1, 2].map(i => (
-          <div key={i} className={`w-20 h-24 rounded-2xl flex items-center justify-center text-3xl font-black border-4 border-dashed transition-all duration-300 ${sequence[i]
+          <div key={i} className={`w-16 h-20 sm:w-20 sm:h-24 rounded-xl sm:rounded-2xl flex items-center justify-center text-2xl sm:text-3xl font-black border-4 border-dashed transition-all duration-300 ${sequence[i]
             ? 'bg-blue-600 text-white border-blue-600 shadow-xl scale-105 rotate-1'
             : 'bg-slate-50 border-slate-200 text-slate-300'
             }`}>
@@ -600,7 +600,7 @@ export const SequenceGame = memo(({ onComplete, playSound }) => {
       </div>
 
       {/* Controls */}
-      <div className="flex justify-center gap-4 mb-6">
+      <div className="flex justify-center gap-3 sm:gap-4 mb-6">
         {['S', 'P', 'A'].map(l => {
           const isUsed = sequence.includes(l);
           return (
@@ -608,7 +608,7 @@ export const SequenceGame = memo(({ onComplete, playSound }) => {
               key={l}
               onClick={() => handlePress(l)}
               disabled={completed || isUsed}
-              className={`w-16 h-16 rounded-2xl font-black text-2xl shadow-lg transition-all duration-200 flex items-center justify-center
+              className={`w-14 h-14 sm:w-16 sm:h-16 rounded-xl sm:rounded-2xl font-black text-xl sm:text-2xl shadow-lg transition-all duration-200 flex items-center justify-center
                 ${isUsed
                   ? 'bg-slate-100 text-slate-300 scale-90 shadow-none'
                   : 'bg-white text-slate-700 hover:-translate-y-1 hover:shadow-xl border-b-4 border-slate-200 active:border-b-0 active:translate-y-0'
@@ -659,8 +659,8 @@ export const TriageGame = memo(({ onComplete, playSound }) => {
   };
 
   return (
-    <div className="bg-slate-50 p-6 rounded-[2rem] border border-slate-200/60 shadow-xl max-w-md mx-auto">
-      <div className="flex items-center gap-3 mb-6">
+    <div className="bg-slate-50 p-4 sm:p-6 rounded-2xl sm:rounded-[2rem] border border-slate-200/60 shadow-xl max-w-md mx-auto">
+      <div className="flex items-center gap-3 mb-4 sm:mb-6">
         <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center text-red-600">
           <AlertTriangle size={20} />
         </div>

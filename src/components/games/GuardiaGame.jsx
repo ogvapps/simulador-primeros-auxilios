@@ -195,20 +195,20 @@ const GuardiaGame = memo(({ onComplete, onExit, playSound = defaultPlaySound }) 
       </div>
 
       {/* Main Area */}
-      <div className="flex-1 flex flex-col items-center justify-start md:justify-center p-4 pb-8 relative z-10 w-full max-w-4xl mx-auto">
+      <div className="flex-1 flex flex-col items-center justify-start md:justify-center p-3 sm:p-4 pb-8 relative z-10 w-full max-w-4xl mx-auto">
 
         {/* Patient Monitor Card */}
-        <div className="w-full bg-slate-900/90 backdrop-blur-xl border border-slate-800 rounded-[2rem] p-8 mb-8 shadow-2xl relative overflow-hidden group">
+        <div className="w-full bg-slate-900/90 backdrop-blur-xl border border-slate-800 rounded-2xl sm:rounded-[2rem] p-4 sm:p-8 mb-4 sm:mb-8 shadow-2xl relative overflow-hidden group">
           {/* Scanline effect */}
           <div className="absolute inset-0 bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.25)_50%),linear-gradient(90deg,rgba(255,0,0,0.06),rgba(0,255,0,0.02),rgba(0,0,255,0.06))] bg-[length:100%_2px,3px_100%] pointer-events-none z-0 opacity-20"></div>
 
-          <div className="relative z-10 flex flex-col md:flex-row items-center gap-8">
+          <div className="relative z-10 flex flex-col md:flex-row items-center gap-4 sm:gap-8">
             {/* Icon & Timer */}
-            <div className="flex flex-col items-center gap-4 min-w-[120px]">
-              <div className="w-24 h-24 rounded-2xl bg-slate-800 flex items-center justify-center shadow-inner border border-slate-700/50">
+            <div className="flex flex-row md:flex-col items-center gap-3 sm:gap-4 min-w-[100px] sm:min-w-[120px]">
+              <div className="w-16 h-16 sm:w-24 sm:h-24 rounded-xl sm:rounded-2xl bg-slate-800 flex items-center justify-center shadow-inner border border-slate-700/50">
                 {activeScenario?.icon}
               </div>
-              <div className={`font-mono text-2xl font-black px-4 py-1 rounded-lg border-2 ${timeLeft < 3
+              <div className={`font-mono text-xl sm:text-2xl font-black px-3 sm:px-4 py-1 rounded-lg border-2 ${timeLeft < 3
                 ? 'bg-red-950/50 border-red-500 text-red-500 animate-pulse'
                 : 'bg-slate-950/50 border-green-900 text-green-400'
                 }`}>
@@ -218,8 +218,8 @@ const GuardiaGame = memo(({ onComplete, onExit, playSound = defaultPlaySound }) 
 
             {/* Info & Health */}
             <div className="flex-1 w-full text-center md:text-left">
-              <span className="text-red-400 text-xs font-bold uppercase tracking-widest mb-1 block animate-pulse">¡Nueva Emergencia!</span>
-              <h2 className="text-2xl md:text-3xl font-black leading-tight mb-2 md:mb-4">{activeScenario?.text}</h2>
+              <span className="text-red-400 text-[10px] sm:text-xs font-bold uppercase tracking-widest mb-1 block animate-pulse">¡Nueva Emergencia!</span>
+              <h2 className="text-xl sm:text-2xl md:text-3xl font-black leading-tight mb-2 md:mb-4">{activeScenario?.text}</h2>
 
               {/* Health Bar */}
               <div className="space-y-1">
@@ -227,7 +227,7 @@ const GuardiaGame = memo(({ onComplete, onExit, playSound = defaultPlaySound }) 
                   <span>Integridad Paciente</span>
                   <span className={patientHealth < 30 ? 'text-red-500' : 'text-slate-300'}>{Math.round(patientHealth)}%</span>
                 </div>
-                <div className="h-4 bg-slate-800 rounded-full overflow-hidden border border-slate-700/50 relative">
+                <div className="h-3 sm:h-4 bg-slate-800 rounded-full overflow-hidden border border-slate-700/50 relative">
                   <div
                     className={`h-full transition-all duration-200 ease-out ${patientHealth < 30 ? 'bg-red-600 shadow-[0_0_10px_rgba(220,38,38,0.5)]' :
                       patientHealth < 60 ? 'bg-yellow-500' : 'bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.3)]'
@@ -241,21 +241,21 @@ const GuardiaGame = memo(({ onComplete, onExit, playSound = defaultPlaySound }) 
         </div>
 
         {/* Tools Dashboard */}
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-4 w-full">
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-2.5 sm:gap-4 w-full">
           {tools.map(t => (
             <button
               key={t.id}
               onClick={() => handleTool(t.id)}
               className={`
-                        group relative flex flex-col items-center justify-center p-6 rounded-2xl bg-slate-800 border-2 border-slate-700 
+                        group relative flex flex-col items-center justify-center p-3.5 sm:p-6 rounded-xl sm:rounded-2xl bg-slate-800 border-2 border-slate-700 
                         transition-all duration-200 active:scale-95 hover:shadow-lg hover:shadow-black/20
                         ${t.color} hover:text-white text-slate-400
                     `}
             >
-              <div className="mb-3 transform group-hover:scale-110 transition-transform duration-200">
-                {React.cloneElement(t.icon, { size: 32 })}
+              <div className="mb-2 sm:mb-3 transform group-hover:scale-110 transition-transform duration-200">
+                {React.cloneElement(t.icon, { size: 28 })}
               </div>
-              <span className="font-bold text-sm tracking-wide">{t.label}</span>
+              <span className="font-bold text-xs sm:text-sm tracking-wide">{t.label}</span>
 
               {/* Corner accents */}
               <div className="absolute top-2 right-2 w-1.5 h-1.5 rounded-full bg-slate-600 group-hover:bg-white/50 transition-colors"></div>

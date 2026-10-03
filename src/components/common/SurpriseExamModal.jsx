@@ -38,29 +38,29 @@ const SurpriseExamModal = ({ questions, onComplete, onClose, t, playSound, curre
     const isUrgent = timeLeft < 60;
 
     return (
-        <div className="fixed inset-0 z-[150] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-            <div className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col">
+        <div className="fixed inset-0 z-[150] bg-black/80 backdrop-blur-sm flex items-center justify-center p-2 sm:p-4">
+            <div className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[96vh] sm:max-h-[90vh] overflow-hidden flex flex-col">
                 {/* Header */}
-                <div className="bg-gradient-to-r from-red-500 to-orange-500 p-6 text-white">
-                    <div className="flex items-center justify-between">
+                <div className="bg-gradient-to-r from-red-500 to-orange-500 p-4 sm:p-6 text-white">
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
                         <div className="flex items-center gap-3">
-                            <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center animate-pulse">
-                                <AlertTriangle size={24} />
+                            <div className="w-10 h-10 sm:w-12 sm:h-12 bg-white/20 rounded-full flex items-center justify-center shrink-0 animate-pulse">
+                                <AlertTriangle size={20} className="sm:w-6 sm:h-6" />
                             </div>
                             <div>
-                                <h2 className="text-2xl font-black">🚨 SURPRISE EXAM!</h2>
-                                <p className="text-sm opacity-90">Complete before time runs out</p>
+                                <h2 className="text-xl sm:text-2xl font-black">🚨 SURPRISE EXAM!</h2>
+                                <p className="text-xs sm:text-sm opacity-90">Complete before time runs out</p>
                             </div>
                         </div>
-                        <div className={`flex items-center gap-2 px-4 py-2 rounded-full ${isUrgent ? 'bg-red-700 animate-pulse' : 'bg-white/20'}`}>
-                            <Clock size={20} />
-                            <span className="font-mono font-black text-xl">{formatTime(timeLeft)}</span>
+                        <div className={`self-end sm:self-auto flex items-center gap-2 px-3 py-1.5 sm:px-4 sm:py-2 rounded-full ${isUrgent ? 'bg-red-700 animate-pulse' : 'bg-white/20'}`}>
+                            <Clock size={16} className="sm:w-5 sm:h-5" />
+                            <span className="font-mono font-black text-lg sm:text-xl">{formatTime(timeLeft)}</span>
                         </div>
                     </div>
                 </div>
 
                 {/* Exam Content */}
-                <div className="flex-1 overflow-y-auto p-6">
+                <div className="flex-1 overflow-y-auto p-3 sm:p-6">
                     <ExamComponent
                         questions={questions}
                         t={t}

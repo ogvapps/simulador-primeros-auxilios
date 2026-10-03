@@ -86,7 +86,7 @@ const FlashcardsGame = ({ glossary, onBack, playSound }) => {
     const currentCard = cards[currentIndex];
 
     return (
-        <div className="max-w-xl mx-auto space-y-6 h-[80vh] flex flex-col">
+        <div className="max-w-xl mx-auto space-y-4 sm:space-y-6 min-h-[440px] h-[75vh] flex flex-col px-2 sm:px-0">
             {/* Header */}
             <div className="flex items-center justify-between">
                 <button onClick={onBack} className="p-2 hover:bg-slate-100 rounded-full transition-colors text-slate-500">
@@ -103,18 +103,18 @@ const FlashcardsGame = ({ glossary, onBack, playSound }) => {
                 <div className={`relative w-full h-full transition-all duration-500 transform preserve-3d ${isFlipped ? 'rotate-y-180' : ''}`}>
 
                     {/* Front */}
-                    <div className="absolute inset-0 bg-white rounded-3xl shadow-2xl border-2 border-slate-100 flex flex-col items-center justify-center p-8 backface-hidden">
-                        <span className="text-indigo-500 font-black tracking-widest uppercase text-xs mb-4">Término</span>
-                        <h3 className="text-4xl md:text-5xl font-black text-slate-800 text-center leading-tight">
+                    <div className="absolute inset-0 bg-white rounded-3xl shadow-2xl border-2 border-slate-100 flex flex-col items-center justify-center p-4 sm:p-8 backface-hidden">
+                        <span className="text-indigo-500 font-black tracking-widest uppercase text-xs mb-3 sm:mb-4">Término</span>
+                        <h3 className="text-2xl sm:text-4xl md:text-5xl font-black text-slate-800 text-center leading-tight">
                             {currentCard.t}
                         </h3>
-                        <p className="mt-8 text-slate-400 text-sm font-medium animate-pulse">Toca para voltear</p>
+                        <p className="mt-6 sm:mt-8 text-slate-400 text-xs sm:text-sm font-medium animate-pulse">Toca para voltear</p>
                     </div>
 
                     {/* Back */}
-                    <div className="absolute inset-0 bg-indigo-600 text-white rounded-3xl shadow-2xl flex flex-col items-center justify-center p-8 backface-hidden rotate-y-180">
-                        <span className="text-indigo-200 font-bold tracking-widest uppercase text-xs mb-4">Definición</span>
-                        <p className="text-xl md:text-2xl font-bold text-center leading-relaxed">
+                    <div className="absolute inset-0 bg-indigo-600 text-white rounded-3xl shadow-2xl flex flex-col items-center justify-center p-4 sm:p-8 backface-hidden rotate-y-180 overflow-y-auto">
+                        <span className="text-indigo-200 font-bold tracking-widest uppercase text-xs mb-3 sm:mb-4">Definición</span>
+                        <p className="text-base sm:text-xl md:text-2xl font-bold text-center leading-relaxed">
                             {currentCard.d}
                         </p>
                     </div>

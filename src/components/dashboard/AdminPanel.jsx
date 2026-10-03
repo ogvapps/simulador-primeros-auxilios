@@ -938,13 +938,13 @@ const AdminPanel = ({ onBack, db, firebaseConfigId, playSound, t, modules, addTo
             )}
 
             {selectedStudent && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-in fade-in">
-                    <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[80vh] overflow-hidden flex flex-col">
-                        <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50">
-                            <div><h3 className="text-2xl font-black text-slate-800">{presentationMode ? 'Detail' : selectedStudent.name}</h3><p className="text-slate-500 font-medium">{selectedStudent.role}</p></div>
-                            <button onClick={() => setSelectedStudent(null)} className="p-2 hover:bg-slate-200 rounded-full transition-colors"><X size={24} className="text-slate-500" /></button>
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-3 sm:p-4 animate-in fade-in">
+                    <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[92vh] sm:max-h-[85vh] overflow-hidden flex flex-col">
+                        <div className="p-4 sm:p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+                            <div><h3 className="text-xl sm:text-2xl font-black text-slate-800">{presentationMode ? 'Detail' : selectedStudent.name}</h3><p className="text-slate-500 font-medium text-xs sm:text-sm">{selectedStudent.role}</p></div>
+                            <button onClick={() => setSelectedStudent(null)} className="p-2 hover:bg-slate-200 rounded-full transition-colors"><X size={20} className="sm:w-6 sm:h-6 text-slate-500" /></button>
                         </div>
-                        <div className="p-6 overflow-y-auto">
+                        <div className="p-4 sm:p-6 overflow-y-auto">
                             <div className="grid grid-cols-2 gap-4 mb-8">
                                 <div className="bg-brand-50 p-4 rounded-xl border border-brand-100 text-center"><p className="text-brand-600 text-xs font-bold uppercase">{t?.admin?.detail?.level || "Level"}</p><p className="text-3xl font-black text-brand-800">{selectedStudent.progress?.level || 1}</p></div>
                                 <div className="bg-yellow-50 p-4 rounded-xl border border-yellow-100 text-center"><p className="text-yellow-600 text-xs font-bold uppercase">{t?.admin?.detail?.xp || "XP"}</p><p className="text-3xl font-black text-yellow-800">{selectedStudent.progress?.xp || 0}</p></div>

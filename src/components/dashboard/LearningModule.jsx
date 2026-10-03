@@ -357,19 +357,19 @@ const LearningModule = ({ module, t, onComplete, onBack, playSound, questions = 
                 </div>
             </div>
 
-            <div className="absolute bottom-8 right-8 md:bottom-12 md:right-12 z-50">
+            <div className="absolute bottom-4 right-4 sm:bottom-8 sm:right-8 md:bottom-12 md:right-12 z-50">
                 <button
                     onClick={next}
                     disabled={!canAdvance}
                     className={`
-                        group flex items-center justify-center gap-3 px-8 py-4 md:px-10 md:py-5 rounded-[2rem] font-black text-xl shadow-2xl transition-all duration-300
+                        group flex items-center justify-center gap-2 sm:gap-3 px-5 py-3 sm:px-8 sm:py-4 md:px-10 md:py-5 rounded-2xl sm:rounded-[2rem] font-black text-base sm:text-xl shadow-2xl transition-all duration-300
                         ${canAdvance
                             ? 'bg-brand-600 text-white hover:bg-brand-700 hover:scale-105 hover:shadow-brand-500/40 active:scale-95 cursor-pointer ring-4 ring-white/50'
                             : 'bg-slate-200 text-slate-400 cursor-not-allowed shadow-none'}
                     `}
                 >
-                    <span className="hidden md:inline">{step === totalSteps - 1 ? (t?.common?.finish || 'FINALIZAR') : (t?.common?.continue || 'CONTINUAR')}</span>
-                    <ChevronRight size={32} strokeWidth={3} className={canAdvance ? 'group-hover:translate-x-1 transition-transform' : ''} />
+                    <span className="hidden sm:inline">{step === totalSteps - 1 ? (t?.common?.finish || 'FINALIZAR') : (t?.common?.continue || 'CONTINUAR')}</span>
+                    <ChevronRight size={28} strokeWidth={3} className={`sm:w-8 sm:h-8 ${canAdvance ? 'group-hover:translate-x-1 transition-transform' : ''}`} />
                 </button>
             </div>
         </div>

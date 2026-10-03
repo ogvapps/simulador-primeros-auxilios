@@ -139,7 +139,7 @@ const Leaderboard = ({ db, firebaseConfigId, onBack, currentUserId, currentUserR
                                     }}
                                     value={filter === 'class' && selectedRole ? selectedRole : ''}
                                     className={`
-                                        appearance-none pl-10 pr-8 py-2.5 rounded-xl font-bold text-sm border-2 outline-none cursor-pointer transition-all min-w-[200px]
+                                        appearance-none pl-10 pr-8 py-2.5 rounded-xl font-bold text-xs sm:text-sm border-2 outline-none cursor-pointer transition-all w-full sm:w-auto min-w-0 sm:min-w-[200px]
                                         ${filter === 'class'
                                             ? 'bg-brand-50 border-brand-500 text-brand-700 shadow-sm'
                                             : 'bg-white border-slate-200 text-slate-600 hover:border-slate-300'
@@ -164,7 +164,7 @@ const Leaderboard = ({ db, firebaseConfigId, onBack, currentUserId, currentUserR
                         <p className="font-bold text-slate-400">{t?.leaderboard?.loading || "Cargando..."}</p>
                     </div>
                 ) : (
-                    <div className="bg-white rounded-3xl shadow-xl border border-slate-100 overflow-hidden">
+                    <div className="bg-white rounded-2xl sm:rounded-3xl shadow-xl border border-slate-100 overflow-hidden">
                         {displayedLeaders.length === 0 ? (
                             <div className="p-10 text-center text-slate-400">
                                 <Users size={48} className="mx-auto mb-4 opacity-20" />
@@ -189,25 +189,25 @@ const Leaderboard = ({ db, firebaseConfigId, onBack, currentUserId, currentUserR
                                             )}
                                             <div
                                                 className={`
-                                                    flex items-center p-5 transition-colors
+                                                    flex items-center p-3 sm:p-5 transition-colors
                                                     ${isMe ? 'bg-yellow-50/50 hover:bg-yellow-50' : 'hover:bg-slate-50'}
                                                 `}
                                             >
                                                 {/* Rank */}
-                                                <div className="w-16 flex justify-center flex-shrink-0">
+                                                <div className="w-8 sm:w-16 flex justify-center flex-shrink-0">
                                                     {getRankIcon(idx)}
                                                 </div>
 
                                                 {/* Avatar & Name */}
                                                 <div className="flex items-center flex-1 min-w-0">
-                                                    <div className={`w-12 h-12 rounded-full flex items-center justify-center mr-4 shadow-sm ${avatarDef.color} font-black text-lg`}>
+                                                    <div className={`w-9 h-9 sm:w-12 sm:h-12 rounded-full flex items-center justify-center mr-2.5 sm:mr-4 shadow-sm ${avatarDef.color} font-black text-base sm:text-lg shrink-0`}>
                                                         {avatarDef.icon ? avatarDef.icon : user.name.charAt(0).toUpperCase()}
                                                     </div>
-                                                    <div className="truncate pr-4">
-                                                        <h3 className={`font-bold text-lg truncate ${isMe ? 'text-brand-700' : 'text-slate-800'}`}>
+                                                    <div className="truncate pr-2 sm:pr-4">
+                                                        <h3 className={`font-bold text-sm sm:text-lg truncate ${isMe ? 'text-brand-700' : 'text-slate-800'}`}>
                                                             {user.name} {isMe && (t?.leaderboard?.you || '(Tú)')}
                                                         </h3>
-                                                        <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">
+                                                        <p className="text-[10px] sm:text-xs font-bold text-slate-400 uppercase tracking-widest truncate">
                                                             {user.role} • Nvl {user.level}
                                                         </p>
                                                     </div>
@@ -215,10 +215,10 @@ const Leaderboard = ({ db, firebaseConfigId, onBack, currentUserId, currentUserR
 
                                                 {/* XP */}
                                                 <div className="text-right flex-shrink-0 pl-2">
-                                                    <p className="font-black text-2xl text-slate-800">
+                                                    <p className="font-black text-base sm:text-2xl text-slate-800">
                                                         {filter === 'weekly' ? user.weeklyXP.toLocaleString() : user.lifetimeXp.toLocaleString()}
                                                     </p>
-                                                    <p className="text-xs font-bold text-slate-400 uppercase">
+                                                    <p className="text-[9px] sm:text-xs font-bold text-slate-400 uppercase">
                                                         {filter === 'weekly' ? 'XP SEMANAL' : 'XP TOTAL'}
                                                     </p>
                                                 </div>

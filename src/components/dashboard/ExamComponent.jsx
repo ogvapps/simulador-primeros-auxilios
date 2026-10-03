@@ -202,12 +202,12 @@ const ExamComponent = ({
                         </div>
                     </div>
 
-                    <div className="flex justify-center gap-4">
-                        <button onClick={onBack} className="bg-slate-800 text-white px-10 py-4 rounded-xl hover:bg-slate-900 shadow-xl font-bold text-lg transition-all hover:-translate-y-1">
+                    <div className="flex flex-col sm:flex-row justify-center gap-3 sm:gap-4">
+                        <button onClick={onBack} className="w-full sm:w-auto bg-slate-800 text-white px-6 sm:px-10 py-3.5 sm:py-4 rounded-xl hover:bg-slate-900 shadow-xl font-bold text-base sm:text-lg transition-all hover:-translate-y-1">
                             {t?.exam?.backHome || "Volver al Inicio"}
                         </button>
                         {!isPass && attemptsLeft > 1 && (
-                            <button onClick={() => { setFinished(false); setQIndex(0); setAnswers({}); setRawScore(0); }} className="bg-brand-600 text-white px-10 py-4 rounded-xl hover:bg-brand-700 shadow-xl font-bold text-lg transition-all hover:-translate-y-1 flex items-center">
+                            <button onClick={() => { setFinished(false); setQIndex(0); setAnswers({}); setRawScore(0); }} className="w-full sm:w-auto bg-brand-600 text-white px-6 sm:px-10 py-3.5 sm:py-4 rounded-xl hover:bg-brand-700 shadow-xl font-bold text-base sm:text-lg transition-all hover:-translate-y-1 flex items-center justify-center">
                                 <RotateCcw className="mr-2" /> {t?.exam?.retryButton ? t.exam.retryButton.replace('{0}', attemptsLeft - 1) : `Reintentar (${attemptsLeft - 1} restantes)`}
                             </button>
                         )}
@@ -239,8 +239,8 @@ const ExamComponent = ({
     const options = question.opts || question.options;
 
     return (
-        <div className="min-h-[80vh] flex items-center justify-center p-4">
-            <div className="max-w-2xl w-full mx-auto bg-white p-8 md:p-12 rounded-3xl shadow-2xl border border-slate-100 flex flex-col h-[700px]">
+        <div className="min-h-[80vh] flex items-center justify-center p-3 sm:p-4">
+            <div className="max-w-2xl w-full mx-auto bg-white p-4 sm:p-8 md:p-12 rounded-2xl sm:rounded-3xl shadow-2xl border border-slate-100 flex flex-col min-h-[520px] md:min-h-[650px] h-auto">
 
                 {/* Practice Mode Banner */}
                 {practiceMode && (
@@ -313,14 +313,14 @@ const ExamComponent = ({
 
                 {/* Question */}
                 <div className="flex-1 flex flex-col justify-center">
-                    <h3 className="text-2xl md:text-3xl font-black text-slate-800 mb-8 leading-snug">{question.q}</h3>
+                    <h3 className="text-xl sm:text-2xl md:text-3xl font-black text-slate-800 mb-4 sm:mb-8 leading-snug">{question.q}</h3>
 
-                    <div className="space-y-3">
+                    <div className="space-y-2.5 sm:space-y-3">
                         {options.map((opt, idx) => {
                             // 50/50 Logic: Hide if index is in hiddenOptions[qIndex]
                             if (hiddenOptions[qIndex]?.includes(idx)) {
                                 return (
-                                    <div key={opt} className="w-full p-6 rounded-2xl border-2 border-slate-100 bg-slate-50 text-slate-300 flex items-center justify-center opacity-50">
+                                    <div key={opt} className="w-full p-4 sm:p-6 rounded-xl sm:rounded-2xl border-2 border-slate-100 bg-slate-50 text-slate-300 flex items-center justify-center opacity-50">
                                         <XCircle size={20} />
                                     </div>
                                 );
@@ -348,13 +348,13 @@ const ExamComponent = ({
                                     onClick={() => !isAnswered && handleSelect(opt)}
                                     disabled={isAnswered}
                                     className={`
-                            w-full text-left p-5 rounded-2xl border-2 transition-all duration-200 font-bold text-lg flex items-center justify-between
+                            w-full text-left p-3.5 sm:p-5 rounded-xl sm:rounded-2xl border-2 transition-all duration-200 font-bold text-sm sm:text-base md:text-lg flex items-center justify-between
                             ${feedbackClass}
                         `}
                                 >
                                     <span className="flex-1 pr-2">{opt}</span>
-                                    {isAnswered && isCorrect && <CheckCircle2 size={24} className="text-green-600" />}
-                                    {isAnswered && isSelected && !isCorrect && <XCircle size={24} className="text-red-600" />}
+                                    {isAnswered && isCorrect && <CheckCircle2 size={22} className="text-green-600 shrink-0" />}
+                                    {isAnswered && isSelected && !isCorrect && <XCircle size={22} className="text-red-600 shrink-0" />}
                                 </button>
                             )
                         })}

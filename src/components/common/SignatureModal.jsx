@@ -80,26 +80,26 @@ const SignatureModal = ({ isOpen, onClose, onSave, t }) => {
     if (!isOpen) return null;
 
     return (
-        <div className="fixed inset-0 z-[200] bg-slate-900/80 flex items-center justify-center p-4 backdrop-blur-sm animate-in fade-in duration-300">
-            <div className="bg-white rounded-[40px] w-full max-w-lg overflow-hidden shadow-2xl border-4 border-slate-800 animate-in zoom-in duration-300">
-                <div className="bg-slate-900 p-6 text-white flex items-center justify-between">
+        <div className="fixed inset-0 z-[200] bg-slate-900/80 flex items-center justify-center p-3 sm:p-4 backdrop-blur-sm animate-in fade-in duration-300">
+            <div className="bg-white rounded-2xl sm:rounded-[40px] w-full max-w-lg overflow-hidden shadow-2xl border-4 border-slate-800 animate-in zoom-in duration-300 max-h-[92vh] flex flex-col">
+                <div className="bg-slate-900 p-4 sm:p-6 text-white flex items-center justify-between shrink-0">
                     <div className="flex items-center gap-3">
                         <div className="p-2 bg-brand-500 rounded-xl">
                             <PenTool size={20} />
                         </div>
-                        <h3 className="text-xl font-black">FIRMA DEL PROFESOR</h3>
+                        <h3 className="text-lg sm:text-xl font-black">FIRMA DEL PROFESOR</h3>
                     </div>
                     <button onClick={onClose} className="p-2 hover:bg-white/10 rounded-full transition-colors">
                         <X size={24} />
                     </button>
                 </div>
 
-                <div className="p-8">
-                    <p className="text-slate-500 text-sm font-medium mb-6">
+                <div className="p-4 sm:p-8 overflow-y-auto">
+                    <p className="text-slate-500 text-xs sm:text-sm font-medium mb-4 sm:mb-6">
                         Dibuja tu firma en el recuadro de abajo. Esta firma aparecerá en todos los diplomas generados.
                     </p>
 
-                    <div className="relative border-4 border-dashed border-slate-200 rounded-3xl bg-slate-50 cursor-crosshair overflow-hidden touch-none">
+                    <div className="relative border-4 border-dashed border-slate-200 rounded-2xl sm:rounded-3xl bg-slate-50 cursor-crosshair overflow-hidden touch-none">
                         <canvas
                             ref={canvasRef}
                             width={450}
@@ -114,16 +114,16 @@ const SignatureModal = ({ isOpen, onClose, onSave, t }) => {
                             onTouchEnd={stopDrawing}
                         />
                         {!hasSignature && (
-                            <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-20 capitalize font-serif text-3xl font-black text-slate-400">
+                            <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-20 capitalize font-serif text-2xl sm:text-3xl font-black text-slate-400">
                                 Firma aquí
                             </div>
                         )}
                     </div>
 
-                    <div className="flex gap-4 mt-8">
+                    <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 mt-6 sm:mt-8">
                         <button
                             onClick={clear}
-                            className="flex-1 flex items-center justify-center gap-2 bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold py-4 rounded-2xl transition-all active:scale-95"
+                            className="flex-1 flex items-center justify-center gap-2 bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold py-3 sm:py-4 rounded-xl sm:rounded-2xl transition-all active:scale-95"
                         >
                             <RotateCcw size={20} />
                             BORRAR
@@ -131,7 +131,7 @@ const SignatureModal = ({ isOpen, onClose, onSave, t }) => {
                         <button
                             onClick={handleSave}
                             disabled={!hasSignature}
-                            className={`flex-1 flex items-center justify-center gap-2 ${hasSignature ? 'bg-emerald-500 hover:bg-emerald-600 text-white' : 'bg-slate-200 text-slate-400 cursor-not-allowed'} font-bold py-4 rounded-2xl transition-all active:scale-95`}
+                            className={`flex-1 flex items-center justify-center gap-2 ${hasSignature ? 'bg-emerald-500 hover:bg-emerald-600 text-white' : 'bg-slate-200 text-slate-400 cursor-not-allowed'} font-bold py-3 sm:py-4 rounded-xl sm:rounded-2xl transition-all active:scale-95`}
                         >
                             <Check size={20} />
                             GUARDAR FIRMA

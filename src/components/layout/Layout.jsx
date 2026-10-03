@@ -91,7 +91,12 @@ const Layout = ({ children, view, setView, profile, currentLevel, currentXp, mut
                     </div>
 
                     {/* Mobile Menu Button */}
-                    <div className="md:hidden flex items-center gap-2">
+                    <div className="md:hidden flex items-center gap-1.5 sm:gap-2">
+                        {/* Mobile Streak */}
+                        <div className="flex items-center gap-1 px-2 py-1 bg-orange-50 dark:bg-orange-900/20 text-orange-600 dark:text-orange-400 rounded-lg font-bold text-xs border border-orange-100 dark:border-orange-800/30" title={t?.nav?.streak || "Racha"}>
+                            <Flame size={14} className={streak > 0 ? "fill-orange-500 animate-pulse" : ""} />
+                            <span>{streak}</span>
+                        </div>
                         <button onClick={toggleLang} className="px-2 py-1 text-xs font-bold bg-slate-100 dark:bg-slate-800 rounded uppercase">
                             {lang}
                         </button>
@@ -106,7 +111,7 @@ const Layout = ({ children, view, setView, profile, currentLevel, currentXp, mut
                     <div className="md:hidden absolute top-16 left-0 w-full bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 p-4 shadow-xl animate-in slide-in-from-top-2">
                         <div className="flex flex-col gap-2">
                             {profile && (
-                                <div className="flex items-center gap-3 p-3 bg-slate-50 dark:bg-slate-800 rounded-xl mb-2" onClick={() => { onProfileClick(); setIsMobileMenuOpen(false); }}>
+                                <div className="flex items-center gap-3 p-3 bg-slate-50 dark:bg-slate-800 rounded-xl mb-2 cursor-pointer" onClick={() => { onProfileClick(); setIsMobileMenuOpen(false); }}>
                                     <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white text-xl font-bold ${profile.avatarColor || 'bg-brand-500 shadow-sm'}`}>
                                         {profile.activeAvatarIcon || (profile.name ? profile.name[0] : 'U')}
                                     </div>
@@ -134,15 +139,15 @@ const Layout = ({ children, view, setView, profile, currentLevel, currentXp, mut
             </header>
 
             {/* Main Content */}
-            <main className="flex-grow w-full max-w-7xl mx-auto p-4 sm:p-6 lg:p-8 animate-in fade-in duration-500">
+            <main className="flex-grow w-full max-w-7xl mx-auto p-3 sm:p-6 lg:p-8 animate-in fade-in duration-500">
                 {children}
             </main>
 
             {/* Footer */}
-            <footer className="bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 py-8 text-center text-slate-400 dark:text-slate-500 text-sm print:hidden">
-                <p className="mb-2">{t?.footer?.title || "Simulador de Primeros Auxilios para Educación"}</p>
-                <div className="flex justify-center gap-4 text-xs font-bold text-slate-300">
-                    <span>© {new Date().getFullYear()} {t?.footer?.rights || "OGV Apps Educational"} • ogonzalezv01@educarex.es</span>
+            <footer className="bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 py-6 sm:py-8 text-center text-slate-400 dark:text-slate-500 text-sm print:hidden">
+                <p className="mb-2 px-4 text-xs sm:text-sm">{t?.footer?.title || "Simulador de Primeros Auxilios para Educación"}</p>
+                <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1.5 px-4 text-xs font-bold text-slate-400 dark:text-slate-500 max-w-xl mx-auto">
+                    <span>© {new Date().getFullYear()} {t?.footer?.rights || "OGV Apps Educational"}</span>
                     <span>•</span>
                     <button onClick={() => setShowPrivacy(true)} className="hover:text-brand-600 transition-colors">{t?.nav?.privacy || "Privacidad"}</button>
                     <span>•</span>

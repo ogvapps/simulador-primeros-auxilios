@@ -106,43 +106,42 @@ const CPRHero = ({ onComplete }) => {
     }, [started, gameWon]);
 
     return (
-        <div className="w-full max-w-lg mx-auto bg-slate-50 rounded-3xl p-8 text-center border-4 border-slate-200 shadow-xl select-none"
+        <div className="w-full max-w-lg mx-auto bg-slate-50 rounded-2xl sm:rounded-3xl p-4 sm:p-8 text-center border-4 border-slate-200 shadow-xl select-none"
             onClick={handleTap}>
 
-            <div className="flex justify-between items-center mb-6 text-slate-400 font-bold uppercase text-xs tracking-widest">
+            <div className="flex justify-between items-center mb-4 sm:mb-6 text-slate-400 font-bold uppercase text-xs tracking-widest">
                 <span>Ritmo Vital</span>
                 <span>{timeLeft}s</span>
             </div>
 
             {/* Heart Animation */}
-            <div className="relative h-48 flex items-center justify-center mb-6">
+            <div className="relative h-36 sm:h-48 flex items-center justify-center mb-4 sm:mb-6">
                 <Heart
                     fill="currentColor"
-                    className={`text-red-500 transition-all duration-100 ${started ? 'scale-110' : 'scale-100'}`}
-                    size={started ? 180 : 140}
+                    className={`w-28 h-28 sm:w-44 sm:h-44 text-red-500 transition-all duration-100 ${started ? 'scale-110' : 'scale-100'}`}
                     style={{ transform: started ? `scale(${1 + (combo / 50)})` : 'scale(1)' }}
                 />
 
                 {!started && !gameWon && (
                     <div className="absolute inset-0 flex items-center justify-center">
-                        <Play size={64} className="text-white drop-shadow-lg opacity-80" />
+                        <Play size={48} className="sm:w-16 sm:h-16 text-white drop-shadow-lg opacity-80" />
                     </div>
                 )}
 
                 {gameWon && (
                     <div className="absolute inset-0 flex items-center justify-center animate-in zoom-in">
-                        <Trophy size={80} className="text-yellow-400 drop-shadow-lg" />
+                        <Trophy size={60} className="sm:w-20 sm:h-20 text-yellow-400 drop-shadow-lg" />
                     </div>
                 )}
             </div>
 
             <div className="mb-4">
-                <div className={`text-xl ${feedbackColor} transition-colors uppercase tracking-tight`}>
+                <div className={`text-base sm:text-xl font-bold ${feedbackColor} transition-colors uppercase tracking-tight`}>
                     {feedback}
                 </div>
                 {started && (
-                    <div className="text-6xl font-black text-slate-800 my-2 font-mono">
-                        {bpm} <span className="text-lg text-slate-400">BPM</span>
+                    <div className="text-4xl sm:text-6xl font-black text-slate-800 my-2 font-mono">
+                        {bpm} <span className="text-base sm:text-lg text-slate-400">BPM</span>
                     </div>
                 )}
             </div>

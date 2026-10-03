@@ -53,8 +53,8 @@ const HelpTutorial = ({ isOpen, onClose, t }) => {
     };
 
     return (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
-            <div className="bg-white rounded-3xl shadow-2xl max-w-lg w-full overflow-hidden relative flex flex-col min-h-[500px]">
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-sm p-3 sm:p-4 animate-in fade-in duration-200">
+            <div className="bg-white rounded-3xl shadow-2xl max-w-lg w-full overflow-hidden relative flex flex-col max-h-[92vh]">
                 {/* Close Button */}
                 <button
                     onClick={onClose}
@@ -64,44 +64,44 @@ const HelpTutorial = ({ isOpen, onClose, t }) => {
                 </button>
 
                 {/* Progress Bar */}
-                <div className="flex gap-1 p-6 pb-0">
+                <div className="flex gap-1 p-4 sm:p-6 pb-0">
                     {steps.map((_, i) => (
                         <div key={i} className={`h-1.5 flex-1 rounded-full transition-colors ${i <= step ? 'bg-brand-500' : 'bg-slate-100'}`} />
                     ))}
                 </div>
 
                 {/* Content */}
-                <div className="flex-1 flex flex-col items-center justify-center p-8 text-center animate-in slide-in-from-right-8 fade-in duration-300 transform" key={step}>
-                    <div className={`w-32 h-32 rounded-full flex items-center justify-center mb-6 shadow-inner ${current.color}`}>
-                        {current.icon}
+                <div className="flex-1 overflow-y-auto flex flex-col items-center justify-center p-5 sm:p-8 text-center animate-in slide-in-from-right-8 fade-in duration-300 transform" key={step}>
+                    <div className={`w-20 h-20 sm:w-28 sm:h-28 rounded-full flex items-center justify-center mb-4 sm:mb-6 shadow-inner shrink-0 ${current.color}`}>
+                        {React.cloneElement(current.icon, { size: 40, className: `${current.icon.props.className} sm:w-14 sm:h-14` })}
                     </div>
 
-                    <h2 className="text-3xl font-black text-slate-800 mb-4 leading-tight">{current.title}</h2>
-                    <p className="text-lg text-slate-600 font-medium leading-relaxed">{current.desc}</p>
+                    <h2 className="text-xl sm:text-2xl md:text-3xl font-black text-slate-800 mb-2 sm:mb-4 leading-tight">{current.title}</h2>
+                    <p className="text-sm sm:text-base md:text-lg text-slate-600 font-medium leading-relaxed">{current.desc}</p>
 
                     {current.subtext && (
-                        <div className="mt-6 p-4 bg-orange-50 text-orange-800 text-sm font-bold rounded-xl border border-orange-100 flex items-start text-left">
+                        <div className="mt-4 sm:mt-6 p-3 sm:p-4 bg-orange-50 text-orange-800 text-xs sm:text-sm font-bold rounded-xl border border-orange-100 flex items-start text-left">
                             {current.subtext}
                         </div>
                     )}
                 </div>
 
                 {/* Footer Nav */}
-                <div className="p-6 border-t border-slate-100 bg-slate-50 flex justify-between items-center">
+                <div className="p-4 sm:p-6 border-t border-slate-100 bg-slate-50 flex justify-between items-center shrink-0">
                     <button
                         onClick={() => setStep(s => Math.max(0, s - 1))}
                         disabled={step === 0}
-                        className="px-4 py-2 text-slate-400 font-bold hover:text-slate-600 disabled:opacity-0 transition-all"
+                        className="px-3 sm:px-4 py-2 text-xs sm:text-sm text-slate-400 font-bold hover:text-slate-600 disabled:opacity-0 transition-all"
                     >
                         {t?.tutorial?.prev || "Anterior"}
                     </button>
 
                     <button
                         onClick={handleNext}
-                        className="flex items-center gap-2 bg-brand-600 text-white px-8 py-3 rounded-xl font-bold shadow-lg shadow-brand-200 hover:bg-brand-700 hover:scale-105 active:scale-95 transition-all"
+                        className="flex items-center gap-2 bg-brand-600 text-white px-5 sm:px-8 py-2.5 sm:py-3 rounded-xl font-bold text-sm sm:text-base shadow-lg shadow-brand-200 hover:bg-brand-700 hover:scale-105 active:scale-95 transition-all"
                     >
                         {isLast ? (t?.tutorial?.understood || "¡Entendido!") : (t?.tutorial?.next || "Siguiente")}
-                        {!isLast && <ChevronRight size={20} />}
+                        {!isLast && <ChevronRight size={18} />}
                     </button>
                 </div>
             </div>

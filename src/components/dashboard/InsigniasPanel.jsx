@@ -79,7 +79,7 @@ const InsigniasPanel = memo(({ progress, currentLevel, currentXp, t, modules, hi
                     </div>
                 </div>
 
-                <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-4 pb-4">
+                <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-2 sm:gap-4 pb-2 sm:pb-4">
                     {DISPLAY_BADGES.map((id) => {
                         const isUnlocked = progress[`${id}Completed`];
                         const module = modules?.find(m => m.id === id);

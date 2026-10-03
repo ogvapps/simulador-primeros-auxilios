@@ -34,49 +34,51 @@ const HomePage = ({
         </div>
       </div>
 
-      <div className="flex flex-col md:flex-row items-end justify-between gap-4 mb-6 animate-in slide-in-from-top-4">
+      <div className="flex flex-col md:flex-row items-start md:items-end justify-between gap-4 mb-6 animate-in slide-in-from-top-4">
         <div>
-          <h1 className="text-3xl md:text-4xl font-black text-slate-900 dark:text-white mb-2">
+          <h1 className="text-2xl sm:text-3xl md:text-4xl font-black text-slate-900 dark:text-white mb-2">
             {t?.home?.welcome || "Tu Entrenamiento"}
           </h1>
-          <p className="text-slate-500 dark:text-slate-400 font-medium max-w-xl">
+          <p className="text-slate-500 dark:text-slate-400 font-medium text-xs sm:text-base max-w-xl">
             {t?.home?.subtitle || "Completa todos los módulos teóricos para desbloquear el examen final y obtener tu certificado."}
           </p>
         </div>
 
-        <button onClick={() => { generateCheatSheet(); playSound('success'); }}
-          className="flex items-center gap-2 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 px-4 py-3 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 hover:border-brand-300 hover:text-brand-600 dark:hover:text-brand-400 font-bold transition-all text-sm mb-2 md:mb-0">
-          <FileText size={18} />
-          <span className="hidden md:inline">{t?.home?.cheatSheet || "Ficha Resumen"}</span>
-          <span className="md:hidden">PDF</span>
-          <Download size={14} className="opacity-50" />
-        </button>
+        <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+          <button onClick={() => { generateCheatSheet(); playSound('success'); }}
+            className="flex items-center gap-2 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 px-3.5 sm:px-4 py-2.5 sm:py-3 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 hover:border-brand-300 hover:text-brand-600 dark:hover:text-brand-400 font-bold transition-all text-xs sm:text-sm">
+            <FileText size={18} />
+            <span className="hidden sm:inline">{t?.home?.cheatSheet || "Ficha Resumen"}</span>
+            <span className="sm:hidden">PDF</span>
+            <Download size={14} className="opacity-50" />
+          </button>
 
-        <div className="flex gap-2">
-          <button onClick={() => setView('shop')}
-            className="flex flex-col items-center justify-center w-16 h-16 bg-white dark:bg-slate-800 rounded-2xl border-2 border-slate-100 dark:border-slate-700 shadow-sm hover:border-yellow-400 hover:scale-105 transition-all group"
-            title={t?.home?.shop}>
-            <div className="bg-yellow-100 dark:bg-yellow-900/30 text-yellow-600 dark:text-yellow-400 p-2 rounded-lg mb-1 group-hover:bg-yellow-400 group-hover:text-yellow-900 transition-colors">
-              <ShoppingBag size={20} className="stroke-[3]" />
-            </div>
-            <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase">{t?.home?.shop}</span>
-          </button>
-          <button onClick={() => setView('profile')}
-            className="flex flex-col items-center justify-center w-16 h-16 bg-white dark:bg-slate-800 rounded-2xl border-2 border-slate-100 dark:border-slate-700 shadow-sm hover:border-orange-400 hover:scale-105 transition-all group"
-            title={t?.profile?.backpack_btn || "Mochila"}>
-            <div className="bg-orange-50 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400 p-2 rounded-lg mb-1 group-hover:bg-orange-500 group-hover:text-white transition-colors">
-              <User size={20} className="stroke-[3]" />
-            </div>
-            <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase">P.A.S.</span>
-          </button>
-          <button onClick={() => setView('leaderboard')}
-            className="flex flex-col items-center justify-center w-16 h-16 bg-white dark:bg-slate-800 rounded-2xl border-2 border-slate-100 dark:border-slate-700 shadow-sm hover:border-brand-400 hover:scale-105 transition-all group"
-            title={t?.home?.rank}>
-            <div className="bg-brand-50 dark:bg-brand-900/30 text-brand-600 dark:text-brand-400 p-2 rounded-lg mb-1 group-hover:bg-brand-500 group-hover:text-white transition-colors">
-              <Trophy size={20} className="stroke-[3]" />
-            </div>
-            <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase">Rank</span>
-          </button>
+          <div className="flex gap-2">
+            <button onClick={() => setView('shop')}
+              className="flex flex-col items-center justify-center w-14 h-14 sm:w-16 sm:h-16 bg-white dark:bg-slate-800 rounded-xl sm:rounded-2xl border-2 border-slate-100 dark:border-slate-700 shadow-sm hover:border-yellow-400 hover:scale-105 transition-all group"
+              title={t?.home?.shop}>
+              <div className="bg-yellow-100 dark:bg-yellow-900/30 text-yellow-600 dark:text-yellow-400 p-1.5 sm:p-2 rounded-lg mb-0.5 sm:mb-1 group-hover:bg-yellow-400 group-hover:text-yellow-900 transition-colors">
+                <ShoppingBag size={18} className="stroke-[3]" />
+              </div>
+              <span className="text-[9px] sm:text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase">{t?.home?.shop}</span>
+            </button>
+            <button onClick={() => setView('profile')}
+              className="flex flex-col items-center justify-center w-14 h-14 sm:w-16 sm:h-16 bg-white dark:bg-slate-800 rounded-xl sm:rounded-2xl border-2 border-slate-100 dark:border-slate-700 shadow-sm hover:border-orange-400 hover:scale-105 transition-all group"
+              title={t?.profile?.backpack_btn || "Mochila"}>
+              <div className="bg-orange-50 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400 p-1.5 sm:p-2 rounded-lg mb-0.5 sm:mb-1 group-hover:bg-orange-500 group-hover:text-white transition-colors">
+                <User size={18} className="stroke-[3]" />
+              </div>
+              <span className="text-[9px] sm:text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase">P.A.S.</span>
+            </button>
+            <button onClick={() => setView('leaderboard')}
+              className="flex flex-col items-center justify-center w-14 h-14 sm:w-16 sm:h-16 bg-white dark:bg-slate-800 rounded-xl sm:rounded-2xl border-2 border-slate-100 dark:border-slate-700 shadow-sm hover:border-brand-400 hover:scale-105 transition-all group"
+              title={t?.home?.rank}>
+              <div className="bg-brand-50 dark:bg-brand-900/30 text-brand-600 dark:text-brand-400 p-1.5 sm:p-2 rounded-lg mb-0.5 sm:mb-1 group-hover:bg-brand-500 group-hover:text-white transition-colors">
+                <Trophy size={18} className="stroke-[3]" />
+              </div>
+              <span className="text-[9px] sm:text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase">Rank</span>
+            </button>
+          </div>
         </div>
       </div>
 
@@ -151,27 +153,27 @@ const HomePage = ({
         <div className="bg-slate-900 text-white rounded-3xl shadow-xl overflow-hidden relative group cursor-pointer border-2 border-slate-700 hover:border-red-500 transition-colors" onClick={() => setView('guardia')}>
           <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-30"></div>
           <div className="absolute top-0 right-0 p-32 bg-red-600 rounded-full blur-[100px] opacity-20 group-hover:opacity-40 transition-opacity"></div>
-          <div className="relative p-8 md:p-10 flex flex-col md:flex-row justify-between items-center gap-6">
-            <div className="flex-1">
+          <div className="relative p-5 sm:p-8 md:p-10 flex flex-col md:flex-row justify-between items-center gap-6">
+            <div className="flex-1 text-center md:text-left">
               <div className="inline-flex items-center gap-2 bg-red-500/20 text-red-400 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider mb-3 border border-red-500/30">
                 <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse"></span> Acceso Restringido
               </div>
               <h2 className="text-3xl md:text-5xl font-black mb-2 italic tracking-tighter">MODO GUARDIA</h2>
-              <p className="text-slate-400 text-lg font-medium max-w-lg">Pon a prueba tus reflejos en situaciones de emergencia real. Contrarreloj.</p>
+              <p className="text-slate-400 text-base sm:text-lg font-medium max-w-lg">Pon a prueba tus reflejos en situaciones de emergencia real. Contrarreloj.</p>
             </div>
-            <button className="bg-red-600 hover:bg-red-500 text-white font-bold py-4 px-8 rounded-2xl shadow-lg shadow-red-900/50 transform group-hover:scale-105 transition-all flex items-center gap-3 text-lg">
+            <button className="w-full sm:w-auto justify-center bg-red-600 hover:bg-red-500 text-white font-bold py-3.5 sm:py-4 px-6 sm:px-8 rounded-2xl shadow-lg shadow-red-900/50 transform group-hover:scale-105 transition-all flex items-center gap-3 text-base sm:text-lg">
               <Play fill="currentColor" /> INICIAR TURNO
             </button>
           </div>
         </div>
       ) : (
-        <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm flex items-center gap-6">
-          <div className="w-16 h-16 rounded-2xl bg-slate-100 dark:bg-slate-900 flex items-center justify-center text-slate-400">
-            <AlertTriangle size={32} />
+        <div className="bg-white dark:bg-slate-800 p-4 sm:p-6 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm flex flex-col sm:flex-row items-center sm:items-start text-center sm:text-left gap-4 sm:gap-6">
+          <div className="w-14 h-14 sm:w-16 sm:h-16 shrink-0 rounded-2xl bg-slate-100 dark:bg-slate-900 flex items-center justify-center text-slate-400">
+            <AlertTriangle size={28} className="sm:w-8 sm:h-8" />
           </div>
-          <div>
-            <h3 className="font-bold text-slate-800 dark:text-white text-lg">Modo Guardia Bloqueado</h3>
-            <p className="text-slate-500 dark:text-slate-400 text-sm">Alcanza el <span className="font-bold text-brand-600 dark:text-brand-400">Nivel 3 ({LEVELS[2].name})</span> para desbloquear el simulador de guardia.</p>
+          <div className="flex-1">
+            <h3 className="font-bold text-slate-800 dark:text-white text-base sm:text-lg">Modo Guardia Bloqueado</h3>
+            <p className="text-slate-500 dark:text-slate-400 text-xs sm:text-sm">Alcanza el <span className="font-bold text-brand-600 dark:text-brand-400">Nivel 3 ({LEVELS[2].name})</span> para desbloquear el simulador de guardia.</p>
             <div className="w-full bg-slate-100 dark:bg-slate-900 h-2 rounded-full mt-3 overflow-hidden">
               <div className="h-full bg-slate-300 dark:bg-slate-600" style={{ width: `${(currentXp / 400) * 100}%` }}></div>
             </div>

@@ -86,16 +86,16 @@ const TimeTrialExam = ({ questions, t, onComplete, onBack, playSound }) => {
 
     if (gameState === 'intro') {
         return (
-            <div className="min-h-screen bg-slate-900 flex items-center justify-center p-4 font-sans text-white">
-                <div className="max-w-md w-full bg-slate-800 rounded-3xl p-8 text-center border-4 border-yellow-500 shadow-2xl relative overflow-hidden">
+            <div className="min-h-screen bg-slate-900 flex items-center justify-center p-3 sm:p-4 font-sans text-white">
+                <div className="max-w-md w-full bg-slate-800 rounded-2xl sm:rounded-3xl p-5 sm:p-8 text-center border-4 border-yellow-500 shadow-2xl relative overflow-hidden">
                     {/* Decorative Background - Added pointer-events-none to prevent click blocking */}
                     <div className="absolute top-0 left-0 w-full h-full bg-yellow-500/10 animate-pulse pointer-events-none"></div>
 
                     {/* Content Wrapper to ensure Z-Index above background */}
                     <div className="relative z-10">
-                        <Zap className="mx-auto text-yellow-500 mb-6 animate-bounce" size={64} />
-                        <h1 className="text-4xl font-black mb-2 uppercase italic tracking-tighter">{t?.game?.timetrial?.title || "Contrarreloj"}</h1>
-                        <p className="text-slate-400 mb-8 text-lg">
+                        <Zap className="mx-auto text-yellow-500 mb-4 sm:mb-6 animate-bounce" size={48} />
+                        <h1 className="text-2xl sm:text-4xl font-black mb-2 uppercase italic tracking-tighter">{t?.game?.timetrial?.title || "Contrarreloj"}</h1>
+                        <p className="text-slate-400 mb-6 sm:mb-8 text-sm sm:text-lg">
                             {t?.game?.timetrial?.subtitle || "10 Preguntas. 60 Segundos."}<br />
                             <span className="text-red-400 font-bold">{t?.game?.timetrial?.penalty || "Fallar resta 5 segundos."}</span>
                         </p>
@@ -104,7 +104,7 @@ const TimeTrialExam = ({ questions, t, onComplete, onBack, playSound }) => {
                             <button
                                 type="button"
                                 onClick={handleStart}
-                                className="w-full bg-yellow-500 hover:bg-yellow-400 text-slate-900 font-black text-xl py-4 rounded-xl shadow-[0_0_20px_rgba(234,179,8,0.5)] hover:scale-105 transition-all active:scale-95"
+                                className="w-full bg-yellow-500 hover:bg-yellow-400 text-slate-900 font-black text-lg sm:text-xl py-3.5 sm:py-4 rounded-xl shadow-[0_0_20px_rgba(234,179,8,0.5)] hover:scale-105 transition-all active:scale-95"
                             >
                                 {t?.game?.timetrial?.start || "¡EMPEZAR YA!"}
                             </button>
@@ -114,12 +114,7 @@ const TimeTrialExam = ({ questions, t, onComplete, onBack, playSound }) => {
                             </div>
                         )}
 
-                        <button onClick={onBack} className="mt-4 text-slate-500 hover:text-white underline">{t?.game?.timetrial?.back || "Volver"}</button>
-
-                        {/* DEBUGGER FOR USER FEEDBACK */}
-                        <div className="mt-6 p-2 bg-red-900/50 border border-red-500 rounded text-xs text-white font-mono font-bold">
-                            DEBUG: v1.6 | Q: {localQuestions?.length || 0} | S: {gameState} | C: {clickCount}
-                        </div>
+                        <button onClick={onBack} className="mt-4 text-slate-500 hover:text-white underline text-sm">{t?.game?.timetrial?.back || "Volver"}</button>
                     </div>
                 </div>
             </div>
@@ -128,21 +123,21 @@ const TimeTrialExam = ({ questions, t, onComplete, onBack, playSound }) => {
 
     if (gameState === 'finished') {
         return (
-            <div className="min-h-screen bg-slate-900 flex items-center justify-center p-4 font-sans text-white">
-                <div className="max-w-md w-full bg-slate-800 rounded-3xl p-8 text-center border border-slate-700 shadow-2xl">
-                    <Trophy className="mx-auto text-yellow-500 mb-4" size={64} />
-                    <h2 className="text-3xl font-black mb-2">{t?.game?.timetrial?.timeUp || "¡Tiempo Agotado!"}</h2>
-                    <div className="text-6xl font-black text-white mb-2">{score}/10</div>
-                    <p className="text-slate-400 mb-6">{t?.game?.timetrial?.hits || "Aciertos"}</p>
+            <div className="min-h-screen bg-slate-900 flex items-center justify-center p-3 sm:p-4 font-sans text-white">
+                <div className="max-w-md w-full bg-slate-800 rounded-2xl sm:rounded-3xl p-5 sm:p-8 text-center border border-slate-700 shadow-2xl">
+                    <Trophy className="mx-auto text-yellow-500 mb-3 sm:mb-4" size={48} />
+                    <h2 className="text-2xl sm:text-3xl font-black mb-2">{t?.game?.timetrial?.timeUp || "¡Tiempo Agotado!"}</h2>
+                    <div className="text-5xl sm:text-6xl font-black text-white mb-2">{score}/10</div>
+                    <p className="text-slate-400 mb-6 text-sm sm:text-base">{t?.game?.timetrial?.hits || "Aciertos"}</p>
 
-                    <div className="bg-slate-700/50 rounded-xl p-4 mb-8 flex justify-between items-center">
+                    <div className="bg-slate-700/50 rounded-xl p-3 sm:p-4 mb-6 sm:mb-8 flex justify-between items-center text-sm sm:text-base">
                         <span className="text-slate-400">{t?.game?.timetrial?.bonus || "Bonus Tiempo"}:</span>
                         <span className="font-bold text-green-400">+{Math.floor(timeLeft / 2)} XP</span>
                     </div>
 
                     <button
                         onClick={handleExit}
-                        className="w-full bg-white text-slate-900 font-bold py-3 rounded-xl hover:bg-slate-200 transition-colors"
+                        className="w-full bg-white text-slate-900 font-bold py-3.5 rounded-xl hover:bg-slate-200 transition-colors"
                     >
                         {t?.game?.timetrial?.returnMenu || "Volver al Menú"}
                     </button>
@@ -162,31 +157,31 @@ const TimeTrialExam = ({ questions, t, onComplete, onBack, playSound }) => {
     const options = currentQ.opts || currentQ.options;
 
     return (
-        <div className="min-h-screen bg-slate-900 flex flex-col items-center justify-center p-4 font-sans relative overflow-hidden">
+        <div className="min-h-screen bg-slate-900 flex flex-col items-center justify-center p-3 sm:p-4 font-sans relative overflow-hidden">
             {/* Background elements */}
             <div className="absolute top-0 right-0 p-32 bg-blue-500/20 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
             <div className="absolute bottom-0 left-0 p-32 bg-purple-500/20 rounded-full blur-3xl translate-y-1/2 -translate-x-1/2"></div>
 
             <div className="max-w-2xl w-full z-10">
                 {/* Header */}
-                <div className="flex justify-between items-center mb-8">
+                <div className="flex justify-between items-center mb-4 sm:mb-8">
                     <div className="flex items-center gap-2">
-                        <span className="text-slate-500 font-bold">{t?.game?.timetrial?.question || "PREGUNTA"}</span>
-                        <span className="text-2xl font-black text-white">{currentIndex + 1}<span className="text-slate-600 text-lg">/{localQuestions.length}</span></span>
+                        <span className="text-slate-500 font-bold text-xs sm:text-sm">{t?.game?.timetrial?.question || "PREGUNTA"}</span>
+                        <span className="text-xl sm:text-2xl font-black text-white">{currentIndex + 1}<span className="text-slate-600 text-base sm:text-lg">/{localQuestions.length}</span></span>
                     </div>
-                    <div className={`flex items-center gap-2 px-4 py-2 rounded-full font-black text-xl border-2 ${timeLeft < 10 ? 'bg-red-500/20 border-red-500 text-red-500 animate-pulse' : 'bg-slate-800 border-slate-700 text-white'}`}>
-                        <Timer size={24} />
+                    <div className={`flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-1.5 sm:py-2 rounded-full font-black text-base sm:text-xl border-2 ${timeLeft < 10 ? 'bg-red-500/20 border-red-500 text-red-500 animate-pulse' : 'bg-slate-800 border-slate-700 text-white'}`}>
+                        <Timer size={20} className="sm:size-6" />
                         {timeLeft}s
                     </div>
                 </div>
 
                 {/* Question Card */}
-                <div className="bg-slate-800 rounded-3xl p-6 md:p-10 shadow-2xl border border-slate-700 mb-6">
-                    <h3 className="text-xl md:text-2xl font-bold text-white leading-relaxed mb-6">
+                <div className="bg-slate-800 rounded-2xl sm:rounded-3xl p-4 sm:p-6 md:p-10 shadow-2xl border border-slate-700 mb-6">
+                    <h3 className="text-lg sm:text-xl md:text-2xl font-bold text-white leading-relaxed mb-4 sm:mb-6">
                         {currentQ.q || currentQ.question}
                     </h3>
 
-                    <div className="grid gap-3">
+                    <div className="grid gap-2.5 sm:gap-3">
                         {options.map((opt, idx) => {
                             let status = 'neutral';
                             if (selectedAnswer !== null) {
@@ -205,15 +200,15 @@ const TimeTrialExam = ({ questions, t, onComplete, onBack, playSound }) => {
                                     onClick={() => handleAnswer(idx)}
                                     disabled={selectedAnswer !== null}
                                     className={`
-                                        w-full p-4 rounded-xl text-left font-medium transition-all transform duration-200 flex items-center justify-between
+                                        w-full p-3.5 sm:p-4 rounded-xl text-left font-medium text-sm sm:text-base transition-all transform duration-200 flex items-center justify-between
                                         ${status === 'neutral' ? 'bg-slate-700 text-slate-200 hover:bg-slate-600 hover:scale-[1.02]' : ''}
                                         ${status === 'correct' ? 'bg-green-500 text-white ring-4 ring-green-500/30 font-bold' : ''}
                                         ${status === 'wrong' ? 'bg-red-500 text-white opacity-50' : ''}
                                     `}
                                 >
-                                    <span>{opt}</span>
-                                    {status === 'correct' && <CheckCircle2 size={24} />}
-                                    {status === 'wrong' && <XCircle size={24} />}
+                                    <span className="flex-1 pr-2">{opt}</span>
+                                    {status === 'correct' && <CheckCircle2 size={22} className="shrink-0" />}
+                                    {status === 'wrong' && <XCircle size={22} className="shrink-0" />}
                                 </button>
                             );
                         })}

@@ -236,7 +236,7 @@ const DesaSimulator = ({ onComplete, onBack, playSound, t, lang }) => {
     };
 
     return (
-        <div className="flex flex-col h-full bg-slate-950 text-white overflow-hidden font-sans select-none">
+        <div className="flex flex-col h-full bg-slate-950 text-white overflow-y-auto lg:overflow-hidden font-sans select-none">
             {/* AE Header */}
             <div className="flex items-center justify-between p-4 md:p-6 bg-slate-900 border-b border-white/10 shadow-2xl z-20 shrink-0">
                 <div className="flex items-center gap-2 md:gap-4">
@@ -283,7 +283,7 @@ const DesaSimulator = ({ onComplete, onBack, playSound, t, lang }) => {
                 </div>
             </div>
 
-            <div className="flex-1 flex flex-col lg:flex-row p-4 md:p-8 gap-4 md:gap-8 overflow-hidden min-h-0">
+            <div className="flex-1 flex flex-col lg:flex-row p-3 sm:p-4 md:p-8 gap-4 md:gap-8 overflow-y-auto lg:overflow-hidden min-h-0">
                 {/* Patient Viewport */}
                 <div className="flex-[1.5] bg-slate-900/40 rounded-[30px] md:rounded-[60px] border border-white/5 relative flex items-center justify-center overflow-hidden shadow-inner group min-h-[300px]">
                     <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(37,99,235,0.05)_0%,transparent_70%)]"></div>
@@ -432,57 +432,57 @@ const DesaSimulator = ({ onComplete, onBack, playSound, t, lang }) => {
                 </div>
 
                 {/* Device Console */}
-                <div className="flex-1 bg-slate-800 rounded-[30px] md:rounded-[70px] border-[6px] md:border-[12px] border-slate-700 shadow-[10px_10px_40px_-5px_rgba(0,0,0,0.5)] flex flex-col overflow-hidden relative min-h-[400px]">
+                <div className="flex-1 bg-slate-800 rounded-2xl sm:rounded-[30px] md:rounded-[70px] border-4 md:border-[12px] border-slate-700 shadow-[10px_10px_40px_-5px_rgba(0,0,0,0.5)] flex flex-col overflow-hidden relative min-h-[340px] md:min-h-[400px]">
                     {/* Screen Section */}
-                    <div className="m-4 md:m-8 flex-1 bg-black rounded-[25px] md:rounded-[45px] border-[10px] md:border-[15px] border-slate-900 shadow-inner relative flex flex-col p-6 md:p-10 overflow-hidden">
+                    <div className="m-2 sm:m-4 md:m-8 flex-1 bg-black rounded-xl sm:rounded-[25px] md:rounded-[45px] border-4 sm:border-[10px] md:border-[15px] border-slate-900 shadow-inner relative flex flex-col p-4 sm:p-6 md:p-10 overflow-hidden min-h-[160px]">
                         {/* CRT Effect */}
                         <div className="absolute inset-0 pointer-events-none bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.1)_50%),linear-gradient(90deg,rgba(255,0,0,0.03),rgba(0,255,0,0.01),rgba(0,0,255,0.03))] bg-[length:100%_4px,3px_100%] z-20"></div>
 
                         {step === 'OFF' ? (
                             <div className="h-full flex flex-col items-center justify-center opacity-20">
-                                <Power size={48} className="md:size-20 text-slate-700 mb-4" />
-                                <span className="text-[10px] md:text-sm text-slate-700 font-bold uppercase tracking-[0.3em] md:tracking-[0.5em]">System Standby</span>
+                                <Power size={36} className="md:size-20 text-slate-700 mb-2 md:mb-4" />
+                                <span className="text-[9px] md:text-sm text-slate-700 font-bold uppercase tracking-[0.2em] md:tracking-[0.5em]">System Standby</span>
                             </div>
                         ) : (
                             <div className="h-full flex flex-col animate-in fade-in duration-1000">
                                 {/* Status Bar */}
-                                <div className="flex justify-between items-center mb-6 md:mb-10 text-[8px] md:text-[10px] font-black tracking-widest text-slate-500 uppercase">
+                                <div className="flex justify-between items-center mb-4 md:mb-10 text-[8px] md:text-[10px] font-black tracking-widest text-slate-500 uppercase">
                                     <div className="flex items-center gap-1.5 md:gap-2">
                                         <Activity size={12} className="text-emerald-500" />
                                         <span>Nominal</span>
                                     </div>
-                                    <div className="px-2 py-1 bg-slate-900 rounded-full border border-white/5">
+                                    <div className="px-2 py-0.5 md:py-1 bg-slate-900 rounded-full border border-white/5">
                                         {patientMode === 'pediatric' ? 'Pediatric' : 'Adult'}
                                     </div>
                                 </div>
 
                                 <div className="flex-1 flex flex-col items-center justify-center text-center">
                                     {step === 'ANALYZING' && (
-                                        <div className="flex gap-2 md:gap-3 h-12 md:h-20 items-end mb-8 md:mb-12">
+                                        <div className="flex gap-1.5 sm:gap-2 md:gap-3 h-8 sm:h-12 md:h-20 items-end mb-4 sm:mb-8 md:mb-12">
                                             {[1, 2, 3, 4, 5].map(i => (
-                                                <div key={i} className="w-2 md:w-4 bg-yellow-500 rounded-full animate-pulse shadow-[0_0_15px_rgba(234,179,8,0.5)]" style={{ height: `${20 + Math.random() * 80}%`, animationDelay: `${i * 100}ms` }}></div>
+                                                <div key={i} className="w-1.5 sm:w-2 md:w-4 bg-yellow-500 rounded-full animate-pulse shadow-[0_0_15px_rgba(234,179,8,0.5)]" style={{ height: `${20 + Math.random() * 80}%`, animationDelay: `${i * 100}ms` }}></div>
                                             ))}
                                         </div>
                                     )}
                                     {step === 'SHOCK_ADVISED' && (
-                                        <div className="mb-6 md:mb-10 p-6 md:p-8 bg-orange-500/10 rounded-full border-2 md:border-4 border-orange-500/20 animate-pulse">
-                                            <ShieldAlert size={60} className="md:size-[100px] text-orange-500" />
+                                        <div className="mb-4 sm:mb-6 md:mb-10 p-4 sm:p-6 md:p-8 bg-orange-500/10 rounded-full border-2 md:border-4 border-orange-500/20 animate-pulse">
+                                            <ShieldAlert size={40} className="sm:size-[60px] md:size-[100px] text-orange-500" />
                                         </div>
                                     )}
-                                    {step === 'SHOCKING' && <Zap size={80} className="md:size-[140px] text-red-500 mb-6 md:mb-10 animate-flash drop-shadow-[0_0_40px_rgba(239,68,68,0.8)]" />}
+                                    {step === 'SHOCKING' && <Zap size={56} className="sm:size-[80px] md:size-[140px] text-red-500 mb-4 sm:mb-6 md:mb-10 animate-flash drop-shadow-[0_0_40px_rgba(239,68,68,0.8)]" />}
 
                                     {step === 'CPR' && (
-                                        <div className="mb-6 md:mb-10">
-                                            <div className="text-7xl md:text-[120px] font-black text-brand-400 leading-none tabular-nums tracking-tighter">
+                                        <div className="mb-4 sm:mb-6 md:mb-10">
+                                            <div className="text-5xl sm:text-7xl md:text-[120px] font-black text-brand-400 leading-none tabular-nums tracking-tighter">
                                                 {cprPhase === 'compressing' ? 30 - cprCount : 2 - breathCount}
                                             </div>
-                                            <div className="text-[10px] md:text-[14px] uppercase tracking-[0.4em] md:tracking-[0.6em] font-black text-brand-200/60 mt-2 md:mt-4">
+                                            <div className="text-[9px] sm:text-[10px] md:text-[14px] uppercase tracking-[0.2em] sm:tracking-[0.4em] md:tracking-[0.6em] font-black text-brand-200/60 mt-1 sm:mt-2 md:mt-4">
                                                 {cprPhase === 'compressing' ? 'Compresiones' : 'Insuflaciones'}
                                             </div>
                                         </div>
                                     )}
 
-                                    <h3 className={`text-2xl md:text-4xl lg:text-5xl font-black uppercase tracking-tight leading-[0.9] px-2 md:px-4 ${step === 'SHOCK_ADVISED' || step === 'SHOCKING' ? 'text-orange-500' : 'text-white'}`}>
+                                    <h3 className={`text-xl sm:text-2xl md:text-4xl lg:text-5xl font-black uppercase tracking-tight leading-[0.9] px-2 md:px-4 ${step === 'SHOCK_ADVISED' || step === 'SHOCKING' ? 'text-orange-500' : 'text-white'}`}>
                                         {steps[step]?.message || ''}
                                     </h3>
                                 </div>
@@ -491,36 +491,36 @@ const DesaSimulator = ({ onComplete, onBack, playSound, t, lang }) => {
                     </div>
 
                     {/* Controls Section */}
-                    <div className="h-[180px] md:h-[280px] px-8 md:px-16 flex items-center justify-between gap-4 md:gap-12 bg-slate-700/30">
+                    <div className="h-[140px] sm:h-[180px] md:h-[280px] px-4 sm:px-8 md:px-16 flex items-center justify-between gap-2 sm:gap-4 md:gap-12 bg-slate-700/30">
                         {/* Power Button */}
-                        <div className="flex flex-col items-center gap-2 md:gap-4">
-                            <button onClick={handlePower} className={`w-16 h-16 md:w-28 md:h-28 rounded-full flex items-center justify-center transition-all active:scale-90 shadow-2xl border-b-[6px] md:border-b-[10px] ${step === 'OFF' ? 'bg-slate-800 border-slate-950 text-slate-600' : 'bg-green-600 border-green-900 text-white shadow-green-500/30'}`}>
-                                <Power size={24} className={step !== 'OFF' ? 'animate-pulse' : ''} />
+                        <div className="flex flex-col items-center gap-1.5 sm:gap-2 md:gap-4">
+                            <button onClick={handlePower} className={`w-14 h-14 sm:w-16 sm:h-16 md:w-28 md:h-28 rounded-full flex items-center justify-center transition-all active:scale-90 shadow-2xl border-b-4 md:border-b-[10px] ${step === 'OFF' ? 'bg-slate-800 border-slate-950 text-slate-600' : 'bg-green-600 border-green-900 text-white shadow-green-500/30'}`}>
+                                <Power size={20} className={`sm:size-[24px] ${step !== 'OFF' ? 'animate-pulse' : ''}`} />
                             </button>
                             <span className="text-[8px] md:text-[11px] uppercase font-black text-slate-500 tracking-widest leading-none">Power</span>
                         </div>
 
                         {/* Shock Button */}
-                        <div className="flex flex-col items-center gap-2 md:gap-4">
+                        <div className="flex flex-col items-center gap-1.5 sm:gap-2 md:gap-4">
                             <button
                                 onClick={deliverShock}
                                 disabled={step !== 'SHOCKING'}
-                                className={`w-20 h-20 md:w-36 md:h-36 rounded-full flex items-center justify-center transition-all shadow-2xl relative overflow-hidden active:scale-95 ${step === 'SHOCKING' ? 'bg-orange-500 border-b-[8px] md:border-b-[14px] border-orange-900 animate-flash cursor-pointer' : 'bg-slate-300/10 border-b-[8px] md:border-b-[14px] border-slate-950 opacity-10 cursor-not-allowed'}`}
+                                className={`w-16 h-16 sm:w-20 sm:h-20 md:w-36 md:h-36 rounded-full flex items-center justify-center transition-all shadow-2xl relative overflow-hidden active:scale-95 ${step === 'SHOCKING' ? 'bg-orange-500 border-b-4 sm:border-b-[8px] md:border-b-[14px] border-orange-900 animate-flash cursor-pointer' : 'bg-slate-300/10 border-b-4 sm:border-b-[8px] md:border-b-[14px] border-slate-950 opacity-10 cursor-not-allowed'}`}
                             >
-                                <Zap size={32} className="md:size-[64px] text-white relative z-10" />
+                                <Zap size={24} className="sm:size-[32px] md:size-[64px] text-white relative z-10" />
                                 {step === 'SHOCKING' && <div className="absolute inset-0 bg-white/30 animate-pulse"></div>}
                             </button>
-                            <span className={`text-[9px] md:text-[12px] uppercase font-black tracking-[0.1em] md:tracking-[0.2em] leading-none ${step === 'SHOCKING' ? 'text-orange-500 animate-pulse' : 'text-slate-500'}`}>Shock</span>
+                            <span className={`text-[8px] sm:text-[9px] md:text-[12px] uppercase font-black tracking-[0.1em] md:tracking-[0.2em] leading-none ${step === 'SHOCKING' ? 'text-orange-500 animate-pulse' : 'text-slate-500'}`}>Shock</span>
                         </div>
 
                         {/* CPR/Interaction Button */}
-                        <div className="flex flex-col items-center gap-2 md:gap-4">
+                        <div className="flex flex-col items-center gap-1.5 sm:gap-2 md:gap-4">
                             <button
                                 onClick={cprPhase === 'compressing' ? handleCpr : handleBreath}
                                 disabled={step !== 'CPR'}
-                                className={`w-16 h-16 md:w-28 md:h-28 rounded-full flex items-center justify-center transition-all active:scale-90 shadow-2xl border-b-[6px] md:border-b-[10px] ${step === 'CPR' ? (cprPhase === 'compressing' ? 'bg-brand-600 border-brand-900' : 'bg-pink-600 border-pink-900') : 'bg-slate-300/10 border-b-[6px] md:border-b-[10px] border-slate-950 opacity-10'}`}
+                                className={`w-14 h-14 sm:w-16 sm:h-16 md:w-28 md:h-28 rounded-full flex items-center justify-center transition-all active:scale-90 shadow-2xl border-b-4 md:border-b-[10px] ${step === 'CPR' ? (cprPhase === 'compressing' ? 'bg-brand-600 border-brand-900' : 'bg-pink-600 border-pink-900') : 'bg-slate-300/10 border-b-4 md:border-b-[10px] border-slate-950 opacity-10'}`}
                             >
-                                <Activity size={24} className="md:size-[48px] text-white" />
+                                <Activity size={20} className="sm:size-[24px] md:size-[48px] text-white" />
                             </button>
                             <span className="text-[8px] md:text-[11px] uppercase font-black text-slate-500 tracking-widest leading-none">{cprPhase === 'compressing' ? 'Comp' : 'Breath'}</span>
                         </div>
